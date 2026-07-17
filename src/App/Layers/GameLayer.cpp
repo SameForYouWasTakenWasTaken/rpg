@@ -27,6 +27,8 @@ void GameLayer::OnAttach()
     auto makeSquare = [&](float x, float y, float size, TextureID textureID, const sf::FloatRect texRect) {
         entt::entity entity = m_Registry.create();
         auto& sprite = m_Registry.emplace<CSprite>(entity);
+        sprite.origin = {0.5, 0.5};
+
         auto& texture = m_Registry.emplace<CTexture>(entity);
         texture.textureID = textureID;
         texture.textureRect = texRect;
@@ -38,10 +40,10 @@ void GameLayer::OnAttach()
         return entity;
     };
 
-    m_LocalPlayer = makeSquare(100.0f, 100.0f, 200.0f, textureID, dogbite);
+    makeSquare(100.0f, 100.0f, 200.0f, textureID, dogbite);
     makeSquare(340.0f, 100.0f, 200.0f, textureID, dogbite);
     makeSquare(100.0f, 340.0f, 200.0f, textureID, shocked);
-    makeSquare(340.0f, 340.0f, 200.0f, textureID, uwu);
+    m_LocalPlayer = makeSquare(340.0f, 340.0f, 200.0f, textureID, uwu);
 
     m_LocalPlayerCamera.SetCenter(m_Registry.get<CTransform>(m_LocalPlayer).position);
     
@@ -61,6 +63,7 @@ void GameLayer::OnDetach()
 
 void GameLayer::OnUpdate(float dt, ApplicationContext& context) 
 {
+    auto& localPlayerSprite = m_Registry.get<CSprite>(m_LocalPlayer);
     auto& transform = m_Registry.get<CTransform>(m_LocalPlayer);
 
     constexpr float speed = 300.0f; // pixels per second
@@ -77,7 +80,7 @@ void GameLayer::OnUpdate(float dt, ApplicationContext& context)
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
         transform.position.x += speed * dt;
 
-    m_LocalPlayerCamera.SetCenter(transform.position + transform.scale / 2.0f);
+    m_LocalPlayerCamera.SetCenter(transform.position);
     context.MainWindow.SetView(m_LocalPlayerCamera.GetView());
 }
 
@@ -94,9 +97,11 @@ void GameLayer::OnRender(Renderer& renderer, ApplicationContext& context)
         RenderObject obj;
         obj.color = sprite.color;
         obj.origin = sprite.origin;
+        obj.zIndex = sprite.zIndex;
 
         obj.pos = transform.position;
-        obj.scale = transform.scale;
+        obj.scale.x = sprite.flipX ? -transform.scale.x : transform.scale.x;
+        obj.scale.y = sprite.flipY ? -transform.scale.y : transform.scale.y;
         obj.rotation = transform.rotation;
 
         obj.texture = &assetManager.GetTexture(texture.textureID);

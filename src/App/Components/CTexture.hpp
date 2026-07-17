@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SFML/Graphics/Rect.hpp"
-#include "Systems/AssetManager.hpp"
+#include "Types.hpp"
 
 namespace ssg {
 

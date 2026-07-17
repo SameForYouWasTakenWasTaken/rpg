@@ -8,7 +8,6 @@
 
 namespace ssg
 {
-using TextureID = uint32_t;
 class AssetManager
 {
 public:

@@ -55,17 +55,19 @@ void Application::Run()
     {
         float dt = clock.restart().asSeconds();
         eventBus.Update(); // Update events at the start of the frame
+
         HandleEvents(m_window);
 
         m_window.Clear(sf::Color::Black);
         
         m_renderer.Begin();
+
         stack.Update(dt, Context);
         stack.Render(m_renderer, Context);
+
         m_renderer.End(m_window);
 
         m_window.Display();
-
     }
 
     Shutdown();

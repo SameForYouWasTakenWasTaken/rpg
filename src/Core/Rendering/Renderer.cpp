@@ -1,3 +1,7 @@
+#include <algorithm>
+#include <stdexcept>
+#include <tuple>
+
 #include "Renderer.hpp"
 #include "Engine.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
@@ -5,8 +9,6 @@
 #include "SFML/Graphics/Transform.hpp"
 #include "SFML/Graphics/VertexArray.hpp"
 #include "SFML/System/Angle.hpp"
-#include <algorithm>
-#include <stdexcept>
 
 namespace ssg {
 
@@ -20,49 +22,57 @@ Renderer::Renderer()
 }
 void Renderer::Begin() 
 {
+    for (auto& layer : m_Layers)
+        layer.clear();
+
     m_sfVertexArray.clear();
-    m_RenderObjects.clear();
 }
 
-void Renderer::End(Window& window) 
-{   
-    // Sort by texture
-    std::sort(m_RenderObjects.begin(), m_RenderObjects.end(), 
-    [](const auto& a, const auto& b){
-        return a.texture < b.texture;
-    });
-
-    std::size_t idx = 0;
-    std::size_t spriteCount = m_RenderObjects.size();
-    if (spriteCount == 0) return;
-    
-    
-    const sf::Texture* currentBatchTexture = m_RenderObjects[0].texture;
-
-    size_t batchStartVertex = 0;
-    size_t batchVertexCount = 0;
-
-    for (size_t i = 0; i < spriteCount; i++)
+void Renderer::End(Window& window)
+{
+    for (auto& layer : m_Layers)
     {
-        auto& renderObject = m_RenderObjects[i];
+        if (layer.empty())
+            continue;
 
-        // Will only run after loop reaches next texture
-        if (renderObject.texture != currentBatchTexture)
+        // Sort by texture
+        std::sort(layer.begin(), layer.end(),
+        [](const auto& a, const auto& b)
         {
-            // Render previous appended vertices
-            FlushBatch(window, currentBatchTexture, batchStartVertex, batchVertexCount);
+            return a.texture < b.texture;
+        });
 
-            // Move pointers to track next sub-batch range
-            batchStartVertex += batchVertexCount;
-            batchVertexCount = 0;
-            currentBatchTexture = renderObject.texture;
+        const sf::Texture* currentTexture = layer.front().texture;
+
+        std::size_t batchStartVertex = m_sfVertexArray.getVertexCount();
+        std::size_t batchVertexCount = 0;
+
+        for (const auto& renderObject : layer)
+        {
+            if (renderObject.texture != currentTexture)
+            {
+                FlushBatch(window,
+                           currentTexture,
+                           batchStartVertex,
+                           batchVertexCount);
+
+                // Start new batch
+                batchStartVertex += batchVertexCount;
+                batchVertexCount = 0;
+                currentTexture = renderObject.texture;
+            }
+
+            // Append vertices
+            AppendVertices(renderObject);
+            batchVertexCount += 6; // 6 vertices for one quad (2 triangles)
         }
-        
-        AppendVertices(renderObject);
-        batchVertexCount += 6; // 6 vertices per quad
-    }
 
-    FlushBatch(window, currentBatchTexture, batchStartVertex, batchVertexCount);
+        // Flush final batch
+        FlushBatch(window,
+                   currentTexture,
+                   batchStartVertex,
+                   batchVertexCount);
+    }
 }
 
 void Renderer::AppendVertices(const RenderObject& obj)
@@ -74,18 +84,21 @@ void Renderer::AppendVertices(const RenderObject& obj)
     auto texRect = obj.texRect;
 
     transform.translate({pos.x, pos.y});
-
-    transform.rotate(
-        sf::degrees(obj.rotation), 
-        {size.x * origin.x, size.y * origin.y}
-    );
-
+    transform.rotate(sf::degrees(obj.rotation));
     transform.scale({size.x, size.y});
 
-    sf::Vector2f p0 = transform.transformPoint({0.0f, 0.0f}); // TL
-    sf::Vector2f p1 = transform.transformPoint({1.0f, 0.0f}); // TR
-    sf::Vector2f p2 = transform.transformPoint({1.0f, 1.0f}); // BR
-    sf::Vector2f p3 = transform.transformPoint({0.0f, 1.0f}); // BL
+    // transform points by the origin offset, makes camera centering much simpler
+    // and makes sure that the pivot isn't based off of transform.position but by origin.
+    // Also helps when flipping X and Y, so the pivot doesn't fuck up
+    sf::Vector2f originOffset = {
+        obj.origin.x,
+        obj.origin.y
+    };
+
+    sf::Vector2f p0 = transform.transformPoint({0.0f - originOffset.x, 0.0f - originOffset.y});
+    sf::Vector2f p1 = transform.transformPoint({1.0f - originOffset.x, 0.0f - originOffset.y});
+    sf::Vector2f p2 = transform.transformPoint({1.0f - originOffset.x, 1.0f - originOffset.y});
+    sf::Vector2f p3 = transform.transformPoint({0.0f - originOffset.x, 1.0f - originOffset.y});
 
     sf::Vector2f t0 = {texRect.position.x, texRect.position.y};
     sf::Vector2f t1 = {texRect.position.x + texRect.size.x, texRect.position.y};
@@ -124,9 +137,9 @@ void Renderer::FlushBatch(Window& window, const sf::Texture* texture, std::size_
     window.Draw(m_sfVertexBuffer, startVertex, endVertex, state);
 }
 
-void Renderer::Submit(const RenderObject& object)
+void Renderer::Submit(const RenderObject& obj)
 {
-    m_RenderObjects.push_back(object);
+    m_Layers[obj.zIndex].push_back(obj);
 }
 
 } // namespace ssg

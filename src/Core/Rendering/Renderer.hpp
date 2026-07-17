@@ -7,6 +7,7 @@
 #include "SFML/Graphics/VertexBuffer.hpp"
 #include "Types.hpp"
 #include "Window.hpp"
+#include <limits>
 namespace ssg {
 
 struct RenderObject
@@ -15,7 +16,8 @@ struct RenderObject
     Vec2 scale                       {0, 0};
     Vec2 origin                     {0, 0}; // Normalized, 0 - 1
     float rotation                  {0};
-
+    
+    uint8_t zIndex                  {0};
     sf::Color color                 {sf::Color::White};
     
     sf::FloatRect texRect           {{0, 0}, {0, 0}};
@@ -42,8 +44,10 @@ private:
     
     sf::VertexArray m_sfVertexArray;
     sf::VertexBuffer m_sfVertexBuffer;
-    
-    Vector<RenderObject> m_RenderObjects{};
+        
+    static constexpr std::size_t MAX_LAYERS = 
+            static_cast<std::size_t>(std::numeric_limits<zIndex_t>::max()) + 1; // +1 cuz indexing starts at 0
+    Array<Vector<RenderObject>, MAX_LAYERS> m_Layers;
     
 };
 
