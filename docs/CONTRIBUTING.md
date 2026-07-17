@@ -91,3 +91,7 @@ Queue events with `eventBus.Queue<MyEvent>(args...)`.
 
 Read [`ARCHITECTURE.md`](ARCHITECTURE.md) for the flow, and
 [`CLASSES.md`](CLASSES.md) for the per-class map. Then just ask. 🙂
+
+Additionally, [`HIERARCHY.md`](HIERARCHY.md) discloses how hierarchial entities
+work. This is especially important since there are some writing conventions
+you should adhere to.

@@ -81,12 +81,32 @@ Entities are just `entt::entity` IDs. Data lives in **components**:
 
 | Component | Holds |
 | --- | --- |
-| `CTransform` | position, scale, rotation |
-| `CSprite` | color, z-index, origin, flip flags |
+| `CTransform` | **local** position, scale (multiplier), rotation |
+| `CWorldTransform` | **derived** absolute position, scale, rotation |
+| `CRelationship` | parent/child links (intrusive linked list) |
+| `CSprite` | color, z-index, origin, pixel size, flip flags |
 | `CTexture` | texture ID + source rectangle (sub-texture) |
 
 A layer (like `GameLayer`) creates entities, attaches these components, and
 reads them in `OnUpdate` / `OnRender`.
+
+> **Write local, read world.** Gameplay edits `CTransform`; everything visual /
+> spatial reads `CWorldTransform`. Exactly one system (`TransformSystem`) derives
+> world from local each frame. See [`HIERARCHY.md`](HIERARCHY.md) for the full
+> pipeline.
+
+### 5b. Systems
+Systems derive from `ISystem` and operate on the registry once per frame via
+`Update(dt)`:
+
+| System | Purpose |
+| --- | --- |
+| `TransformSystem` | Derives `CWorldTransform` from `CTransform` + hierarchy, parents first. |
+| `SpatialGrid` | Buckets entities by cell for "what is near this point?" queries. |
+
+Entities are set up through **factories** (`ssg::factory`) that attach a standard
+set of components (transform pair + sprite/texture) to an existing entity, so the
+local + world transform pair always exists together.
 
 ### 6. Renderer (batched)
 The `Renderer` collects `RenderObject`s through `Submit()`. Each object is
@@ -129,7 +149,9 @@ Layered code asks the atlas for a sub-texture rect, then renders it.
 | `src/App/` | `Application`, `Scene`, `SceneStack`, `ILayer` |
 | `src/App/Layers/` | `GameLayer` (example layer) |
 | `src/App/Scenes/` | `GameScene` (example scene) |
-| `src/App/Components/` | `CTransform`, `CSprite`, `CTexture` |
+| `src/App/Components/` | `CTransform`, `CWorldTransform`, `CRelationship`, `CSprite`, `CTexture` |
+| `src/App/Systems/` | `ISystem`, `TransformSystem`, `SpatialGrid`, `Hierarchy` |
+| `src/App/Factories/` | `Default` (`AddDefault*` entity setup) |
 | `src/App/Events/` | Input events (key, mouse, text) |
 | `src/Shared/` | Shared type aliases (`Types.hpp`) |
 

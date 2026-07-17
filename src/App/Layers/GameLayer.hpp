@@ -8,6 +8,8 @@
 #include "ILayer.hpp"
 #include "Rendering/Camera.hpp"
 #include "Rendering/Renderer.hpp"
+#include "Systems/SpatialGrid.hpp"
+#include "Systems/TransformSystem.hpp"
 #include "Types.hpp"
 
 namespace ssg
@@ -33,6 +35,8 @@ class GameLayer final : public ILayer
   private:
     void OnWindowResize(const WindowResizeEvent& event);
     entt::registry m_Registry;
+    SpatialGrid m_SpatialGrid{m_Registry};
+    TransformSystem m_TransformSystem{m_Registry};
 
     entt::entity m_LocalPlayer{entt::null};
     Camera m_LocalPlayerCamera;
