@@ -1,0 +1,100 @@
+{
+	"frames": [
+		{
+			"filename": "default.png",
+			"frame": {
+				"x": 0,
+				"y": 0,
+				"w": 1,
+				"h": 1
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 1,
+				"h": 1
+			},
+			"sourceSize": {
+				"w": 1,
+				"h": 1
+			}
+		},
+		{
+			"filename": "dogbite.jpg",
+			"frame": {
+				"x": 1,
+				"y": 0,
+				"w": 735,
+				"h": 705
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 735,
+				"h": 705
+			},
+			"sourceSize": {
+				"w": 735,
+				"h": 705
+			}
+		},
+		{
+			"filename": "shocked.jpg",
+			"frame": {
+				"x": 736,
+				"y": 0,
+				"w": 677,
+				"h": 662
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 677,
+				"h": 662
+			},
+			"sourceSize": {
+				"w": 677,
+				"h": 662
+			}
+		},
+		{
+			"filename": "uwu.jpg",
+			"frame": {
+				"x": 0,
+				"y": 705,
+				"w": 736,
+				"h": 736
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 736,
+				"h": 736
+			},
+			"sourceSize": {
+				"w": 736,
+				"h": 736
+			}
+		}
+	],
+	"meta": {
+		"app": "https://www.codeandweb.com/texturepacker",
+		"version": "1.0",
+		"image": "random.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 1413,
+			"h": 1441
+		},
+		"scale": "1",
+		"smartupdate": "$TexturePacker:SmartUpdate:22c933d9018a18ae96842407849a35f1:a42b90f9611f028e372e24c83cbb1ad1:799902b4f04cad10441f97658c01b88e$"
+	}
+}
