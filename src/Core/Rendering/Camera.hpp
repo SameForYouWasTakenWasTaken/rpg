@@ -1,13 +1,15 @@
 #pragma once
 
-#include "SFML/Graphics/View.hpp"
 #include "SFML/Graphics/Rect.hpp"
+#include "SFML/Graphics/View.hpp"
 #include "Types.hpp"
 
-namespace ssg {
+namespace ssg
+{
 
-class Camera {
-public:
+class Camera
+{
+  public:
     Camera() = default;
     explicit Camera(const Vec2& center, const Vec2& size);
     ~Camera() = default;
@@ -36,7 +38,7 @@ public:
     void SetView(const Vec2& center, const Vec2& size);
     const sf::View& GetView() const;
 
-private:
+  private:
     sf::View m_View;
 };
 

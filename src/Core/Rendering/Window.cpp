@@ -1,6 +1,7 @@
+#include "Window.hpp"
+
 #include <optional>
 
-#include "Window.hpp"
 #include "Engine.hpp"
 #include "Events/WindowResizeEvent.hpp"
 #include "Events/WindowSetView.hpp"
@@ -12,10 +13,7 @@ namespace ssg
 {
 Window::Window(const WindowSettings& settings)
 {
-    m_sfRenderWindow.create(
-        sf::VideoMode{{settings.Width, settings.Height}},
-        settings.title
-    );
+    m_sfRenderWindow.create(sf::VideoMode{{settings.Width, settings.Height}}, settings.title);
 
     SetSettings(settings);
 
@@ -25,7 +23,8 @@ Window::Window(const WindowSettings& settings)
 }
 Window::~Window()
 {
-    if (IsOpen()) Close();
+    if (IsOpen())
+        Close();
 }
 
 void Window::SetSettings(const WindowSettings& settings)
@@ -35,44 +34,28 @@ void Window::SetSettings(const WindowSettings& settings)
     SetFramerate(settings.Framerate);
 }
 
-void Window::SetTitle(const String& title)
-{
-    m_sfRenderWindow.setTitle(title);
-}
+void Window::SetTitle(const String& title) { m_sfRenderWindow.setTitle(title); }
 
-void Window::SetFramerate(WindowSettings::Fps fps)
-{
-    m_sfRenderWindow.setFramerateLimit(fps);
-}
+void Window::SetFramerate(WindowSettings::Fps fps) { m_sfRenderWindow.setFramerateLimit(fps); }
 
 void Window::SetSize(WindowSettings::Size width, WindowSettings::Size height)
 {
     m_sfRenderWindow.setSize(sf::Vector2u{height, width});
-    UpdateView([width, height](sf::View& view){
-        view.setSize({static_cast<float>(width), static_cast<float>(height)});
-    });
+    UpdateView([width, height](sf::View& view)
+               { view.setSize({static_cast<float>(width), static_cast<float>(height)}); });
 }
 
-void Window::SetView(const sf::View& view)
-{
-    m_sfRenderWindow.setView(view);
-}
+void Window::SetView(const sf::View& view) { m_sfRenderWindow.setView(view); }
 
-std::optional<sf::Event> Window::PollSFMLEvents()
-{
-    return m_sfRenderWindow.pollEvent();
-}
+std::optional<sf::Event> Window::PollSFMLEvents() { return m_sfRenderWindow.pollEvent(); }
 
 void Window::OnResize(const WindowResizeEvent& event)
 {
-    UpdateView([&event](sf::View& view){
-        view.setSize({static_cast<float>(event.Width), static_cast<float>(event.Height)});
-    });
+    UpdateView(
+        [&event](sf::View& view)
+        { view.setSize({static_cast<float>(event.Width), static_cast<float>(event.Height)}); });
 }
-void Window::OnClose(const WindowCloseEvent& event)
-{
-    Close();
-}
+void Window::OnClose(const WindowCloseEvent& event) { Close(); }
 
 void Window::OnWindowSetView(const WindowSetViewEvent& event)
 {
@@ -86,4 +69,4 @@ void Window::UpdateView(std::invocable<sf::View&> auto&& func)
     SetView(m_View);
 }
 
-} // ssg
+} // namespace ssg

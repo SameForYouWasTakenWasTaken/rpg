@@ -1,10 +1,12 @@
 #pragma once
 
-#include "Rendering/Renderer.hpp"
-#include "Rendering/Window.hpp"
 #include <SFML/Graphics.hpp>
 
-namespace ssg {
+#include "Rendering/Renderer.hpp"
+#include "Rendering/Window.hpp"
+
+namespace ssg
+{
 
 struct ApplicationContext
 {
@@ -12,22 +14,22 @@ struct ApplicationContext
     ApplicationContext(ApplicationContext&&) = delete;
     ApplicationContext& operator=(const ApplicationContext&) = delete;
     ApplicationContext& operator=(ApplicationContext&&) = delete;
-    
-    ApplicationContext(
-        Window& w
-    ) : MainWindow(w) {}
+
+    ApplicationContext(Window& w) : MainWindow(w) {}
 
     Window& MainWindow;
 };
 
-class Application {
-public:
+class Application
+{
+  public:
     Application();
 
     void Run();
     void Shutdown();
     void HandleEvents(Window& window);
-private:
+
+  private:
     Renderer m_renderer;
     Window m_window{WindowSettings{}};
 };

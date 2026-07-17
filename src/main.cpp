@@ -1,7 +1,7 @@
 #include "Application.hpp"
 #include "Engine.hpp"
 
-int main() 
+int main()
 {
     ssg::Engine::instance().initialize();
     ssg::Application application;

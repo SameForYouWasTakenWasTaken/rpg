@@ -18,6 +18,6 @@ target_link_libraries(Game2
 
 add_custom_command(TARGET Game2 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/App/Assets
+    ${CMAKE_CURRENT_SOURCE_DIR}/App/assets
     $<TARGET_FILE_DIR:Game2>/assets
 )

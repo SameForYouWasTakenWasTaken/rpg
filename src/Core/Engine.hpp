@@ -1,15 +1,18 @@
 #pragma once
 
-#include "Events/EventBus.hpp"
-#include "Rendering/Window.hpp"
-#include "Systems/AssetManager.hpp"
 #include <atomic>
 #include <iterator>
 
-namespace ssg {
+#include "Events/EventBus.hpp"
+#include "Rendering/Window.hpp"
+#include "Systems/AssetManager.hpp"
 
-class Engine {
-public:
+namespace ssg
+{
+
+class Engine
+{
+  public:
     static Engine& instance();
 
     Engine(const Engine&) = delete;
@@ -22,9 +25,10 @@ public:
 
     EventBus eventBus;
     AssetManager assetManager;
-private:
+
+  private:
     Engine() = default;
-    
+
     std::atomic<bool> m_running{false};
 };
 

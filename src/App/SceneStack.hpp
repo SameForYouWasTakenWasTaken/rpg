@@ -3,14 +3,16 @@
 #include <memory>
 
 #include "Application.hpp"
-#include "Scene.hpp"
 #include "Rendering/Renderer.hpp"
+#include "Scene.hpp"
 #include "Types.hpp"
 
-namespace ssg {
+namespace ssg
+{
 
-class SceneStack {
-public:
+class SceneStack
+{
+  public:
     SceneStack() = default;
     ~SceneStack() = default;
 
@@ -30,7 +32,7 @@ public:
     void Update(float dt, ApplicationContext& context);
     void Render(Renderer& renderer, ApplicationContext& context);
 
-private:
+  private:
     Vector<std::unique_ptr<IScene>> m_Scenes;
 };
 

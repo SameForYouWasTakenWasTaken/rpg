@@ -1,13 +1,13 @@
 #include "GameScene.hpp"
+
 #include "Application.hpp"
 
-namespace ssg {
-
-GameScene::GameScene() 
+namespace ssg
 {
-}
 
-GameScene::~GameScene() 
+GameScene::GameScene() {}
+
+GameScene::~GameScene()
 {
     for (auto& layer : m_Layers)
     {
@@ -15,15 +15,15 @@ GameScene::~GameScene()
     }
 }
 
-void GameScene::OnUpdate(float dt, ApplicationContext& context) 
+void GameScene::OnUpdate(float dt, ApplicationContext& context)
 {
     for (auto& layer : m_Layers)
     {
         layer->OnUpdate(dt, context);
-    }    
+    }
 }
 
-void GameScene::OnRender(Renderer& renderer, ApplicationContext& context) 
+void GameScene::OnRender(Renderer& renderer, ApplicationContext& context)
 {
     for (auto& layer : m_Layers)
     {

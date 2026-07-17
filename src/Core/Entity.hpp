@@ -1,9 +1,11 @@
 #pragma once
 
-namespace ssg {
+namespace ssg
+{
 
-class Entity {
-public:
+class Entity
+{
+  public:
     Entity() = default;
     ~Entity() = default;
 
@@ -13,7 +15,7 @@ public:
     Entity(Entity&&) = default;
     Entity& operator=(Entity&&) = default;
 
-private:
+  private:
 };
 
 } // namespace ssg
