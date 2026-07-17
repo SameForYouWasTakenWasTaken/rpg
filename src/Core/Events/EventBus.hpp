@@ -29,15 +29,14 @@ class EventBus
     template <TEvent TEventU> void Update()
     {
         m_Dispatcher.update<TEventU>();
-    }                                        // Update single event
+    } // Update single event
     void Update() { m_Dispatcher.update(); } // Update all events
 
     template <TEvent TEvent> auto Sink() { return m_Dispatcher.sink<TEvent>(); }
 
     template <typename TEventReceive> // Don't use TEvent in place of typename here, since SFML
                                       // events do not derive the IEvent interface
-                                      static TEventReceive*
-                                      IsSFMLEvent(std::optional<sf::Event> event)
+    static TEventReceive* IsSFMLEvent(std::optional<sf::Event> event)
     {
         if (auto* e = event->getIf<TEventReceive>())
             return e;
