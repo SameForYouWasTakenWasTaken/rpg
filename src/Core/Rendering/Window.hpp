@@ -1,16 +1,16 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
 #include <concepts>
 #include <cstdint>
 
-#include <SFML/Graphics.hpp>
 #include "Events/WindowCloseEvent.hpp"
-#include "SFML/Graphics/Color.hpp"
-#include "SFML/Graphics/View.hpp"
-#include "Types.hpp"
-#include "SFML/Graphics/RenderWindow.hpp"
 #include "Events/WindowResizeEvent.hpp"
 #include "Events/WindowSetView.hpp"
+#include "SFML/Graphics/Color.hpp"
+#include "SFML/Graphics/RenderWindow.hpp"
+#include "SFML/Graphics/View.hpp"
+#include "Types.hpp"
 
 namespace ssg
 {
@@ -24,12 +24,11 @@ struct WindowSettings
     Size Width{100}, Height{100};
     Fps Framerate{60};
     String title{"Window"};
-
 };
 
 class Window
 {
-public:
+  public:
     Window(const WindowSettings& settings);
     ~Window();
 
@@ -44,23 +43,26 @@ public:
     void SetSize(WindowSettings::Size, WindowSettings::Size);
     void SetView(const sf::View& view);
 
-    template <typename... TArgs>
-    void Draw(TArgs&&... args)                  {m_sfRenderWindow.draw(std::forward<TArgs>(args)...);}
-    void Display()                              {m_sfRenderWindow.display();}
-    void Clear(sf::Color c = sf::Color::Black)  {m_sfRenderWindow.clear(c);}
+    template <typename... TArgs> void Draw(TArgs&&... args)
+    {
+        m_sfRenderWindow.draw(std::forward<TArgs>(args)...);
+    }
+    void Display() { m_sfRenderWindow.display(); }
+    void Clear(sf::Color c = sf::Color::Black) { m_sfRenderWindow.clear(c); }
 
-    void Close() {m_sfRenderWindow.close();}
+    void Close() { m_sfRenderWindow.close(); }
 
-    bool IsOpen() {return m_sfRenderWindow.isOpen();};
+    bool IsOpen() { return m_sfRenderWindow.isOpen(); };
 
     void UpdateView(std::invocable<sf::View&> auto&& func);
 
     std::optional<sf::Event> PollSFMLEvents();
-private:
+
+  private:
     void OnResize(const WindowResizeEvent& event);
     void OnClose(const WindowCloseEvent& event);
     void OnWindowSetView(const WindowSetViewEvent& event);
     sf::View m_View;
     sf::RenderWindow m_sfRenderWindow;
 };
-}
+} // namespace ssg

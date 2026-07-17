@@ -1,19 +1,21 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
+#include <entt/entt.hpp>
+#include <memory>
+
 #include "Events/WindowResizeEvent.hpp"
 #include "ILayer.hpp"
 #include "Rendering/Camera.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Types.hpp"
 
-#include <entt/entt.hpp>
-#include <SFML/Graphics.hpp>
-#include <memory>
+namespace ssg
+{
 
-namespace ssg {
-
-class GameLayer final : public ILayer {
-public:
+class GameLayer final : public ILayer
+{
+  public:
     GameLayer() = default;
     ~GameLayer() = default;
 
@@ -28,7 +30,7 @@ public:
     void OnUpdate(float dt, ApplicationContext& context) override;
     void OnRender(Renderer& renderer, ApplicationContext& context) override;
 
-private:
+  private:
     void OnWindowResize(const WindowResizeEvent& event);
     entt::registry m_Registry;
 

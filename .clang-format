@@ -1,6 +1,6 @@
 BasedOnStyle: LLVM
 Language: Cpp
-Standard: c++23
+Standard: c++20
 
 ColumnLimit: 100
 IndentWidth: 4
@@ -24,4 +24,3 @@ IncludeCategories:
     Priority: 3
   - Regex: '.*'
     Priority: 4
-...

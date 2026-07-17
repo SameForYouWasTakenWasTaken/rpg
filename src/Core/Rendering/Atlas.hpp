@@ -1,9 +1,10 @@
 #pragma once
 
 #include <unordered_map>
-#include "Systems/AssetManager.hpp"
+
 #include "SFML/Graphics/Rect.hpp"
 #include "SFML/Graphics/Texture.hpp"
+#include "Systems/AssetManager.hpp"
 #include "Types.hpp"
 
 namespace ssg
@@ -11,7 +12,7 @@ namespace ssg
 using SubTextureDimensionList = std::unordered_map<String, sf::FloatRect>;
 class Atlas
 {
-public:
+  public:
     Atlas() = default;
     ~Atlas() = default;
 
@@ -23,7 +24,8 @@ public:
     TextureID LoadTexture(Filepath, Filepath);
     sf::FloatRect GetSubTextureDimensions(const String&);
     const SubTextureDimensionList& GetAllSubTextureDimensions();
-private:
+
+  private:
     const sf::Texture* m_Texture = nullptr;
     Filepath m_Filepath = "";
     Filepath m_JsonFilepath = "";
@@ -32,4 +34,4 @@ private:
     // sf::FloatRect: the texture dimensions
     SubTextureDimensionList m_SubTextureDimensions = {};
 };
-}
+} // namespace ssg

@@ -40,6 +40,10 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install ccache --yes
 
+      - name: 🎨 Install clang-format (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y clang-format-18
+
       - name: 🔍 Restore ccache
         uses: actions/cache@v4
         with:
@@ -80,3 +84,9 @@ jobs:
       - name: 📊 ccache stats
         if: always()
         run: ccache --show-stats || true
+
+      - name: 🎨 clang-format check
+        if: runner.os == 'Linux'
+        run: |
+          files=$(find src -type f \( -name '*.cpp' -o -name '*.hpp' \))
+          clang-format-18 --dry-run --Werror $files

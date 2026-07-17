@@ -1,8 +1,9 @@
+#include "Renderer.hpp"
+
 #include <algorithm>
 #include <stdexcept>
 #include <tuple>
 
-#include "Renderer.hpp"
 #include "Engine.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/Texture.hpp"
@@ -10,17 +11,18 @@
 #include "SFML/Graphics/VertexArray.hpp"
 #include "SFML/System/Angle.hpp"
 
-namespace ssg {
+namespace ssg
+{
 
 Renderer::Renderer()
 {
     // Make enough room for 1k sprites
-    if (!m_sfVertexBuffer.create(1'000 * 6)) // 2 triangles, so 3 points * 2 = 6, indexing doesnt work on sfml
+    if (!m_sfVertexBuffer.create(
+            1'000 * 6)) // 2 triangles, so 3 points * 2 = 6, indexing doesnt work on sfml
         throw std::runtime_error("Unable to preallocate vertex buffer!");
     m_sfVertexBuffer.setPrimitiveType(sf::PrimitiveType::Triangles);
-    
 }
-void Renderer::Begin() 
+void Renderer::Begin()
 {
     for (auto& layer : m_Layers)
         layer.clear();
@@ -37,10 +39,7 @@ void Renderer::End(Window& window)
 
         // Sort by texture
         std::sort(layer.begin(), layer.end(),
-        [](const auto& a, const auto& b)
-        {
-            return a.texture < b.texture;
-        });
+                  [](const auto& a, const auto& b) { return a.texture < b.texture; });
 
         const sf::Texture* currentTexture = layer.front().texture;
 
@@ -51,10 +50,7 @@ void Renderer::End(Window& window)
         {
             if (renderObject.texture != currentTexture)
             {
-                FlushBatch(window,
-                           currentTexture,
-                           batchStartVertex,
-                           batchVertexCount);
+                FlushBatch(window, currentTexture, batchStartVertex, batchVertexCount);
 
                 // Start new batch
                 batchStartVertex += batchVertexCount;
@@ -68,10 +64,7 @@ void Renderer::End(Window& window)
         }
 
         // Flush final batch
-        FlushBatch(window,
-                   currentTexture,
-                   batchStartVertex,
-                   batchVertexCount);
+        FlushBatch(window, currentTexture, batchStartVertex, batchVertexCount);
     }
 }
 
@@ -90,10 +83,7 @@ void Renderer::AppendVertices(const RenderObject& obj)
     // transform points by the origin offset, makes camera centering much simpler
     // and makes sure that the pivot isn't based off of transform.position but by origin.
     // Also helps when flipping X and Y, so the pivot doesn't fuck up
-    sf::Vector2f originOffset = {
-        obj.origin.x,
-        obj.origin.y
-    };
+    sf::Vector2f originOffset = {obj.origin.x, obj.origin.y};
 
     sf::Vector2f p0 = transform.transformPoint({0.0f - originOffset.x, 0.0f - originOffset.y});
     sf::Vector2f p1 = transform.transformPoint({1.0f - originOffset.x, 0.0f - originOffset.y});
@@ -113,15 +103,17 @@ void Renderer::AppendVertices(const RenderObject& obj)
     // Triangle 2 (TL -> BR -> BL)
     m_sfVertexArray.append(sf::Vertex{p0, obj.color, t0});
     m_sfVertexArray.append(sf::Vertex{p2, obj.color, t2});
-    m_sfVertexArray.append(sf::Vertex{p3, obj.color, t3}); 
+    m_sfVertexArray.append(sf::Vertex{p3, obj.color, t3});
 }
 
-void Renderer::FlushBatch(Window& window, const sf::Texture* texture, std::size_t startVertex, std::size_t endVertex)
+void Renderer::FlushBatch(Window& window, const sf::Texture* texture, std::size_t startVertex,
+                          std::size_t endVertex)
 {
     assert(m_sfVertexArray.getVertexCount() > 0); // make sure we have at least 1 vertex
 
     // Resize GPU VBO if needed
-    if (m_sfVertexArray.getVertexCount() > m_sfVertexBuffer.getVertexCount()) {
+    if (m_sfVertexArray.getVertexCount() > m_sfVertexBuffer.getVertexCount())
+    {
         // Grow by 1.5x of what we need, so we don't reallocate again next frame
         size_t newCapacity = static_cast<size_t>(m_sfVertexArray.getVertexCount() * 1.5f);
         bool create = m_sfVertexBuffer.create(newCapacity);
@@ -137,9 +129,6 @@ void Renderer::FlushBatch(Window& window, const sf::Texture* texture, std::size_
     window.Draw(m_sfVertexBuffer, startVertex, endVertex, state);
 }
 
-void Renderer::Submit(const RenderObject& obj)
-{
-    m_Layers[obj.zIndex].push_back(obj);
-}
+void Renderer::Submit(const RenderObject& obj) { m_Layers[obj.zIndex].push_back(obj); }
 
 } // namespace ssg

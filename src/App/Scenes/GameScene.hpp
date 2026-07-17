@@ -1,14 +1,16 @@
 #pragma once
 
 #include "Application.hpp"
+#include "Layers/GameLayer.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Scene.hpp"
-#include "Layers/GameLayer.hpp"
 
-namespace ssg {
+namespace ssg
+{
 
-class GameScene final : public IScene {
-public:
+class GameScene final : public IScene
+{
+  public:
     GameScene();
     ~GameScene();
 

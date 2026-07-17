@@ -5,9 +5,9 @@ namespace ssg
 {
 class WindowCloseEvent : public IEvent
 {
-public:
+  public:
     WindowCloseEvent() = default;
 
     GENERATE_EVENT_TYPE();
 };
-}
+} // namespace ssg

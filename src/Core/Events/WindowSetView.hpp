@@ -9,11 +9,12 @@ namespace ssg
 class Window;
 class WindowSetViewEvent : public IEvent
 {
-public:
+  public:
     sf::View view;
     Window* window = nullptr;
 
-    WindowSetViewEvent(sf::View newView, Window* window = nullptr)
-    : view(newView), window(window) {}
+    WindowSetViewEvent(sf::View newView, Window* window = nullptr) : view(newView), window(window)
+    {
+    }
 };
-} // ssg
+} // namespace ssg
