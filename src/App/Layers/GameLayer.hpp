@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Events/WindowResizeEvent.hpp"
 #include "ILayer.hpp"
+#include "Rendering/Camera.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Types.hpp"
 
@@ -27,8 +29,11 @@ public:
     void OnRender(Renderer& renderer, ApplicationContext& context) override;
 
 private:
+    void OnWindowResize(const WindowResizeEvent& event);
     entt::registry m_Registry;
-    Vector<std::unique_ptr<sf::Texture>> m_Textures;
+
+    entt::entity m_LocalPlayer{entt::null};
+    Camera m_LocalPlayerCamera;
 };
 
 } // namespace ssg

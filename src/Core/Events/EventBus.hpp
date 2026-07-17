@@ -33,7 +33,7 @@ public:
 
     template <TEvent TEvent>
     auto Sink() {return m_Dispatcher.sink<TEvent>();}
-    
+
     template <typename TEventReceive> // Don't use TEvent in place of typename here, since SFML events do not derive the IEvent interface
     static TEventReceive* IsSFMLEvent(std::optional<sf::Event> event)
     {

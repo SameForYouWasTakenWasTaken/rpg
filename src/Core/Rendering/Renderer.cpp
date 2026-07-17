@@ -68,7 +68,7 @@ void Renderer::End(Window& window)
 void Renderer::AppendVertices(const RenderObject& obj)
 {
     sf::Transform transform;
-    auto size = obj.size;
+    auto size = obj.scale;
     auto pos = obj.pos;
     auto origin = obj.origin; // ORIGIN IS NORMALIZED!
     auto texRect = obj.texRect;

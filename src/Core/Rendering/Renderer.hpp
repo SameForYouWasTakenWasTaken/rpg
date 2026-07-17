@@ -12,7 +12,7 @@ namespace ssg {
 struct RenderObject
 {
     Vec2 pos                        {0, 0};
-    Vec2 size                       {0, 0};
+    Vec2 scale                       {0, 0};
     Vec2 origin                     {0, 0}; // Normalized, 0 - 1
     float rotation                  {0};
 
