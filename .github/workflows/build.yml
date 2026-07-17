@@ -30,8 +30,8 @@ jobs:
             libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
             libxi-dev libgl1-mesa-dev libudev-dev libopenal-dev \
             libflac-dev libvorbis-dev libpthread-stubs0-dev ccache
-          # MbedTLS is required by SFML's Network module on Linux
-          sudo apt-get install -y libmbedtls-dev || sudo apt-get install -y libmbedcrypto-dev libmbedx509-dev libmbedtls12
+          # MbedTLS + libssh2 are required by SFML's Network module on Linux
+          sudo apt-get install -y libmbedtls-dev libssh2-1-dev
 
       - name: 🍎 Install macOS deps
         if: runner.os == 'macOS'
