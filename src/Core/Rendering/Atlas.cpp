@@ -11,7 +11,17 @@
 namespace ssg
 {
 
-TextureID Atlas::LoadTexture(Filepath jsonFilepath, Filepath textureFilepath)
+TextureID Atlas::LoadAtlas(const Filepath& jsonFilepath, const Filepath& textureFilepath)
+{
+    auto& assetManager = Engine::instance().assetManager;
+
+    TextureID texID = assetManager.LoadTexture(textureFilepath);
+    LoadAtlas(jsonFilepath, texID);
+
+    return texID;
+}
+
+void Atlas::LoadAtlas(const Filepath& jsonFilepath, TextureID texID)
 {
     using namespace nlohmann;
 
@@ -44,27 +54,22 @@ TextureID Atlas::LoadTexture(Filepath jsonFilepath, Filepath textureFilepath)
         float w = static_cast<float>(frame["w"]);
         float h = static_cast<float>(frame["h"]);
 
-        m_SubTextureDimensions.emplace(element.at("filename").get<String>(),
-                                       sf::FloatRect{{x, y}, {w, h}});
+        m_Regions.emplace(element.at("filename").get<String>(), sf::FloatRect{{x, y}, {w, h}});
     }
 
     // LoadTexture() already throw std::runtime, no checks needed
-    TextureID id = assetManager.LoadTexture(textureFilepath);
-    m_Texture = &assetManager.GetTexture(id);
-    m_Filepath = textureFilepath;
+    m_TextureID = texID;
     m_JsonFilepath = jsonFilepath;
 
-    return id;
+    // this ID serves as the "name" of the atlas
+    m_ID = std::filesystem::path(atlas["meta"]["image"].get<std::string>()).stem().string();
 }
 
-sf::FloatRect Atlas::GetSubTextureDimensions(const String& SubTextureFilename)
+sf::FloatRect Atlas::GetRegion(const String& SubTextureFilename)
 {
-    return m_SubTextureDimensions.at(SubTextureFilename);
+    return m_Regions.at(SubTextureFilename);
 }
 
-const SubTextureDimensionList& Atlas::GetAllSubTextureDimensions()
-{
-    return m_SubTextureDimensions;
-}
+const RegionList& Atlas::GetAllRegions() { return m_Regions; }
 
 } // namespace ssg
