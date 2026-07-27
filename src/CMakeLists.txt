@@ -21,3 +21,9 @@ add_custom_command(TARGET Game2 POST_BUILD
     ${CMAKE_CURRENT_SOURCE_DIR}/App/assets
     $<TARGET_FILE_DIR:Game2>/assets
 )
+
+add_custom_command(TARGET Game2 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/App/data
+    $<TARGET_FILE_DIR:Game2>/data
+)

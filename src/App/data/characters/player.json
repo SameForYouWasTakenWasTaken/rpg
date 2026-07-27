@@ -1,0 +1,7 @@
+{
+    "id": "player",
+    "sprite": {
+        "atlas": "random",
+        "region": "shocked"
+    }
+}

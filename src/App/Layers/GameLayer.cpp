@@ -19,18 +19,18 @@ namespace ssg
 
 void GameLayer::OnAttach()
 {
-    Atlas atlas;
-    TextureID textureID =
-        atlas.LoadTexture("assets/Textures/Atlas/random.json", "assets/Textures/Atlas/random.png");
-    const sf::Texture& tex = Engine::instance().assetManager.GetTexture(textureID);
+    auto& assetManager = Engine::instance().assetManager;
+    auto atlasID = assetManager.LoadAtlas("assets/Textures/Atlas/random.json",
+                                          "assets/Textures/Atlas/random.png");
+    auto& atlas = assetManager.GetAtlas(atlasID);
+    auto textureID = atlas.GetTextureID();
 
-    sf::FloatRect defaultPNG = atlas.GetSubTextureDimensions("default.png");
-    sf::FloatRect dogbite = atlas.GetSubTextureDimensions("dogbite.jpg");
-    sf::FloatRect shocked = atlas.GetSubTextureDimensions("shocked.jpg");
-    sf::FloatRect uwu = atlas.GetSubTextureDimensions("uwu.jpg");
+    Region defaultPNG = atlas.GetRegion("default");
+    Region dogbite = atlas.GetRegion("dogbite");
+    Region shocked = atlas.GetRegion("shocked");
+    Region uwu = atlas.GetRegion("uwu");
 
-    auto makeSquare =
-        [&](float x, float y, float size, TextureID textureID, const sf::FloatRect texRect)
+    auto makeSquare = [&](float x, float y, float size, TextureID textureID, const Region texRect)
     {
         entt::entity entity = m_Registry.create();
         factory::AddDefaultSprite(m_Registry, entity, textureID, texRect, {size, size});
@@ -44,8 +44,13 @@ void GameLayer::OnAttach()
 
     makeSquare(100.0f, 100.0f, 200.0f, textureID, dogbite);
     makeSquare(340.0f, 100.0f, 200.0f, textureID, dogbite);
-    auto other = makeSquare(100.0f, 340.0f, 200.0f, textureID, shocked);
-    m_LocalPlayer = makeSquare(340.0f, 340.0f, 200.0f, textureID, uwu);
+    makeSquare(100.0f, 340.0f, 200.0f, textureID, shocked);
+    auto other = makeSquare(340.0f, 340.0f, 200.0f, textureID, uwu);
+
+    auto player = assetManager.GetEntityDefinition("data/characters/player.json");
+    auto& playerAtlas = assetManager.GetAtlas(player.atlasID);
+    auto& playerRegion = player.region;
+    m_LocalPlayer = makeSquare(500.f, 500.f, 200.f, playerAtlas.GetTextureID(), playerRegion);
 
     m_LocalPlayerCamera.SetCenter(m_Registry.get<CTransform>(m_LocalPlayer).position);
 
