@@ -1,7 +1,7 @@
 {
 	"frames": [
 		{
-			"filename": "default.png",
+			"filename": "default",
 			"frame": {
 				"x": 0,
 				"y": 0,
@@ -22,7 +22,7 @@
 			}
 		},
 		{
-			"filename": "dogbite.jpg",
+			"filename": "dogbite",
 			"frame": {
 				"x": 1,
 				"y": 0,
@@ -43,7 +43,7 @@
 			}
 		},
 		{
-			"filename": "shocked.jpg",
+			"filename": "shocked",
 			"frame": {
 				"x": 736,
 				"y": 0,
@@ -64,7 +64,7 @@
 			}
 		},
 		{
-			"filename": "uwu.jpg",
+			"filename": "uwu",
 			"frame": {
 				"x": 0,
 				"y": 705,
