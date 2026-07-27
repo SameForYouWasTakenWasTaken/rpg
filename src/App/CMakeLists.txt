@@ -4,6 +4,10 @@ add_library(App STATIC
     SceneStack.cpp
     Layers/GameLayer.cpp
     Scenes/GameScene.cpp
+    Systems/SpatialGrid.cpp
+    Systems/Hierarchy.cpp
+    Systems/TransformSystem.cpp
+    Factories/Default.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

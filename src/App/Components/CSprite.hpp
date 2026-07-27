@@ -13,6 +13,8 @@ struct CSprite
 
     Vec2 origin{0.0f, 0.0f}; // Normalized, 0 - 1
 
+    Vec2 size{100.0f, 100.0f}; // Pixel size before the transform scale multiplier
+
     bool flipX{false}; // TODO: make work
     bool flipY{false}; // TODO: make work
 };

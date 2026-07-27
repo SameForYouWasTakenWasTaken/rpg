@@ -105,9 +105,75 @@ A concrete layer. It:
 | Member | Purpose |
 | --- | --- |
 | `m_Registry` | Local ECS registry for this layer. |
+| `m_SpatialGrid` | `SpatialGrid` system bound to the registry. |
+| `m_TransformSystem` | `TransformSystem` that derives world transforms. |
 | `m_LocalPlayer` | The player entity. |
 | `m_LocalPlayerCamera` | Camera that follows the player. |
 | `OnWindowResize(e)` | Keeps the camera size in sync with the window. |
+
+---
+
+## 🧭 App Systems (`src/App/Systems/`)
+
+Gameplay-side systems that run over the scene's registry. For the full transform
+& hierarchy story see [`HIERARCHY.md`](HIERARCHY.md).
+
+### `ISystem` (abstract)
+Base class for systems (mirrors `ILayer`).
+
+| Member | Purpose |
+| --- | --- |
+| `ISystem(registry&)` | Bind the system to a registry. |
+| `Update(float dt)` | Per-frame entry point (pure virtual). |
+| `m_Registry` | The registry the system operates on (protected). |
+
+### `TransformSystem`
+Derives every `CWorldTransform` from `CTransform` + the `CRelationship` chain,
+parents before children.
+
+| Method | Purpose |
+| --- | --- |
+| `Update(dt)` | Walk each root recursively and fill `CWorldTransform`. |
+
+> Composition: `world.scale = parent.scale * local.scale`,
+> `world.rotation = parent.rotation + local.rotation`,
+> `world.position = parent.position + parent.scale * local.position`.
+
+### `SpatialGrid`
+A uniform grid (`std::unordered_map<GridKey, ...>`) for proximity queries,
+rebuilt each frame.
+
+| Method | Purpose |
+| --- | --- |
+| `Update(dt)` | `ISystem` hook; calls `Rebuild()`. |
+| `Rebuild()` | Clear and re-bucket every entity by cell. |
+| `Insert(entity)` | Add one entity to its cell. |
+| `Clear()` | Empty the grid. |
+| `Query(pos, radius, filter)` | Entities within `radius` passing `filter`. |
+| `FindNearest(pos, radius, filter)` | Closest matching entity (or `entt::null`). |
+
+### `hierarchy` (free functions, `ssg::hierarchy`)
+Parent/child linked-list surgery. Call sites never touch the links directly.
+
+| Function | Purpose |
+| --- | --- |
+| `AttachChild(reg, parent, child)` | Pure hierarchy attach (no transforms). |
+| `AttachChild(reg, parent, child, AttachMode)` | Attach, then apply mode behaviour. |
+| `DetachChild(reg, child)` | Unlink a child (turn it back into a root). |
+| `AttachMode` | `KeepLocal` (default) / `KeepWorld` (rebase local, no teleport). |
+
+---
+
+## 🏭 Factories (`src/App/Factories/`, `ssg::factory`)
+
+Attach a standard set of components to an **existing** entity (they don't create
+it). Guarantees the local + world transform pair always exists together.
+
+| Function | Adds |
+| --- | --- |
+| `AddDefaultTransform(reg, e)` | `CTransform` + `CWorldTransform` + `CRelationship` (root) |
+| `AddDefaultTexture(reg, e)` | the above + an empty `CTexture` |
+| `AddDefaultSprite(reg, e, texID, rect, size={100,100})` | the above + `CSprite` + `CTexture` |
 
 ---
 
@@ -223,9 +289,14 @@ Plain structs stored on entities.
 
 | Component | Fields |
 | --- | --- |
-| `CTransform` | `position` (Vec2), `scale` (Vec2), `rotation` (float) |
-| `CSprite` | `color` (sf::Color), `zIndex` (uint8), `origin` (Vec2, normalized), `flipX`, `flipY` |
+| `CTransform` | **local** `position` (Vec2), `scale` (Vec2, a *multiplier*), `rotation` (float) |
+| `CWorldTransform` | **derived** `position` (Vec2), `scale` (Vec2), `rotation` (float) — written only by `TransformSystem` |
+| `CRelationship` | `children` (size_t), `first`/`prev`/`next`/`parent` (entt::entity) — intrusive linked-list hierarchy |
+| `CSprite` | `color` (sf::Color), `zIndex` (uint8), `origin` (Vec2, normalized), `size` (Vec2, pixels), `flipX`, `flipY` |
 | `CTexture` | `textureID` (TextureID), `textureRect` (sf::FloatRect) |
+
+> `CTransform.scale` is a multiplier (default `{1,1}`); the pixel size lives on
+> `CSprite.size`. See [`HIERARCHY.md`](HIERARCHY.md) for the transform pipeline.
 
 ---
 
