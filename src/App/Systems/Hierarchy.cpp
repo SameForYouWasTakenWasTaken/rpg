@@ -24,8 +24,7 @@ void AttachChild(entt::registry& registry, entt::entity parent, entt::entity chi
     parentRelation.children++;
 }
 
-void AttachChild(entt::registry& registry, entt::entity parent, entt::entity child,
-                 AttachMode mode)
+void AttachChild(entt::registry& registry, entt::entity parent, entt::entity child, AttachMode mode)
 {
     AttachChild(registry, parent, child);
 
@@ -39,7 +38,8 @@ void AttachChild(entt::registry& registry, entt::entity parent, entt::entity chi
 
         if (childLocal != nullptr && childWorld != nullptr && parentWorld != nullptr)
         {
-            childLocal->position = (childWorld->position - parentWorld->position) / parentWorld->scale;
+            childLocal->position =
+                (childWorld->position - parentWorld->position) / parentWorld->scale;
             childLocal->scale = childWorld->scale / parentWorld->scale;
             childLocal->rotation = childWorld->rotation - parentWorld->rotation;
         }

@@ -21,11 +21,11 @@ namespace ssg
 // Entities without this component (or with parent == null) are roots.
 struct CRelationship
 {
-    std::size_t children{0};           // number of direct children
-    entt::entity first{entt::null};    // head of the child list
-    entt::entity prev{entt::null};     // previous sibling
-    entt::entity next{entt::null};     // next sibling
-    entt::entity parent{entt::null};   // up-link to the parent
+    std::size_t children{0};         // number of direct children
+    entt::entity first{entt::null};  // head of the child list
+    entt::entity prev{entt::null};   // previous sibling
+    entt::entity next{entt::null};   // next sibling
+    entt::entity parent{entt::null}; // up-link to the parent
 };
 
 } // namespace ssg
