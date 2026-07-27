@@ -40,7 +40,15 @@ AtlasID AssetManager::LoadAtlas(const Filepath& jsonPath, const Filepath& textur
     return id;
 }
 
-Atlas& AssetManager::GetAtlas(AtlasID id) { return m_Atlases.at(id); }
+Atlas& AssetManager::GetAtlas(AtlasID id)
+{
+    auto it = m_Atlases.find(id);
+
+    if (it == m_Atlases.end())
+        throw std::runtime_error("Couldn't find loaded atlas with ID: " + id);
+
+    return it->second;
+}
 
 EntityDefinition AssetManager::GetEntityDefinition(const Filepath& filepath)
 {
@@ -54,10 +62,11 @@ EntityDefinition AssetManager::GetEntityDefinition(const Filepath& filepath)
 
     file >> data;
 
-    if (!data.contains("id") || !data.contains("sprite"))
+    if (!data.contains("id") ||
+        !data.contains("components") && data["components"].contains("sprite"))
         return EntityDefinition{};
 
-    auto& spriteField = data.at("sprite");
+    auto& spriteField = data["components"].at("sprite");
     auto regionName = spriteField.at("region").get<String>();
 
     definition.nameID = data.at("id").get<String>();

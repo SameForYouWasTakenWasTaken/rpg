@@ -30,27 +30,30 @@ void GameLayer::OnAttach()
     Region shocked = atlas.GetRegion("shocked");
     Region uwu = atlas.GetRegion("uwu");
 
-    auto makeSquare = [&](float x, float y, float size, TextureID textureID, const Region texRect)
+    auto makeEntity = [&](float x, float y, float size, const Filepath& definition)
     {
         entt::entity entity = m_Registry.create();
-        factory::AddDefaultSprite(m_Registry, entity, textureID, texRect, {size, size});
-
+        factory::CreateCharacter(m_Registry, entity, definition);
         // modify local transform (scale stays a {1,1} multiplier; size lives on the sprite)
-        auto& transform = m_Registry.get<CTransform>(entity);
-        transform.position = {x, y};
+        auto* transform = m_Registry.try_get<CTransform>(entity);
+        auto* sprite = m_Registry.try_get<CSprite>(entity);
+        if (transform)
+        {
+            transform->position = {x, y};
+        }
+        if (sprite)
+        {
+            sprite->size = {size, size};
+        }
 
         return entity;
     };
 
-    makeSquare(100.0f, 100.0f, 200.0f, textureID, dogbite);
-    makeSquare(340.0f, 100.0f, 200.0f, textureID, dogbite);
-    makeSquare(100.0f, 340.0f, 200.0f, textureID, shocked);
-    auto other = makeSquare(340.0f, 340.0f, 200.0f, textureID, uwu);
-
-    auto player = assetManager.GetEntityDefinition("data/characters/player.json");
-    auto& playerAtlas = assetManager.GetAtlas(player.atlasID);
-    auto& playerRegion = player.region;
-    m_LocalPlayer = makeSquare(500.f, 500.f, 200.f, playerAtlas.GetTextureID(), playerRegion);
+    makeEntity(100.0f, 100.0f, 200.0f, "data/characters/default.json");
+    makeEntity(340.0f, 100.0f, 200.0f, "data/characters/default.json");
+    makeEntity(100.0f, 340.0f, 200.0f, "data/characters/default.json");
+    auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
+    m_LocalPlayer = makeEntity(500.f, 500.f, 200.f, "data/characters/player.json");
 
     m_LocalPlayerCamera.SetCenter(m_Registry.get<CTransform>(m_LocalPlayer).position);
 
