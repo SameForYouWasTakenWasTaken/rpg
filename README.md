@@ -1,6 +1,6 @@
 # 🎮 Game2
 
-> A small [SFML](https://github.com/SFML/SFML) game project written in modern C++ (C++23).
+> A small [SFML](https://github.com/SFML/SFML) game project written in modern C++ (C++20).
 > Built around a **scene + layer** model, an **ECS** (Entity-Component-System) core,
 > and a **batched renderer** for fast 2D drawing.
 
@@ -39,7 +39,7 @@ Pick the doc you need. Each one is short and to the point.
 
 You need:
 
-- A C++23 compiler (MSVC, Clang, or GCC)
+- A C++20 compiler (MSVC, Clang, or GCC)
 - [CMake](https://cmake.org/) 3.28 or newer
 - Git (used by CMake to fetch dependencies)
 

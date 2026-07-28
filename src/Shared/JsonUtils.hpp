@@ -1,4 +1,5 @@
 #pragma once
+#include <format>
 #include <nlohmann/json.hpp>
 
 #include "Types.hpp"

@@ -25,7 +25,7 @@ Dependencies are fetched for you by CMake. Versions & links are in
 
 The repo ships `.clang-format` and `.clang-tidy`. Use them.
 
-- **Standard:** C++23 (`CMAKE_CXX_STANDARD 23`).
+- **Standard:** C++20 (`CMAKE_CXX_STANDARD 20`).
 - **Namespace:** everything is in `namespace ssg`.
 - **Classes:** copy/assign/move are deleted on most core types (singletons,
   renderers, managers). Follow that pattern for non-copyable objects.
