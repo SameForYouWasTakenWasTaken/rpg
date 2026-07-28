@@ -1,6 +1,7 @@
 #include "GameLayer.hpp"
 
 #include "Application.hpp"
+#include "Components/CDefinition.hpp"
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
@@ -33,7 +34,7 @@ void GameLayer::OnAttach()
     auto makeEntity = [&](float x, float y, float size, const Filepath& definition)
     {
         entt::entity entity = m_Registry.create();
-        factory::CreateCharacter(m_Registry, entity, definition);
+        factory::ApplyCharacterDefinition(m_Registry, entity, definition);
         // modify local transform (scale stays a {1,1} multiplier; size lives on the sprite)
         auto* transform = m_Registry.try_get<CTransform>(entity);
         auto* sprite = m_Registry.try_get<CSprite>(entity);
@@ -54,7 +55,6 @@ void GameLayer::OnAttach()
     makeEntity(100.0f, 340.0f, 200.0f, "data/characters/default.json");
     auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
     m_LocalPlayer = makeEntity(500.f, 500.f, 200.f, "data/characters/player.json");
-
     m_LocalPlayerCamera.SetCenter(m_Registry.get<CTransform>(m_LocalPlayer).position);
 
     // World transforms must be current for KeepWorld rebasing to be correct.
@@ -63,11 +63,34 @@ void GameLayer::OnAttach()
 
     // Events
     Engine::instance().eventBus.Sink<WindowResizeEvent>().connect<&GameLayer::OnWindowResize>(this);
+    Engine::instance().eventBus.Sink<KeyPressedEvent>().connect<&GameLayer::OnKeyPress>(this);
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)
 {
     m_LocalPlayerCamera.SetSize({event.Width, event.Height});
+}
+void GameLayer::OnKeyPress(const KeyPressedEvent& event)
+{
+    if (event.key == sf::Keyboard::Key::R)
+    {
+        Vector<entt::entity> reloadTargets;
+
+        auto view = m_Registry.view<CDefinition>();
+
+        reloadTargets.assign(view.begin(), view.end());
+
+        for (auto entity : reloadTargets)
+        {
+            auto& definition = m_Registry.get<CDefinition>(entity);
+            auto transform_copy = m_Registry.get<CTransform>(entity);
+
+            factory::ApplyCharacterDefinition(m_Registry, entity, definition.filepath);
+
+            auto& transform = m_Registry.get<CTransform>(entity);
+            transform.position = transform_copy.position;
+        }
+    }
 }
 
 void GameLayer::OnDetach() { m_Registry.clear(); }
