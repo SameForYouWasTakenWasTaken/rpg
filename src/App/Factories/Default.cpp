@@ -3,6 +3,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+#include "Components/CDefinition.hpp"
 #include "Components/CRelationship.hpp"
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
@@ -11,15 +12,13 @@
 #include "Engine.hpp"
 
 template <typename TExpected>
-static inline TExpected AttemptAccessCharacterField(const nlohmann::json& data,
-                                                    const std::string& field)
+static TExpected AttemptAccessField(const nlohmann::json& data, std::string_view field)
 {
     auto it = data.find(field);
     if (it == data.end())
     {
         std::string id = data.value("id", "UNKNOWN_ENTITY");
-        throw std::runtime_error("Missing required field '" + field +
-                                 "' in JSON for entity ID: " + id);
+        throw std::runtime_error("Missing required field in JSON for entity");
     }
 
     try
@@ -29,13 +28,49 @@ static inline TExpected AttemptAccessCharacterField(const nlohmann::json& data,
     catch (const nlohmann::json::exception& e)
     {
         // Catch type mismatch errors (e.g., field exists, but tried to read a string as int)
-        throw std::runtime_error("Type mismatch for field '" + field + "': " + e.what());
+        throw std::runtime_error(e.what());
     }
 }
 
+static const nlohmann::json& AccessObjectField(const nlohmann::json& data, std::string_view field)
+{
+    auto it = data.find(field);
+    if (it == data.end())
+        throw std::runtime_error("Could not access field");
+
+    return *it;
+}
+
+static ssg::Vec2 ReadVec2(const nlohmann::json& data, std::string_view field,
+                          std::string_view x = "x", std::string_view y = "y")
+{
+    const auto& object = AccessObjectField(data, field);
+
+    return {AttemptAccessField<float>(object, x), AttemptAccessField<float>(object, y)};
+}
+
+static ssg::Vec3 ReadVec3(const nlohmann::json& data, std::string_view field,
+                          std::string_view x = "x", std::string_view y = "y",
+                          std::string_view z = "z")
+{
+    const auto& object = AccessObjectField(data, field);
+
+    return {AttemptAccessField<float>(object, x), AttemptAccessField<float>(object, y),
+            AttemptAccessField<float>(object, z)};
+}
+
+static ssg::Vec4 ReadVec4(const nlohmann::json& data, std::string_view field,
+                          std::string_view x = "x", std::string_view y = "y",
+                          std::string_view z = "z", std::string_view w = "w")
+{
+    const auto& object = AccessObjectField(data, field);
+
+    return {AttemptAccessField<float>(object, x), AttemptAccessField<float>(object, y),
+            AttemptAccessField<float>(object, z), AttemptAccessField<float>(object, w)};
+}
 namespace ssg::factory
 {
-void CreateCharacter(entt::registry& r, entt::entity entity, const Filepath& definition)
+void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath definition)
 {
     using namespace nlohmann;
     auto& assetManager = Engine::instance().assetManager;
@@ -55,64 +90,56 @@ void CreateCharacter(entt::registry& r, entt::entity entity, const Filepath& def
     if (components.contains("sprite"))
     {
         const auto& component = components.at("sprite");
-        auto atlasID = AttemptAccessCharacterField<AtlasID>(component, "atlas");
-        auto region = AttemptAccessCharacterField<String>(component, "region");
+        auto atlasID = AttemptAccessField<AtlasID>(component, "atlas");
+        auto region = AttemptAccessField<String>(component, "region");
 
-        auto zIndex = AttemptAccessCharacterField<zIndex_t>(component, "z-index");
+        auto zIndex = AttemptAccessField<zIndex_t>(component, "z-index");
 
-        auto originField = AttemptAccessCharacterField<json>(component, "origin");
-        auto originX = AttemptAccessCharacterField<float>(originField, "x");
-        auto originY = AttemptAccessCharacterField<float>(originField, "y");
+        auto origin = ReadVec2(component, "origin");
+        auto size = ReadVec2(component, "size");
+        auto color = ReadVec4(component, "color", "r", "g", "b", "a");
 
-        auto sizeField = AttemptAccessCharacterField<json>(component, "size");
-        auto sizeX = AttemptAccessCharacterField<float>(sizeField, "x");
-        auto sizeY = AttemptAccessCharacterField<float>(sizeField, "y");
+        auto flipX = AttemptAccessField<bool>(component, "flip-x");
+        auto flipY = AttemptAccessField<bool>(component, "flip-y");
 
-        auto flipX = AttemptAccessCharacterField<bool>(component, "flip-x");
-        auto flipY = AttemptAccessCharacterField<bool>(component, "flip-y");
-
-        auto colorField = AttemptAccessCharacterField<json>(component, "color");
-        auto colorR = AttemptAccessCharacterField<std::uint8_t>(colorField, "r");
-        auto colorG = AttemptAccessCharacterField<std::uint8_t>(colorField, "g");
-        auto colorB = AttemptAccessCharacterField<std::uint8_t>(colorField, "b");
-        auto colorA = AttemptAccessCharacterField<std::uint8_t>(colorField, "a");
-
-        auto& sprite = r.emplace_or_replace<CSprite>(entity);
-        sprite.color = sf::Color(colorR, colorG, colorB, colorA);
+        CSprite sprite;
+        sprite.color = sf::Color(color.r, color.g, color.b, color.a);
         sprite.flipX = flipX;
         sprite.flipY = flipY;
-        sprite.origin = Vec2{originX, originY};
-        sprite.size = Vec2{sizeX, sizeY};
+        sprite.origin = Vec2{origin.x, origin.y};
+        sprite.size = Vec2{size.x, size.y};
         sprite.zIndex = zIndex;
+
+        r.emplace_or_replace<CSprite>(entity, std::move(sprite));
 
         auto& atlas = assetManager.GetAtlas(atlasID);
         auto regionRect = atlas.GetRegion(region);
 
-        auto& texture = r.emplace_or_replace<CTexture>(entity);
+        CTexture texture;
         texture.textureID = atlas.GetTextureID();
         texture.textureRect = regionRect;
+
+        r.emplace_or_replace<CTexture>(entity, std::move(texture));
     }
 
     if (components.contains("transform"))
     {
         const auto& component = components.at("transform");
-        auto positionField = AttemptAccessCharacterField<json>(component, "position");
-        auto positionX = AttemptAccessCharacterField<float>(positionField, "x");
-        auto positionY = AttemptAccessCharacterField<float>(positionField, "y");
+        auto position = ReadVec2(component, "position");
 
-        auto scaleField = AttemptAccessCharacterField<json>(component, "scale");
-        auto scaleX = AttemptAccessCharacterField<float>(scaleField, "x");
-        auto scaleY = AttemptAccessCharacterField<float>(scaleField, "y");
+        auto scale = ReadVec2(component, "scale");
+        auto rotation = AttemptAccessField<float>(component, "rotation");
 
-        auto rotation = AttemptAccessCharacterField<float>(component, "rotation");
-
-        auto& transform = r.emplace_or_replace<CTransform>(entity);
-        transform.position = Vec2{positionX, positionY};
-        transform.scale = Vec2{scaleX, scaleY};
+        CTransform transform;
+        transform.position = Vec2{position.x, position.y};
+        transform.scale = Vec2{scale.x, scale.y};
         transform.rotation = rotation;
-
+        r.emplace_or_replace<CTransform>(entity, std::move(transform));
         // Add additional world transform for hierarchial entities
         auto& worldTransform = r.emplace_or_replace<CWorldTransform>(entity);
     }
+
+    auto& definitionComponent = r.emplace_or_replace<CDefinition>(entity);
+    definitionComponent.filepath = definition;
 }
 } // namespace ssg::factory

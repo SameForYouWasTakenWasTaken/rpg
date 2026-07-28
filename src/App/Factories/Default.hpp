@@ -7,5 +7,5 @@
 
 namespace ssg::factory
 {
-void CreateCharacter(entt::registry& r, entt::entity entity, const Filepath& definition);
+void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath definition);
 } // namespace ssg::factory

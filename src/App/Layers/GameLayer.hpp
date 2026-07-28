@@ -4,6 +4,7 @@
 #include <entt/entt.hpp>
 #include <memory>
 
+#include "Events/KeyPressedEvent.hpp"
 #include "Events/WindowResizeEvent.hpp"
 #include "ILayer.hpp"
 #include "Rendering/Camera.hpp"
@@ -34,6 +35,7 @@ class GameLayer final : public ILayer
 
   private:
     void OnWindowResize(const WindowResizeEvent& event);
+    void OnKeyPress(const KeyPressedEvent& event);
     entt::registry m_Registry;
     SpatialGrid m_SpatialGrid{m_Registry};
     TransformSystem m_TransformSystem{m_Registry};
