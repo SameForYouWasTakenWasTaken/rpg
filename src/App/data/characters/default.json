@@ -1,9 +1,9 @@
 {
-    "id": "player",
+    "id": "default",
     "components": {
         "sprite": {
             "atlas": "random",
-            "region": "shocked",
+            "region": "uwu",
             "z-index": 0,
             "color": {
                 "r": 255,
