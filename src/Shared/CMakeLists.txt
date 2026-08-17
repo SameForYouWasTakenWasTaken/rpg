@@ -10,3 +10,5 @@ target_link_libraries(Shared PUBLIC
     glm::glm
     nlohmann_json::nlohmann_json
 )
+
+target_compile_features(Shared PRIVATE cxx_std_23)

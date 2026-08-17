@@ -1,10 +1,17 @@
 {
-    "id": "player",
+    "id": "None",
+    "damage": 0.0,
+    "range": 0.0,
+    "attackSpeed": 0.0,
+    "hitWindow": {
+        "min": 0.0,
+        "max": 0.0
+    },
     "components": {
         "sprite": {
             "atlas": "random",
-            "region": "shocked",
-            "z-index": 0,
+            "region": "default",
+            "z-index": 1,
             "color": {
                 "r": 255,
                 "g": 255,
@@ -38,9 +45,7 @@
             "current": 100.0
         },
         "humanoid": {
-            "speed": 500.0
-        },
-        "combatState": {},
-        "equipment": {}
+            "speed": 0.0
+        }
     }
 }

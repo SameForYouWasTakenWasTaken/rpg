@@ -1,3 +1,4 @@
+# GitHub Actions CI — Cross-Platform C++23 Build
 name: 🏗️ Build
 
 on:
@@ -8,85 +9,176 @@ jobs:
   build:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
 
     env:
-      # Cache fetched dependencies (SFML, GLM, EnTT, nlohmann/json)
-      # so FetchContent doesn't re-download on every run.
+      # Cache fetched dependencies
       FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.cache/fetchcontent
 
+      # ccache database
+      CCACHE_DIR: ${{ github.workspace }}/.cache/ccache
+
     steps:
+      # ------------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------------
+
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: 🐧 Install Linux deps
+      # ------------------------------------------------------------
+      # Linux
+      # ------------------------------------------------------------
+
+      - name: 🐧 Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
+
           sudo apt-get install -y \
-            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
-            libxi-dev libgl1-mesa-dev libudev-dev libopenal-dev \
-            libflac-dev libvorbis-dev libpthread-stubs0-dev ccache \
-            libmbedtls-dev libssh2-1-dev libfreetype6-dev libharfbuzz-dev xvfb
+            gcc-14 \
+            g++-14 \
+            ccache \
+            clang-format-18 \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libudev-dev \
+            libopenal-dev \
+            libflac-dev \
+            libvorbis-dev \
+            libpthread-stubs0-dev \
+            libmbedtls-dev \
+            libssh2-1-dev \
+            libfreetype6-dev \
+            libharfbuzz-dev \
+            xvfb
 
-      - name: 🍎 Install macOS deps
+      # ------------------------------------------------------------
+      # macOS
+      # ------------------------------------------------------------
+
+      - name: 🍎 Install macOS dependencies
         if: runner.os == 'macOS'
-        run: brew install openal-soft ccache
+        run: |
+          brew install openal-soft ccache
 
-      - name: 🪟 Install Windows deps
+      # ------------------------------------------------------------
+      # Windows
+      # ------------------------------------------------------------
+
+      - name: 🪟 Install Windows dependencies
         if: runner.os == 'Windows'
-        run: choco install ccache --yes
+        shell: powershell
+        run: |
+          choco install ccache --yes
 
-      - name: 🎨 Install clang-format (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y clang-format-18
+      # ------------------------------------------------------------
+      # ccache
+      # ------------------------------------------------------------
 
       - name: 🔍 Restore ccache
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.cache/ccache
-          # Cache key tied to OS + compiler + branch; falls back to main.
-          key: ccache-${{ matrix.os }}-${{ github.ref_name }}-${{ github.sha }}
-          restore-keys: |
-            ccache-${{ matrix.os }}-${{ github.ref_name }}-
-            ccache-${{ matrix.os }}-main-
+
+          # Stable key intentionally used.
+          # ccache itself determines whether individual
+          # compilations are reusable.
+          key: ccache-${{ matrix.os }}-v1
+
+      - name: 🧰 Configure ccache
+        shell: bash
+        run: |
+          ccache --set-config max_size=1.0G
+          ccache --set-config compression=true
+          ccache --zero-stats
+
+      # ------------------------------------------------------------
+      # FetchContent
+      # ------------------------------------------------------------
 
       - name: 📦 Restore FetchContent cache
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.cache/fetchcontent
-          key: fetch-${{ matrix.os }}-${{ hashFiles('dependencies.cmake') }}
+
+          key: fetch-${{ matrix.os }}-${{ hashFiles('dependencies.cmake', '**/CMakeLists.txt') }}
+
           restore-keys: |
             fetch-${{ matrix.os }}-
 
-      - name: 🧰 Configure ccache
-        run: |
-          ccache --set-config max_size=1.0G
-          ccache --set-config compression=true
-          ccache --zero-stats || true
+      # ------------------------------------------------------------
+      # Configure
+      # ------------------------------------------------------------
 
-      - name: 🔧 Configure
+      - name: 🔧 Configure Linux
+        if: runner.os == 'Linux'
         shell: bash
         run: |
-          case "${{ runner.os }}" in
-            Linux|macOS) export CCACHE_DIR="${{ github.workspace }}/.cache/ccache" ;;
-          esac
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-14 \
+            -DCMAKE_CXX_COMPILER=g++-14 \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
+      - name: 🔧 Configure Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: 🔧 Configure macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      # ------------------------------------------------------------
+      # Build
+      # ------------------------------------------------------------
+
       - name: ⚙️ Build
-        run: cmake --build build --config Release -j 4
+        run: |
+          cmake --build build --config Release --parallel 4
+
+      # ------------------------------------------------------------
+      # ccache statistics
+      # ------------------------------------------------------------
 
       - name: 📊 ccache stats
         if: always()
-        run: ccache --show-stats || true
+        shell: bash
+        run: |
+          ccache --show-stats || true
+
+      # ------------------------------------------------------------
+      # Formatting
+      # ------------------------------------------------------------
 
       - name: 🎨 clang-format check
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           files=$(find src -type f \( -name '*.cpp' -o -name '*.hpp' \))
-          clang-format-18 --dry-run --Werror $files
+
+          if [ -n "$files" ]; then
+            clang-format-18 --dry-run --Werror $files
+          fi

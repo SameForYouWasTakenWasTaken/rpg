@@ -8,6 +8,8 @@ add_library(App STATIC
     Systems/Hierarchy.cpp
     Systems/TransformSystem.cpp
     Factories/Default.cpp
+    Systems/Gameplay/Combat.cpp
+    Factories/Gameplay/Weapons.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -20,3 +22,5 @@ target_link_libraries(App
         SFML::Window
         SFML::System
 )
+
+target_compile_features(App PRIVATE cxx_std_23)

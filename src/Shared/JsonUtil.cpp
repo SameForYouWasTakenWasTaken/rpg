@@ -12,6 +12,8 @@ const nlohmann::json& AccessObjectField(const nlohmann::json& data, std::string_
     return *it;
 }
 
+bool Has(const nlohmann::json& data, std::string field) { return data.contains(field); }
+
 ssg::Vec2 ReadVec2(const nlohmann::json& data, std::string_view field, std::string_view x,
                    std::string_view y)
 {

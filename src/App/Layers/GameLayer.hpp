@@ -4,11 +4,13 @@
 #include <entt/entt.hpp>
 #include <memory>
 
+#include "Engine.hpp"
 #include "Events/KeyPressedEvent.hpp"
 #include "Events/WindowResizeEvent.hpp"
 #include "ILayer.hpp"
 #include "Rendering/Camera.hpp"
 #include "Rendering/Renderer.hpp"
+#include "Systems/Gameplay/Combat.hpp"
 #include "Systems/SpatialGrid.hpp"
 #include "Systems/TransformSystem.hpp"
 #include "Types.hpp"
@@ -37,8 +39,9 @@ class GameLayer final : public ILayer
     void OnWindowResize(const WindowResizeEvent& event);
     void OnKeyPress(const KeyPressedEvent& event);
     entt::registry m_Registry;
-    SpatialGrid m_SpatialGrid{m_Registry};
-    TransformSystem m_TransformSystem{m_Registry};
+    SpatialGrid m_SpatialGrid{m_Registry, Engine::instance().eventBus};
+    TransformSystem m_TransformSystem{m_Registry, Engine::instance().eventBus};
+    CombatSystem m_CombatSystem{m_Registry, Engine::instance().eventBus, m_SpatialGrid};
 
     entt::entity m_LocalPlayer{entt::null};
     Camera m_LocalPlayerCamera;
