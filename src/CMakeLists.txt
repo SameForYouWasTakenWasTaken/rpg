@@ -4,6 +4,7 @@ add_subdirectory(App)
 
 add_executable(Game2 ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
+target_compile_features(Game2 PRIVATE cxx_std_23)
 target_include_directories(Game2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(Game2

@@ -22,3 +22,5 @@ target_link_libraries(App
         SFML::Window
         SFML::System
 )
+
+target_compile_features(App PRIVATE cxx_std_23)

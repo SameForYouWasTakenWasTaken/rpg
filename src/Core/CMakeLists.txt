@@ -18,3 +18,5 @@ target_link_libraries(Core
         glm::glm
         EnTT::EnTT
 )
+
+target_compile_features(Core PRIVATE cxx_std_23)
