@@ -10,72 +10,16 @@
 #include "Components/CTransform.hpp"
 #include "Components/CWorldTransform.hpp"
 #include "Engine.hpp"
-
-template <typename TExpected>
-static TExpected AttemptAccessField(const nlohmann::json& data, std::string_view field)
-{
-    auto it = data.find(field);
-    if (it == data.end())
-    {
-        std::string id = data.value("id", "UNKNOWN_ENTITY");
-        throw std::runtime_error("Missing required field in JSON for entity");
-    }
-
-    try
-    {
-        return it->get<TExpected>();
-    }
-    catch (const nlohmann::json::exception& e)
-    {
-        // Catch type mismatch errors (e.g., field exists, but tried to read a string as int)
-        throw std::runtime_error(e.what());
-    }
-}
-
-static const nlohmann::json& AccessObjectField(const nlohmann::json& data, std::string_view field)
-{
-    auto it = data.find(field);
-    if (it == data.end())
-        throw std::runtime_error("Could not access field");
-
-    return *it;
-}
-
-static ssg::Vec2 ReadVec2(const nlohmann::json& data, std::string_view field,
-                          std::string_view x = "x", std::string_view y = "y")
-{
-    const auto& object = AccessObjectField(data, field);
-
-    return {AttemptAccessField<float>(object, x), AttemptAccessField<float>(object, y)};
-}
-
-static ssg::Vec3 ReadVec3(const nlohmann::json& data, std::string_view field,
-                          std::string_view x = "x", std::string_view y = "y",
-                          std::string_view z = "z")
-{
-    const auto& object = AccessObjectField(data, field);
-
-    return {AttemptAccessField<float>(object, x), AttemptAccessField<float>(object, y),
-            AttemptAccessField<float>(object, z)};
-}
-
-static ssg::Vec4 ReadVec4(const nlohmann::json& data, std::string_view field,
-                          std::string_view x = "x", std::string_view y = "y",
-                          std::string_view z = "z", std::string_view w = "w")
-{
-    const auto& object = AccessObjectField(data, field);
-
-    return {AttemptAccessField<float>(object, x), AttemptAccessField<float>(object, y),
-            AttemptAccessField<float>(object, z), AttemptAccessField<float>(object, w)};
-}
+#include "JsonUtil.hpp"
 namespace ssg::factory
 {
+
 void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath definition)
 {
     using namespace nlohmann;
     auto& assetManager = Engine::instance().assetManager;
 
-    json data;
+    json::json data;
     std::ifstream file(definition);
 
     if (!file.is_open())
@@ -90,17 +34,17 @@ void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath d
     if (components.contains("sprite"))
     {
         const auto& component = components.at("sprite");
-        auto atlasID = AttemptAccessField<AtlasID>(component, "atlas");
-        auto region = AttemptAccessField<String>(component, "region");
+        auto atlasID = json::AttemptAccessField<AtlasID>(component, "atlas");
+        auto region = json::AttemptAccessField<String>(component, "region");
 
-        auto zIndex = AttemptAccessField<zIndex_t>(component, "z-index");
+        auto zIndex = json::AttemptAccessField<zIndex_t>(component, "z-index");
 
-        auto origin = ReadVec2(component, "origin");
-        auto size = ReadVec2(component, "size");
-        auto color = ReadVec4(component, "color", "r", "g", "b", "a");
+        auto origin = json::ReadVec2(component, "origin");
+        auto size = json::ReadVec2(component, "size");
+        auto color = json::ReadVec4(component, "color", "r", "g", "b", "a");
 
-        auto flipX = AttemptAccessField<bool>(component, "flip-x");
-        auto flipY = AttemptAccessField<bool>(component, "flip-y");
+        auto flipX = json::AttemptAccessField<bool>(component, "flip-x");
+        auto flipY = json::AttemptAccessField<bool>(component, "flip-y");
 
         CSprite sprite;
         sprite.color = sf::Color(color.r, color.g, color.b, color.a);
@@ -125,10 +69,10 @@ void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath d
     if (components.contains("transform"))
     {
         const auto& component = components.at("transform");
-        auto position = ReadVec2(component, "position");
+        auto position = json::ReadVec2(component, "position");
 
-        auto scale = ReadVec2(component, "scale");
-        auto rotation = AttemptAccessField<float>(component, "rotation");
+        auto scale = json::ReadVec2(component, "scale");
+        auto rotation = json::AttemptAccessField<float>(component, "rotation");
 
         CTransform transform;
         transform.position = Vec2{position.x, position.y};
