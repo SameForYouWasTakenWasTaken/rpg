@@ -8,6 +8,8 @@ add_library(App STATIC
     Systems/Hierarchy.cpp
     Systems/TransformSystem.cpp
     Factories/Default.cpp
+    Systems/Gameplay/Combat.cpp
+    Factories/Gameplay/Weapons.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

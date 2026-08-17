@@ -1,0 +1,33 @@
+#include "Weapons.hpp"
+
+#include "Components/Gameplay/CWeapon.hpp"
+#include "Factories/Default.hpp"
+#include "JsonUtil.hpp"
+
+namespace ssg::factory
+{
+json::json ApplyWeaponDefinition(entt::registry& r, entt::entity entity, Filepath definition)
+{
+    json::json data =
+        ApplyCharacterDefinition(r, entity, definition); // Adds sprites, textures, etc
+
+    CWeapon weapon;
+    weapon.name = json::AttemptAccessField<std::string>(data, "id");
+    weapon.damage = json::AttemptAccessField<float>(data, "damage");
+    weapon.range = json::AttemptAccessField<float>(data, "range");
+    weapon.hitWindow = json::ReadVec2(data, "hitWindow", "min", "max");
+    weapon.attackSpeed = json::AttemptAccessField<float>(data, "attackSpeed");
+
+    if (weapon.hitWindow.x < 0 || weapon.hitWindow.y < 0 ||
+        weapon.hitWindow.x > weapon.hitWindow.y || weapon.damage < 0 || weapon.range < 0 ||
+        weapon.attackSpeed < 0)
+        throw std::runtime_error(
+            std::format("Error occured during weapon creation: Invalid weapon data!\n\n ID: {}, "
+                        "Hitwindow: {}, {}, Damage: {}, Range: {}, Speed: {}",
+                        weapon.name, weapon.hitWindow.x, weapon.hitWindow.y, weapon.damage,
+                        weapon.range, weapon.attackSpeed));
+
+    r.emplace<CWeapon>(entity, std::move(weapon));
+    return data;
+}
+} // namespace ssg::factory

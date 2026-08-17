@@ -1,10 +1,17 @@
 {
-    "id": "player",
+    "id": "random",
+    "damage": 10.0,
+    "range": 300.0,
+    "attackSpeed": 0.33,
+    "hitWindow": {
+        "min": 0.2,
+        "max": 0.3
+    },
     "components": {
         "sprite": {
             "atlas": "random",
             "region": "shocked",
-            "z-index": 0,
+            "z-index": 1,
             "color": {
                 "r": 255,
                 "g": 255,
@@ -24,23 +31,14 @@
         },
         "transform": {
             "position": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 300.0,
+                "y": 300.0
             },
             "scale": {
-                "x": 1.0,
-                "y": 1.0
+                "x": 0.3,
+                "y": 0.3
             },
-            "rotation": 0.0
-        },
-        "health": {
-            "max": 100.0,
-            "current": 100.0
-        },
-        "humanoid": {
-            "speed": 500.0
-        },
-        "combatState": {},
-        "equipment": {}
+            "rotation": 45.0
+        }
     }
 }

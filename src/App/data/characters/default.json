@@ -32,6 +32,15 @@
                 "y": 1.0
             },
             "rotation": 0.0
-        }
+        },
+        "health": {
+            "max": 100.0,
+            "current": 100.0
+        },
+        "humanoid": {
+            "speed": 50.0
+        },
+        "combatState": {},
+        "equipment": {}
     }
 }

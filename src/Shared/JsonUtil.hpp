@@ -13,10 +13,7 @@ TExpected AttemptAccessField(const nlohmann::json& data, std::string_view field)
 {
     auto it = data.find(field);
     if (it == data.end())
-    {
-        std::string id = data.value("id", "UNKNOWN_ENTITY");
         throw std::runtime_error("Missing required field in JSON for entity");
-    }
 
     try
     {
@@ -28,6 +25,8 @@ TExpected AttemptAccessField(const nlohmann::json& data, std::string_view field)
         throw std::runtime_error(e.what());
     }
 }
+
+bool Has(const nlohmann::json& data, std::string field);
 
 const nlohmann::json& AccessObjectField(const nlohmann::json& data, std::string_view field);
 

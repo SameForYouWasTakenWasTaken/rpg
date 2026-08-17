@@ -19,8 +19,8 @@ using GridEntityList = Vector<entt::entity>;
 class SpatialGrid : public ISystem
 {
   public:
-    explicit SpatialGrid(entt::registry& registry, float gridSize = 1000.0f)
-        : ISystem(registry), m_GridSize(gridSize)
+    explicit SpatialGrid(entt::registry& registry, EventBus& bus, float gridSize = 1000.0f)
+        : ISystem(registry, bus), m_GridSize(gridSize)
     {
     }
 

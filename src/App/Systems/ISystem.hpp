@@ -2,6 +2,8 @@
 
 #include <entt/entt.hpp>
 
+#include "Events/EventBus.hpp"
+
 namespace ssg
 {
 
@@ -14,7 +16,10 @@ namespace ssg
 class ISystem
 {
   public:
-    explicit ISystem(entt::registry& registry) : m_Registry(registry) {}
+    explicit ISystem(entt::registry& registry, EventBus& bus)
+        : m_Registry(registry), m_EventBus(bus)
+    {
+    }
     virtual ~ISystem() = default;
 
     ISystem(const ISystem&) = delete;
@@ -26,6 +31,7 @@ class ISystem
 
   protected:
     entt::registry& m_Registry;
+    EventBus& m_EventBus;
 };
 
 } // namespace ssg

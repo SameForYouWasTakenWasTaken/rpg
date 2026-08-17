@@ -4,17 +4,21 @@
 #include <nlohmann/json.hpp>
 
 #include "Components/CDefinition.hpp"
-#include "Components/CRelationship.hpp"
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
 #include "Components/CWorldTransform.hpp"
+#include "Components/Gameplay/CCombatState.hpp"
+#include "Components/Gameplay/CEquipment.hpp"
+#include "Components/Gameplay/CHealth.hpp"
+#include "Components/Gameplay/CHumanoid.hpp"
 #include "Engine.hpp"
 #include "JsonUtil.hpp"
+
 namespace ssg::factory
 {
 
-void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath definition)
+json::json ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath definition)
 {
     using namespace nlohmann;
     auto& assetManager = Engine::instance().assetManager;
@@ -31,7 +35,7 @@ void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath d
                                  definition.string());
 
     auto& components = data.at("components");
-    if (components.contains("sprite"))
+    if (json::Has(components, "sprite"))
     {
         const auto& component = components.at("sprite");
         auto atlasID = json::AttemptAccessField<AtlasID>(component, "atlas");
@@ -66,7 +70,7 @@ void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath d
         r.emplace_or_replace<CTexture>(entity, std::move(texture));
     }
 
-    if (components.contains("transform"))
+    if (json::Has(components, "transform"))
     {
         const auto& component = components.at("transform");
         auto position = json::ReadVec2(component, "position");
@@ -83,7 +87,45 @@ void ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath d
         auto& worldTransform = r.emplace_or_replace<CWorldTransform>(entity);
     }
 
+    if (json::Has(components, "health"))
+    {
+        const auto& component = json::AccessObjectField(components, "health");
+        auto max = json::AttemptAccessField<float>(component, "max");
+        auto current = json::AttemptAccessField<float>(component, "current");
+
+        CHealth health;
+        health.max = max;
+        health.current = current;
+        r.emplace_or_replace<CHealth>(entity, std::move(health));
+    }
+
+    if (json::Has(components, "humanoid"))
+    {
+        const auto& component = json::AccessObjectField(components, "humanoid");
+        auto speed = json::AttemptAccessField<float>(component, "speed");
+
+        CHumanoid humanoid;
+        humanoid.speed = speed;
+        r.emplace_or_replace<CHumanoid>(entity, std::move(humanoid));
+    }
+
+    // Managed by systems
+    if (json::Has(components, "combatState"))
+    {
+        CCombatState state;
+        r.emplace_or_replace<CCombatState>(entity, std::move(state));
+    }
+
+    // Managed by systems
+    if (json::Has(components, "equipment"))
+    {
+        CEquipment equipment;
+        r.emplace_or_replace<CEquipment>(entity, std::move(equipment));
+    }
+
     auto& definitionComponent = r.emplace_or_replace<CDefinition>(entity);
     definitionComponent.filepath = definition;
+
+    return data;
 }
 } // namespace ssg::factory
