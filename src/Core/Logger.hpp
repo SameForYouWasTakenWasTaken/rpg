@@ -99,10 +99,13 @@ template <typename... Args>
 void Logger::Log(LogLevel level, std::source_location loc, std::string_view category,
                  std::format_string<Args...> fmt, Args&&... args)
 {
-    LogEntry entry{level, std::format(fmt, std::forward<Args>(args)...), std::string(category),
-                   std::string(loc.file_name()) + ":" + std::to_string(loc.line()),
-                   std::chrono::system_clock::now()};
+    const String message = std::format(fmt, std::forward<Args>(args)...);
+    const String categoryName = std::string(category);
+    // file:line
+    const String source = std::string(loc.file_name()) + ":" + std::to_string(loc.line());
+    const auto time = std::chrono::system_clock::now();
 
+    LogEntry entry{level, message, categoryName, source, time};
     Dispatch(entry);
 }
 

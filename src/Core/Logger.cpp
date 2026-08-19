@@ -1,5 +1,6 @@
 #include "Logger.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <time.h>
 #include <utility>
@@ -37,14 +38,12 @@ void ConsoleSink::Write(const LogEntry& entry)
         tag = "FATAL";
         break;
     }
-    const auto time = std::chrono::system_clock::to_time_t(entry.time);
-    std::tm localTime{};
 
-    localtime_s(&localTime, &time);
+    // remove floating point
+    auto formattedTime = std::chrono::floor<std::chrono::seconds>(entry.time);
 
-    std::cout << std::format("[{:02}:{:02}:{:02}] [{}] [{}] [{}] : {}\n", localTime.tm_hour,
-                             localTime.tm_min, localTime.tm_sec, tag, entry.category, entry.source,
-                             entry.message);
+    std::cout << std::format("[{:%H:%M:%S}] [{}] [{}] [{}] : {}\n", formattedTime, tag,
+                             entry.category, entry.source, entry.message);
 }
 void Logger::AddSink(std::unique_ptr<ILogSink> sink) { m_Sinks.push_back(std::move(sink)); }
 void Logger::Dispatch(const LogEntry& entry)
