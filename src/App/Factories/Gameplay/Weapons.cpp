@@ -3,6 +3,7 @@
 #include "Components/Gameplay/CWeapon.hpp"
 #include "Items.hpp"
 #include "JsonUtil.hpp"
+#include "Logging.hpp"
 
 namespace ssg::factory
 {
@@ -20,11 +21,14 @@ json::json ApplyWeaponDefinition(entt::registry& r, entt::entity entity, Filepat
     if (weapon.hitWindow.x < 0 || weapon.hitWindow.y < 0 ||
         weapon.hitWindow.x > weapon.hitWindow.y || weapon.damage < 0 || weapon.range < 0 ||
         weapon.attackSpeed < 0)
-        throw std::runtime_error(
-            std::format("Error occured during weapon creation: Invalid weapon data!\n\n ID: {}, "
-                        "Hitwindow: {}, {}, Damage: {}, Range: {}, Speed: {}",
-                        weapon.name, weapon.hitWindow.x, weapon.hitWindow.y, weapon.damage,
-                        weapon.range, weapon.attackSpeed));
+    {
+        LOG_FATAL("Factory",
+                  "Error occured during weapon creation: Invalid weapon data!\n\n ID: {}, "
+                  "Hitwindow: {}, {}, Damage: {}, Range: {}, Speed: {}",
+                  weapon.name, weapon.hitWindow.x, weapon.hitWindow.y, weapon.damage, weapon.range,
+                  weapon.attackSpeed);
+        return json::json{nullptr};
+    }
 
     r.emplace<CWeapon>(entity, std::move(weapon));
     return data;

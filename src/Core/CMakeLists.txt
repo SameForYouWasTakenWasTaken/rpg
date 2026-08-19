@@ -6,6 +6,7 @@ add_library(Core STATIC
     Rendering/Window.cpp
     Rendering/Atlas.cpp
     Systems/AssetManager.cpp
+    Logger.cpp
 )
 
 target_include_directories(Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -7,6 +7,7 @@
 #include "Components/Gameplay/Inventory/CInventory.hpp"
 #include "Components/Gameplay/Inventory/CItem.hpp"
 #include "InventorySystem.hpp"
+#include "Logging.hpp"
 
 namespace ssg::inventory
 {
@@ -73,6 +74,7 @@ void Equip(entt::registry& registry, entt::entity owner, size_t index)
         inventory.items.push_back(equipment.weapon);        // already has a weapon, swap old
     equipment.weapon = item;                                // set new
     inventory.items.erase(inventory.items.begin() + index); // remove new from inventory
+    LOG_INFO("Inventory", "Equipped {}", itemData.itemTypeId);
 }
 
 // index is unused, but it is here for more hotbar slots if i were to add them
@@ -80,6 +82,9 @@ void Unequip(entt::registry& registry, entt::entity owner, size_t slot)
 {
     auto& inventory = registry.get<CInventory>(owner);
     auto& equipment = registry.get<CEquipment>(owner);
+
+    auto& itemData = registry.get<CItem>(equipment.weapon);
+    LOG_INFO("Inventory", "Unequipped {}", itemData.itemTypeId);
 
     inventory.items.push_back(equipment.weapon); // add to inventory
     equipment.weapon = entt::null;

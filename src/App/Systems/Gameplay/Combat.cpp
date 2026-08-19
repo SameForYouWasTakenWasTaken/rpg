@@ -4,8 +4,10 @@
 #include "Components/Gameplay/CCombatState.hpp"
 #include "Components/Gameplay/CEquipment.hpp"
 #include "Components/Gameplay/CHealth.hpp"
+#include "Components/Gameplay/CHumanoid.hpp"
 #include "Components/Gameplay/CWeapon.hpp"
 #include "Events/Gameplay/OnEntityDeath.hpp"
+#include "Logging.hpp"
 
 namespace ssg
 {
@@ -21,6 +23,7 @@ void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target)
         m_Registry.get<CWeapon>(m_Registry.get<CCombatState>(attacker).cachedWeapon).damage;
     auto& hp = m_Registry.get<CHealth>(target);
     hp.current -= damage;
+    LOG_INFO("Combat", "HIT ENTITY {} FOR {} DAMAGE", static_cast<std::uint32_t>(attacker), damage);
     if (hp.current <= 0.0f)
         m_EventBus.Queue<OnEntityDeath>(target);
 }
@@ -44,10 +47,10 @@ void CombatSystem::Update(float dt)
             auto& transform = m_Registry.get<CWorldTransform>(entity);
             float range = m_Registry.get<CWeapon>(combatState.cachedWeapon).range;
 
-            // query target entities within range of entity, that also have a health component
+            // query target entities within range of entity, that are a humanoid and alive
             for (entt::entity target : m_SpatialGrid.Query(
                      transform.position, range, [entity, this](entt::entity target)
-                     { return target != entity && m_Registry.all_of<CHealth>(target); }))
+                     { return target != entity && m_Registry.all_of<CHealth, CHumanoid>(target); }))
             {
                 // skip already cached entities
                 if (std::ranges::contains(combatState.alreadyHit, target))

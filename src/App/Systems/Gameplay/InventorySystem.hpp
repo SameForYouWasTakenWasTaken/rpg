@@ -2,7 +2,6 @@
 
 #include <entt/entt.hpp>
 
-#include "Components/Gameplay/Inventory/CItem.hpp"
 #include "Types.hpp"
 
 namespace ssg::inventory
