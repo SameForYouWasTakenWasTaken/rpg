@@ -41,6 +41,9 @@
             "speed": 500.0
         },
         "combatState": {},
-        "equipment": {}
+        "equipment": {},
+        "inventory": {
+            "capacity": 10
+        }
     }
 }

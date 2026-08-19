@@ -18,6 +18,7 @@
 #include "SFML/Graphics/Rect.hpp"
 #include "SFML/Window/Keyboard.hpp"
 #include "Systems/AssetManager.hpp"
+#include "Systems/Gameplay/InventorySystem.hpp"
 #include "Systems/Hierarchy.hpp"
 
 namespace ssg
@@ -62,7 +63,7 @@ void GameLayer::OnAttach()
         return entity;
     };
 
-    auto someWeapon = makeWeapon("data/weapons/some_weapon.json");
+    auto someWeapon = makeWeapon("data/items/weapons/some_weapon.json");
     makeEntity(100.0f, 100.0f, 200.0f, "data/characters/default.json");
     makeEntity(340.0f, 100.0f, 200.0f, "data/characters/default.json");
     makeEntity(100.0f, 340.0f, 200.0f, "data/characters/default.json");
@@ -72,15 +73,17 @@ void GameLayer::OnAttach()
     auto& localPlayerWorld = m_Registry.get<CWorldTransform>(m_LocalPlayer);
     m_LocalPlayerCamera.SetCenter(localPlayerWorld.position);
 
-    // equip weapon
-    auto& playerEquipment = m_Registry.get<CEquipment>(m_LocalPlayer);
-    playerEquipment.weapon = someWeapon;
-
     // World transforms must be current for KeepWorld rebasing to be correct.
     m_TransformSystem.Update(0.0f);
     auto& worldWeapon = m_Registry.get<CWorldTransform>(someWeapon);
     worldWeapon.position = localPlayerWorld.position + Vec2{100.f, 0.f};
 
+    // Inventory
+    // add the weapon
+    inventory::AddItem(m_Registry, m_LocalPlayer, someWeapon);
+
+    // hierarchies
+    // add the weapon to the player
     hierarchy::AttachChild(m_Registry, m_LocalPlayer, someWeapon, hierarchy::AttachMode::KeepWorld);
 
     // Events
@@ -119,6 +122,17 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
     {
         auto& eventBus = Engine::instance().eventBus;
         eventBus.Emit<OnAttackRequest>(m_LocalPlayer);
+    }
+
+    if (event.key == sf::Keyboard::Key::E)
+    {
+        static bool canEquip = true;
+        if (canEquip)
+            inventory::Equip(m_Registry, m_LocalPlayer, 0);
+        else
+            inventory::Unequip(m_Registry, m_LocalPlayer, 0); // 0 is currently unused
+
+        canEquip = !canEquip;
     }
 }
 

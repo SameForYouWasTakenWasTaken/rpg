@@ -1,15 +1,14 @@
 #include "Weapons.hpp"
 
 #include "Components/Gameplay/CWeapon.hpp"
-#include "Factories/Default.hpp"
+#include "Items.hpp"
 #include "JsonUtil.hpp"
 
 namespace ssg::factory
 {
 json::json ApplyWeaponDefinition(entt::registry& r, entt::entity entity, Filepath definition)
 {
-    json::json data =
-        ApplyCharacterDefinition(r, entity, definition); // Adds sprites, textures, etc
+    json::json data = ApplyItemDefinition(r, entity, definition); // Adds sprites, textures, etc
 
     CWeapon weapon;
     weapon.name = json::AttemptAccessField<std::string>(data, "id");

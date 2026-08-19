@@ -1,6 +1,7 @@
 {
     "id": "random",
     "damage": 10.0,
+    "maxCount": 1,
     "range": 300.0,
     "attackSpeed": 0.33,
     "hitWindow": {
