@@ -1,6 +1,7 @@
 #include "Logger.hpp"
 
 #include <iostream>
+#include <time.h>
 #include <utility>
 
 namespace ssg::log
