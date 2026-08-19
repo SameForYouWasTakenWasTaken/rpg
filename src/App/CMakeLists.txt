@@ -10,6 +10,8 @@ add_library(App STATIC
     Factories/Default.cpp
     Systems/Gameplay/Combat.cpp
     Factories/Gameplay/Weapons.cpp
+    Factories/Gameplay/Items.cpp
+    Systems/Gameplay/InventorySystem.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -12,6 +12,7 @@
 #include "Components/Gameplay/CEquipment.hpp"
 #include "Components/Gameplay/CHealth.hpp"
 #include "Components/Gameplay/CHumanoid.hpp"
+#include "Components/Gameplay/Inventory/CInventory.hpp"
 #include "Engine.hpp"
 #include "JsonUtil.hpp"
 
@@ -121,6 +122,15 @@ json::json ApplyCharacterDefinition(entt::registry& r, entt::entity entity, File
     {
         CEquipment equipment;
         r.emplace_or_replace<CEquipment>(entity, std::move(equipment));
+    }
+
+    if (json::Has(components, "inventory"))
+    {
+        const auto& component = json::AccessObjectField(components, "inventory");
+        CInventory inventory;
+        auto capacity = json::AttemptAccessField<size_t>(component, "capacity");
+        inventory.capacity = capacity;
+        r.emplace_or_replace<CInventory>(entity, std::move(inventory));
     }
 
     auto& definitionComponent = r.emplace_or_replace<CDefinition>(entity);

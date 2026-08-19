@@ -1,5 +1,6 @@
 {
     "id": "None",
+    "maxCount": 1,
     "damage": 0.0,
     "range": 0.0,
     "attackSpeed": 0.0,
@@ -39,13 +40,6 @@
                 "y": 1.0
             },
             "rotation": 0.0
-        },
-        "health": {
-            "max": 100.0,
-            "current": 100.0
-        },
-        "humanoid": {
-            "speed": 0.0
         }
     }
 }
