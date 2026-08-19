@@ -85,6 +85,7 @@ void Unequip(entt::registry& registry, entt::entity owner, size_t slot)
     equipment.weapon = entt::null;
 }
 
+// TODO: make work
 void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_t amount) {}
 
 }; // namespace ssg::inventory
