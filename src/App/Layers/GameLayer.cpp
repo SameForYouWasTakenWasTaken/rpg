@@ -6,7 +6,6 @@
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
 #include "Components/CWorldTransform.hpp"
-#include "Components/Gameplay/CEquipment.hpp"
 #include "Components/Gameplay/CHumanoid.hpp"
 #include "Engine.hpp"
 #include "Events/Gameplay/OnAttackRequest.hpp"

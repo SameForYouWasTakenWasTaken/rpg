@@ -1,5 +1,4 @@
-add_library(Shared STATIC 
-    dummy.cpp
+add_library(Shared STATIC
     JsonUtil.cpp
 )
 

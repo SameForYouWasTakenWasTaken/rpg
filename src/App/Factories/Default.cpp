@@ -15,12 +15,14 @@
 #include "Components/Gameplay/Inventory/CInventory.hpp"
 #include "Engine.hpp"
 #include "JsonUtil.hpp"
+#include "Logging.hpp"
 
 namespace ssg::factory
 {
 
 json::json ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath definition)
 {
+    LOG_INFO("Factory", "ATTEMPTING TO LOAD JSON OBJECT: {}", definition.string());
     using namespace nlohmann;
     auto& assetManager = Engine::instance().assetManager;
 
@@ -28,12 +30,18 @@ json::json ApplyCharacterDefinition(entt::registry& r, entt::entity entity, File
     std::ifstream file(definition);
 
     if (!file.is_open())
-        throw std::runtime_error("Could not open file " + definition.string() + "!");
+    {
+        LOG_FATAL("Factory", "Could not open JSON file: {}", definition.string());
+        return json::json{nullptr};
+    }
 
     file >> data;
     if (!data.contains("id") || !data.contains("components"))
-        throw std::runtime_error("Definition data does not contain character data: " +
-                                 definition.string());
+    {
+        LOG_FATAL("Factory", "Invalid JSON file: {}, missing 'id' or 'components'",
+                  definition.string());
+        return json::json{nullptr};
+    }
 
     auto& components = data.at("components");
     if (json::Has(components, "sprite"))
