@@ -10,6 +10,8 @@ namespace ssg::factory
 json::json ApplyWeaponDefinition(entt::registry& r, entt::entity entity, Filepath definition)
 {
     json::json data = ApplyItemDefinition(r, entity, definition); // Adds sprites, textures, etc
+    if (data.is_null())
+        return data;
 
     CWeapon weapon;
     weapon.name = json::AttemptAccessField<std::string>(data, "id");

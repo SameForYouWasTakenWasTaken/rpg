@@ -8,6 +8,9 @@ namespace ssg::factory
 json::json ApplyItemDefinition(entt::registry& r, entt::entity entity, Filepath definition)
 {
     auto data = ApplyCharacterDefinition(r, entity, definition);
+    if (data.is_null())
+        return data;
+
     ItemCount_t maxCount = json::AttemptAccessField<ItemCount_t>(data, "maxCount");
 
     CItem item;
