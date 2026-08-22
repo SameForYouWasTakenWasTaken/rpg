@@ -6,6 +6,7 @@
 #include "Logger.hpp"
 #include "Rendering/Window.hpp"
 #include "Systems/AssetManager.hpp"
+#include "Systems/InputSystem.hpp"
 
 #define SSG_ENGINE_HPP_INCLUDED
 
@@ -28,6 +29,7 @@ class Engine
     EventBus eventBus;
     AssetManager assetManager;
     log::Logger logger;
+    Input inputSystem{eventBus};
 
   private:
     Engine() = default;
