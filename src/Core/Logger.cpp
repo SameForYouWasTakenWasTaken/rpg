@@ -49,7 +49,7 @@ void Logger::AddSink(std::unique_ptr<ILogSink> sink) { m_Sinks.push_back(std::mo
 void Logger::Dispatch(const LogEntry& entry)
 {
     for (auto& sink : m_Sinks)
-        if (entry.level >= sink->minLevel)
+        if (entry.level >= m_MinLevel && entry.level >= sink->minLevel)
             sink->Write(entry);
 }
 } // namespace ssg::log

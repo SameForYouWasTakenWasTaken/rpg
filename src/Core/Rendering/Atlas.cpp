@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "Engine.hpp"
+#include "JsonUtil.hpp"
 #include "SFML/Graphics/Rect.hpp"
 #include "Types.hpp"
 
@@ -23,38 +24,40 @@ TextureID Atlas::LoadAtlas(const Filepath& jsonFilepath, const Filepath& texture
 
 void Atlas::LoadAtlas(const Filepath& jsonFilepath, TextureID texID)
 {
-    using namespace nlohmann;
-
     auto& assetManager = Engine::instance().assetManager;
 
-    json atlas;
+    json::json atlas;
     std::ifstream file(jsonFilepath);
 
     if (!file.is_open())
         throw std::runtime_error("Could not open atlas .json file: " + jsonFilepath.string());
 
     file >> atlas;
-    if (!atlas.contains("frames"))
+
+    if (!json::Has(atlas, "frames"))
         throw std::runtime_error(
             "Atlas .json file is not compatible with GetSubTextureDimensions: " +
             m_JsonFilepath.string());
 
-    const auto& framesArray = atlas["frames"];
+    const auto& framesArray = json::AccessObjectField(atlas, "frames");
+
     for (const auto& element : framesArray)
     {
-        if (!element.contains("filename"))
+        if (!json::Has(element, "filename"))
             continue;
 
-        if (!element.contains("frame"))
+        if (!json::Has(element, "frame"))
             throw std::runtime_error("No frame in " + jsonFilepath.string());
 
-        const auto& frame = element["frame"];
-        float x = static_cast<float>(frame["x"]);
-        float y = static_cast<float>(frame["y"]);
-        float w = static_cast<float>(frame["w"]);
-        float h = static_cast<float>(frame["h"]);
+        const auto& frame = json::AccessObjectField(element, "frame");
 
-        m_Regions.emplace(element.at("filename").get<String>(), sf::FloatRect{{x, y}, {w, h}});
+        float x = json::AttemptAccessField<float>(frame, "x");
+        float y = json::AttemptAccessField<float>(frame, "y");
+        float w = json::AttemptAccessField<float>(frame, "w");
+        float h = json::AttemptAccessField<float>(frame, "h");
+
+        m_Regions.emplace(json::AttemptAccessField<String>(element, "filename"),
+                          sf::FloatRect{{x, y}, {w, h}});
     }
 
     // LoadTexture() already throw std::runtime, no checks needed
@@ -62,7 +65,10 @@ void Atlas::LoadAtlas(const Filepath& jsonFilepath, TextureID texID)
     m_JsonFilepath = jsonFilepath;
 
     // this ID serves as the "name" of the atlas
-    m_ID = std::filesystem::path(atlas["meta"]["image"].get<std::string>()).stem().string();
+    m_ID =
+        std::filesystem::path(json::AccessObjectField(atlas, "meta").at("image").get<std::string>())
+            .stem()
+            .string();
 }
 
 sf::FloatRect Atlas::GetRegion(const String& SubTextureFilename)

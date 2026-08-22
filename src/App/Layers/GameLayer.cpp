@@ -26,8 +26,7 @@ namespace ssg
 void GameLayer::OnAttach()
 {
     auto& assetManager = Engine::instance().assetManager;
-    auto atlasID = assetManager.LoadAtlas("assets/Textures/Atlas/random.json",
-                                          "assets/Textures/Atlas/random.png");
+    auto atlasID = assetManager.LoadAtlas("assets/Textures/Atlas/Atlasses.json", "random");
     auto& atlas = assetManager.GetAtlas(atlasID);
     auto textureID = atlas.GetTextureID();
 
