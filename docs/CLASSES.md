@@ -1,32 +1,40 @@
 # 📖 Class Reference
 
-A plain breakdown of every core class in Game2 (namespace `ssg`).
-For the "how it fits" view, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
+A practical breakdown of the main engine and application classes in Game2 (`namespace ssg`).
+For the architectural overview, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
 
 ## 🎛️ Core
 
 ### `Engine`
-The single global object. Created once via `Engine::instance()`.
+The single global engine object, created through `Engine::instance()`.
 
 | Member | Type | Purpose |
 | --- | --- | --- |
-| `eventBus` | `EventBus` | Central pub/sub for game events. |
+| `eventBus` | `EventBus` | Central event dispatch/queue. |
 | `assetManager` | `AssetManager` | Loads and caches textures. |
-| `initialize()` | `void` | Sets `m_running = true`. |
-| `terminate()` | `void` | Sets `m_running = false` (stops the loop). |
-| `isRunning()` | `bool` | Reads the running flag (atomic, thread-safe). |
+| `inputSystem` | `Input` | Tracks input state and translates SFML input events. |
+| `initialize()` | `void` | Starts the engine. |
+| `terminate()` | `void` | Stops the application loop. |
+| `isRunning()` | `bool` | Reads the running flag. |
 
-> 📌 Copy/assign are deleted. It is a true singleton.
-
----
+> Copy/assignment are deleted; this is a true singleton.
 
 ### `Entity`
-A placeholder class. Currently empty (default copy/move). The real ECS work is
-done with `entt::entity` IDs inside layers, not this type. 
+A legacy placeholder. The actual ECS currently uses `entt::entity` IDs directly. This class is not part of the active ECS model and may be removed.
 
-> ⚠️ Most likely being deprecated!
+### `Input`
+Engine-level input service.
+
+- `IsKeyDown()` / `IsKeyUp()` query keyboard state.
+- `IsMouseButtonDown()` / `IsMouseButtonUp()` query mouse state.
+- `GetMousePosition()` queries mouse position.
+- `ProcessEvents()` consumes raw SFML events and updates input state / queues input events.
+- `Update(dt)` advances input repeat timers.
+
+The implementation currently uses SFML key and mouse types directly.
+
 ---
 
 ## 🪟 App
@@ -34,282 +42,168 @@ done with `entt::entity` IDs inside layers, not this type.
 ### `Application`
 Owns the `Window` and `Renderer` and runs the main loop.
 
-| Member | Purpose |
+| Method / Member | Purpose |
 | --- | --- |
-| `Run()` | Sets up window, builds the scene stack, runs the game loop. |
+| `Run()` | Sets up the application and runs the frame loop. |
 | `Shutdown()` | Stops the engine and closes the window. |
-| `HandleEvents(Window&)` | Polls SFML events and queues SSG events on the bus. |
-| `ApplicationContext` | Small struct holding `MainWindow&`. Passed to scenes/layers. |
-
----
+| `HandleEvents(Window&)` | Polls raw SFML events and routes them to input/window handling. |
+| `ApplicationContext` | Small context containing the main `Window`. |
 
 ### `IScene` (abstract)
-A screen/state. Holds an `entt::registry` and a list of layers.
+Represents a screen/game state. Owns an `entt::registry` and a list of layers.
 
 | Member | Purpose |
 | --- | --- |
-| `registry` | The ECS registry for this scene. |
-| `OnUpdate(dt, ctx)` | Update hook (calls each layer). |
-| `OnRender(renderer, ctx)` | Render hook (calls each layer). |
-| `PushLayer(layer)` | Add a layer and call its `OnAttach()`. |
-| `PopLayer(layer)` | Remove the top layer and call its `OnDetach()`. |
-
-> Copy/assign/move are deleted.
-
----
+| `registry` | ECS registry associated with the scene. |
+| `OnUpdate(dt, ctx)` | Update hook. |
+| `OnRender(renderer, ctx)` | Render hook. |
+| `PushLayer(layer)` | Adds a layer and attaches it. |
+| `PopLayer(...)` | Removes a layer and detaches it. |
 
 ### `SceneStack`
-A stack of scenes. Only the **top** scene updates and renders.
+Owns the application's scenes. Only the top scene currently updates and renders.
 
 | Method | Purpose |
 | --- | --- |
-| `Push(scene)` | Add a scene on top. |
+| `Push(scene)` | Add a scene. |
 | `Pop()` | Remove and return the top scene. |
-| `Switch(scene)` | Replace the top scene (pop + push). |
+| `Switch(scene)` | Replace the top scene. |
 | `Clear()` | Remove all scenes. |
-| `Empty()` | `true` if no scenes. |
+| `Empty()` | Test whether the stack is empty. |
 | `Update(dt, ctx)` | Update the top scene. |
 | `Render(renderer, ctx)` | Render the top scene. |
 
----
-
 ### `ILayer` (abstract)
-A slice of logic inside a scene.
+A focused slice of logic inside a scene.
 
 | Method | Purpose |
 | --- | --- |
 | `OnAttach()` | Called when added to a scene. |
 | `OnDetach()` | Called when removed. |
 | `OnUpdate(dt, ctx)` | Per-frame logic. |
-| `OnRender(renderer, ctx)` | Per-frame drawing. |
+| `OnRender(renderer, ctx)` | Per-frame rendering. |
 
-> Copy/assign/move are deleted.
+### `GameScene`
+Current concrete `IScene` example. It installs a `GameLayer` and forwards update/render calls to its layers.
 
----
-
-### `GameScene` (example `IScene`)
-A concrete scene. Its constructor pushes a `GameLayer`. `OnUpdate` /
-`OnRender` forward to every layer.
+### `GameLayer`
+Current concrete `ILayer` example. It demonstrates player movement, camera following, ECS entities, atlas usage, transforms, and rendering.
 
 ---
 
-### `GameLayer` (example `ILayer`)
-A concrete layer. It:
-
-- Loads a texture atlas in `OnAttach()`.
-- Creates a few demo entities (`CTransform` + `CSprite` + `CTexture`).
-- Moves `m_LocalPlayer` with WASD in `OnUpdate`.
-- Follows the player with `m_LocalPlayerCamera`.
-- Submits each entity as a `RenderObject` in `OnRender`.
-
-| Member | Purpose |
-| --- | --- |
-| `m_Registry` | Local ECS registry for this layer. |
-| `m_SpatialGrid` | `SpatialGrid` system bound to the registry. |
-| `m_TransformSystem` | `TransformSystem` that derives world transforms. |
-| `m_LocalPlayer` | The player entity. |
-| `m_LocalPlayerCamera` | Camera that follows the player. |
-| `OnWindowResize(e)` | Keeps the camera size in sync with the window. |
-
----
-
-## 🧭 App Systems (`src/App/Systems/`)
-
-Gameplay-side systems that run over the scene's registry. For the full transform
-& hierarchy story see [`HIERARCHY.md`](HIERARCHY.md).
+## 🧭 Application systems
 
 ### `ISystem` (abstract)
-Base class for systems (mirrors `ILayer`).
+Base class for systems operating on an EnTT registry.
 
-| Member | Purpose |
-| --- | --- |
-| `ISystem(registry&)` | Bind the system to a registry. |
-| `Update(float dt)` | Per-frame entry point (pure virtual). |
-| `m_Registry` | The registry the system operates on (protected). |
+- `ISystem(registry&)` binds the system to a registry.
+- `Update(float dt)` is the per-frame entry point.
 
 ### `TransformSystem`
-Derives every `CWorldTransform` from `CTransform` + the `CRelationship` chain,
-parents before children.
-
-| Method | Purpose |
-| --- | --- |
-| `Update(dt)` | Walk each root recursively and fill `CWorldTransform`. |
-
-> Composition: `world.scale = parent.scale * local.scale`,
-> `world.rotation = parent.rotation + local.rotation`,
-> `world.position = parent.position + parent.scale * local.position`.
+Derives `CWorldTransform` from local transforms and the parent/child hierarchy.
 
 ### `SpatialGrid`
-A uniform grid (`std::unordered_map<GridKey, ...>`) for proximity queries,
-rebuilt each frame.
+A uniform spatial hash/grid for proximity queries.
 
-| Method | Purpose |
-| --- | --- |
-| `Update(dt)` | `ISystem` hook; calls `Rebuild()`. |
-| `Rebuild()` | Clear and re-bucket every entity by cell. |
-| `Insert(entity)` | Add one entity to its cell. |
-| `Clear()` | Empty the grid. |
-| `Query(pos, radius, filter)` | Entities within `radius` passing `filter`. |
-| `FindNearest(pos, radius, filter)` | Closest matching entity (or `entt::null`). |
+- `Update(dt)` rebuilds the grid.
+- `Query(pos, radius, filter)` returns nearby matching entities.
+- `FindNearest(pos, radius, filter)` finds the closest matching entity.
 
-### `hierarchy` (free functions, `ssg::hierarchy`)
-Parent/child linked-list surgery. Call sites never touch the links directly.
+### `hierarchy`
+Free functions for modifying parent/child relationships without exposing linked-list surgery to call sites.
 
-| Function | Purpose |
-| --- | --- |
-| `AttachChild(reg, parent, child)` | Pure hierarchy attach (no transforms). |
-| `AttachChild(reg, parent, child, AttachMode)` | Attach, then apply mode behaviour. |
-| `DetachChild(reg, child)` | Unlink a child (turn it back into a root). |
-| `AttachMode` | `KeepLocal` (default) / `KeepWorld` (rebase local, no teleport). |
+- `AttachChild(...)`
+- `DetachChild(...)`
+- `AttachMode::KeepLocal`
+- `AttachMode::KeepWorld`
+
+See [`HIERARCHY.md`](HIERARCHY.md) for the transform/hierarchy rules.
 
 ---
 
-## 🏭 Factories (`src/App/Factories/`, `ssg::factory`)
+## 🏭 Factories
 
-Attach a standard set of components to an **existing** entity (they don't create
-it). Guarantees the local + world transform pair always exists together.
+`ssg::factory` contains helpers for attaching standard component sets to an **existing** entity.
 
-| Function | Adds |
-| --- | --- |
-| `AddDefaultTransform(reg, e)` | `CTransform` + `CWorldTransform` + `CRelationship` (root) |
-| `AddDefaultTexture(reg, e)` | the above + an empty `CTexture` |
-| `AddDefaultSprite(reg, e, texID, rect, size={100,100})` | the above + `CSprite` + `CTexture` |
+- `AddDefaultTransform()`
+- `AddDefaultTexture()`
+- `AddDefaultSprite()`
+
+These establish the local/world transform pair and optional rendering components.
 
 ---
 
 ## 🖥️ Rendering
 
 ### `Renderer`
-Batched 2D renderer built on SFML vertex buffers.
-
-| Member / Method | Purpose |
-| --- | --- |
-| `Submit(obj)` | Queue a `RenderObject` into its z-index layer. |
-| `Begin()` | Clear all layers for a new frame. |
-| `End(window)` | Sort, batch by texture, and draw to the window. |
-| `RenderObject` | A quad: pos, scale, origin, rotation, z-index, color, texRect, texture. |
-
-> Internally: `MAX_LAYERS` = 256 (one per `zIndex_t` value). Each layer is
-> sorted by texture; consecutive same-texture objects are drawn in one batch.
-
----
+Batched 2D renderer. `Submit()` queues render objects; `Begin()` starts a frame; `End()` sorts/batches and draws them.
 
 ### `Window`
-Wraps an `sf::RenderWindow` and keeps an `sf::View` in sync.
-
-| Method | Purpose |
-| --- | --- |
-| `SetSettings(settings)` | Apply size, title, framerate. |
-| `SetTitle / SetFramerate / SetSize` | Individual setters. |
-| `SetView(view)` | Apply an `sf::View`. |
-| `Draw(...)` | Forward to the SFML window draw. |
-| `Display()` / `Clear(color)` | Frame end / start. |
-| `PollSFMLEvents()` | Return the next raw SFML event (or `nullopt`). |
-| `UpdateView(func)` | Mutate the internal view, then apply it. |
-
-`WindowSettings`: `Width`, `Height`, `Framerate`, `title`.
-
-> The window listens to `WindowResizeEvent` and `WindowCloseEvent` on the bus.
-
----
+Wraps the SFML render window and view. It also exposes raw SFML event polling and listens for relevant window events.
 
 ### `Camera`
-Thin wrapper over `sf::View`.
-
-| Method | Purpose |
-| --- | --- |
-| `SetCenter / GetCenter` | Where the camera looks. |
-| `SetSize / GetSize` | View size (world units). |
-| `SetRotation / GetRotation` | View rotation (degrees). |
-| `SetViewport / GetViewport` | Screen rectangle the view fills. |
-| `Move / Rotate / Zoom` | Relative changes. |
-| `SetView(center, size)` | Set both at once. |
-| `GetView()` | The underlying `sf::View`. |
-
----
+Thin wrapper around `sf::View` for center, size, rotation, viewport, and relative movement/zoom.
 
 ### `Atlas`
-Loads a sprite-sheet `.json` + `.png` and maps sub-image names to rects.
-
-| Method | Purpose |
-| --- | --- |
-| `LoadTexture(json, png)` | Parse the atlas JSON, load the texture, return a `TextureID`. |
-| `GetSubTextureDimensions(name)` | Get the rect for one sub-image. |
-| `GetAllSubTextureDimensions()` | Get the whole name→rect map. |
-
-> Expects TexturePacker-style JSON with a `frames` array.
+Loads TexturePacker-style JSON metadata plus a PNG texture and maps sub-image names to texture rectangles.
 
 ---
 
-## 🗃️ Systems
+## 🗃️ Core systems
 
 ### `AssetManager`
-Loads textures once and hands them out by `TextureID` or path.
-
-| Method | Purpose |
-| --- | --- |
-| `LoadTexture(path)` | Load (or reuse) a texture; returns its `TextureID`. |
-| `GetTexture(id)` | Get a loaded texture by ID. |
-| `GetTexture(path)` | Get a loaded texture by file path. |
-
-> Copy/assign/move are deleted.
+Loads textures once and exposes them by `TextureID` or path.
 
 ---
 
 ## 📡 Events
 
-### `IEvent` (abstract)
-Base class for all SSG events. Each event type gets a unique static ID via
-the `GENERATE_EVENT_TYPE()` macro.
+### `IEvent`
+Base type for SSG events.
 
 ### `EventBus`
-Pub/sub wrapper around `entt::dispatcher`.
+Thin wrapper around `entt::dispatcher`.
 
 | Method | Purpose |
 | --- | --- |
-| `Queue<T>(args...)` | Enqueue an event (delivered on `Update`). |
-| `Emit<T>(args...)` | Fire an event immediately. |
-| `Update()` / `Update<T>()` | Deliver queued events (all or one type). |
-| `Sink<T>()` | Get a sink to `connect` a listener. |
-| `IsSFMLEvent<T>(event)` | Helper to read a typed SFML event safely. |
-
-> Copy/assign/move are deleted.
+| `Queue<T>(args...)` | Queue an event for later delivery. |
+| `Emit<T>(args...)` | Deliver an event immediately. |
+| `Update()` / `Update<T>()` | Deliver queued events. |
+| `Sink<T>()` | Obtain an EnTT event sink. |
+| `IsSFMLEvent<T>(event)` | Extract a typed SFML event safely. |
 
 ### Event types
-- **Core (`src/Core/Events/`)**: `WindowCloseEvent`, `WindowResizeEvent`, `WindowSetView`.
-- **Input (`src/App/Events/`)**: `KeyPressedEvent`, `KeyReleasedEvent`,
-  `MouseButtonPressedEvent`, `MouseButtonReleasedEvent`, `MouseMovedEvent`,
-  `MouseWheelScrolledEvent`, `TextEnteredEvent`.
+Core/window and input events currently live under `src/Core/Events/`, including:
+
+- `WindowCloseEvent`
+- `WindowResizeEvent`
+- `WindowSetView`
+- `KeyPressedEvent`
+- `KeyReleasedEvent`
+- `MouseButtonPressedEvent`
+- `MouseButtonReleasedEvent`
+- `MouseMovedEvent`
+- `MouseWheelScrolledEvent`
+- `TextEnteredEvent`
 
 ---
 
-## 🧩 Components (`src/App/Components/`)
+## 🧩 Components
 
-Plain structs stored on entities.
+Plain structs stored on scene registries.
 
-| Component | Fields |
+| Component | Purpose |
 | --- | --- |
-| `CTransform` | **local** `position` (Vec2), `scale` (Vec2, a *multiplier*), `rotation` (float) |
-| `CWorldTransform` | **derived** `position` (Vec2), `scale` (Vec2), `rotation` (float) — written only by `TransformSystem` |
-| `CRelationship` | `children` (size_t), `first`/`prev`/`next`/`parent` (entt::entity) — intrusive linked-list hierarchy |
-| `CSprite` | `color` (sf::Color), `zIndex` (uint8), `origin` (Vec2, normalized), `size` (Vec2, pixels), `flipX`, `flipY` |
-| `CTexture` | `textureID` (TextureID), `textureRect` (sf::FloatRect) |
+| `CTransform` | Local position, scale multiplier, rotation. |
+| `CWorldTransform` | Derived world position, scale, rotation. |
+| `CRelationship` | Parent/child hierarchy links. |
+| `CSprite` | Sprite appearance and render properties. |
+| `CTexture` | Texture ID and source rectangle. |
 
-> `CTransform.scale` is a multiplier (default `{1,1}`); the pixel size lives on
-> `CSprite.size`. See [`HIERARCHY.md`](HIERARCHY.md) for the transform pipeline.
+> Gameplay should write `CTransform`; `TransformSystem` writes `CWorldTransform`.
 
 ---
 
-## 🔤 Shared types (`src/Shared/Types.hpp`)
+## 🔤 Shared types
 
-Handy aliases used everywhere:
-
-| Alias | Maps to |
-| --- | --- |
-| `Vec2` / `Vec3` | `glm::vec2` / `glm::vec3` |
-| `zIndex_t` | `std::uint8_t` |
-| `TextureID` | `std::uint32_t` |
-| `String` | `std::string` |
-| `Vector<T>` | `std::vector<T>` |
-| `Array<T, N>` | `std::array<T, N>` |
-| `Filepath` | `std::filesystem::path` |
+`src/Shared/Types.hpp` contains commonly used aliases such as `Vec2`, `Vec3`, `TextureID`, `String`, `Vector<T>`, `Array<T, N>`, and `Filepath`.
