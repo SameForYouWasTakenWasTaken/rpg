@@ -55,6 +55,7 @@ class Window
     bool IsOpen() { return m_sfRenderWindow.isOpen(); };
 
     void UpdateView(std::invocable<sf::View&> auto&& func);
+    const sf::Window& GetSFMLWindow() const { return m_sfRenderWindow; }
 
     std::optional<sf::Event> PollSFMLEvents();
 

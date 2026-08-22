@@ -66,41 +66,20 @@ void Application::Run()
 
 void Application::HandleEvents(Window& window)
 {
-    auto& eventBus = Engine::instance().eventBus;
+    auto& engine = Engine::instance();
+    auto& eventBus = engine.eventBus;
+    auto& input = engine.inputSystem;
+
     while (const std::optional event = window.PollSFMLEvents())
     {
+
+        // process input, such as mouse and key presses, releases, movement, etc
+        input.ProcessEvents(event);
         if (EventBus::IsSFMLEvent<sf::Event::Closed>(event))
             eventBus.Queue<WindowCloseEvent>();
 
         if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::Resized>(event))
             eventBus.Queue<WindowResizeEvent>(pEvent->size.x, pEvent->size.y);
-
-        if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::KeyPressed>(event))
-            eventBus.Queue<KeyPressedEvent>(pEvent->code, pEvent->alt, pEvent->control,
-                                            pEvent->shift, pEvent->system);
-
-        if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::KeyReleased>(event))
-            eventBus.Queue<KeyReleasedEvent>(pEvent->code, pEvent->alt, pEvent->control,
-                                             pEvent->shift, pEvent->system);
-
-        if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseButtonPressed>(event))
-            eventBus.Queue<MouseButtonPressedEvent>(pEvent->button,
-                                                    static_cast<float>(pEvent->position.x),
-                                                    static_cast<float>(pEvent->position.y));
-
-        if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseButtonReleased>(event))
-            eventBus.Queue<MouseButtonReleasedEvent>(pEvent->button,
-                                                     static_cast<float>(pEvent->position.x),
-                                                     static_cast<float>(pEvent->position.y));
-
-        if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseMoved>(event))
-            eventBus.Queue<MouseMovedEvent>(static_cast<float>(pEvent->position.x),
-                                            static_cast<float>(pEvent->position.y));
-
-        if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseWheelScrolled>(event))
-            eventBus.Queue<MouseWheelScrolledEvent>(pEvent->wheel, pEvent->delta,
-                                                    static_cast<float>(pEvent->position.x),
-                                                    static_cast<float>(pEvent->position.y));
 
         if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::TextEntered>(event))
             eventBus.Queue<TextEnteredEvent>(static_cast<uint32_t>(pEvent->unicode));

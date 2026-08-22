@@ -95,7 +95,7 @@ void GameLayer::OnWindowResize(const WindowResizeEvent& event)
 }
 void GameLayer::OnKeyPress(const KeyPressedEvent& event)
 {
-    if (event.key == sf::Keyboard::Key::R)
+    if (event.key == Input::Key::R)
     {
         Vector<entt::entity> reloadTargets;
 
@@ -116,13 +116,13 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
     }
 
     // attack
-    if (event.key == sf::Keyboard::Key::F)
+    if (event.key == Input::Key::F)
     {
         auto& eventBus = Engine::instance().eventBus;
         eventBus.Emit<OnAttackRequest>(m_LocalPlayer);
     }
 
-    if (event.key == sf::Keyboard::Key::E)
+    if (event.key == Input::Key::E)
     {
         static bool canEquip = true;
         if (canEquip)
@@ -142,16 +142,16 @@ void GameLayer::OnUpdate(float dt, ApplicationContext& context)
     auto& transform = m_Registry.get<CTransform>(m_LocalPlayer);
     const auto& speed = m_Registry.get<CHumanoid>(m_LocalPlayer).speed;
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+    if (Input::IsKeyDown(Input::Key::W))
         transform.position.y -= speed * dt;
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+    if (Input::IsKeyDown(Input::Key::S))
         transform.position.y += speed * dt;
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+    if (Input::IsKeyDown(Input::Key::A))
         transform.position.x -= speed * dt;
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+    if (Input::IsKeyDown(Input::Key::D))
         transform.position.x += speed * dt;
 
     // 2. Derive world transforms from local + hierarchy.
