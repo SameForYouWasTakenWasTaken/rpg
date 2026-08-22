@@ -4,6 +4,8 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 
+#include "JsonUtil.hpp"
+
 namespace ssg
 {
 TextureID AssetManager::LoadTexture(const Filepath& path)
@@ -27,12 +29,36 @@ const sf::Texture& AssetManager::GetTexture(const Filepath& path)
     TextureID id = m_Filepaths[path];
     return GetTexture(id);
 }
-AtlasID AssetManager::LoadAtlas(const Filepath& jsonPath, const Filepath& texturePath)
+AtlasID AssetManager::LoadAtlas(AtlasConfig config)
 {
     Atlas atlas;
 
-    TextureID textureID = LoadTexture(texturePath);
-    atlas.LoadAtlas(jsonPath, textureID);
+    TextureID textureID = LoadTexture(config.texture);
+    atlas.LoadAtlas(config.metadata, textureID);
+
+    AtlasID id = atlas.GetID();
+    m_Atlases.emplace(id, std::move(atlas));
+
+    return id;
+}
+
+AtlasID AssetManager::LoadAtlas(const Filepath& jsonPath, std::string_view field)
+{
+    Atlas atlas;
+
+    json::json data;
+    std::ifstream file(jsonPath);
+    if (!file.is_open())
+        throw std::runtime_error("Could not open atlas .json file: " + jsonPath.string());
+
+    file >> data;
+
+    auto atlasConfig = json::AccessObjectField(data, field);
+    auto texture = json::AttemptAccessField<Filepath>(atlasConfig, "texture");
+    auto jsonMetadata = json::AttemptAccessField<Filepath>(atlasConfig, "metadata");
+
+    TextureID textureID = LoadTexture(texture);
+    atlas.LoadAtlas(jsonMetadata, textureID);
 
     AtlasID id = atlas.GetID();
     m_Atlases.emplace(id, std::move(atlas));
@@ -52,28 +78,35 @@ Atlas& AssetManager::GetAtlas(AtlasID id)
 
 EntityDefinition AssetManager::GetEntityDefinition(const Filepath& filepath)
 {
-    using namespace nlohmann;
     EntityDefinition definition{};
 
-    json data;
+    json::json data;
+
     std::ifstream file(filepath);
     if (!file.is_open())
-        throw std::runtime_error("Could not open atlas .json file: " + filepath.string());
+        throw std::runtime_error("Could not open entity .json file: " + filepath.string());
 
     file >> data;
 
-    if (!data.contains("id") ||
-        !data.contains("components") && data["components"].contains("sprite"))
+    if (!ssg::json::Has(data, "id") || !ssg::json::Has(data, "components"))
+    {
+        return EntityDefinition{};
+    }
+
+    const auto& components = ssg::json::AccessObjectField(data, "components");
+
+    if (!ssg::json::Has(components, "sprite"))
         return EntityDefinition{};
 
-    auto& spriteField = data["components"].at("sprite");
-    auto regionName = spriteField.at("region").get<String>();
+    const auto& spriteField = ssg::json::AccessObjectField(components, "sprite");
 
-    definition.nameID = data.at("id").get<String>();
-    definition.atlasID = spriteField.at("atlas").get<String>();
+    definition.nameID = ssg::json::AttemptAccessField<String>(data, "id");
 
-    Region region = GetAtlas(definition.atlasID).GetRegion(regionName);
-    definition.region = region;
+    definition.atlasID = ssg::json::AttemptAccessField<String>(spriteField, "atlas");
+
+    const String regionName = ssg::json::AttemptAccessField<String>(spriteField, "region");
+
+    definition.region = GetAtlas(definition.atlasID).GetRegion(regionName);
 
     return definition;
 }

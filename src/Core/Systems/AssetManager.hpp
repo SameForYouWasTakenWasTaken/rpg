@@ -20,6 +20,12 @@ struct EntityDefinition
     bool IsValid() { return !nameID.empty(); }
 };
 
+struct AtlasConfig
+{
+    Filepath texture{};
+    Filepath metadata{};
+};
+
 class AssetManager
 {
   public:
@@ -36,7 +42,10 @@ class AssetManager
     const sf::Texture& GetTexture(TextureID);
     const sf::Texture& GetTexture(const Filepath&);
 
-    AtlasID LoadAtlas(const Filepath&, const Filepath&);
+    AtlasID LoadAtlas(AtlasConfig config);
+    AtlasID LoadAtlas(
+        const Filepath&,
+        std::string_view name); // Load atlas from a .json field, which contains all configuration
 
     Atlas& GetAtlas(AtlasID);
 
