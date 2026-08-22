@@ -1,7 +1,6 @@
 # 🏗️ Architecture
 
-This document explains how Game2 is put together. It is written to be both
-**technical** (for devs) and **clear** (for anyone who wants to help).
+This document explains how Game2 is put together. It is intended to be a practical map of the codebase rather than a complete API reference.
 
 Everything lives in the `ssg` namespace (short for *"super secret game"* 😉).
 
@@ -9,131 +8,155 @@ Everything lives in the `ssg` namespace (short for *"super secret game"* 😉).
 
 ## 🔄 The big picture
 
-```
+```text
         main()
           │
           ▼
-   Engine::instance()  ── owns ──► EventBus + AssetManager
+   Engine::instance()
+          │
+          ├── EventBus
+          ├── AssetManager
+          └── Input
           │
           ▼
    Application::Run()
           │
-          ├── creates Window + Renderer
-          ├── builds a SceneStack (push GameScene)
+          ├── owns Window + Renderer
+          ├── builds SceneStack
           │        │
-          │        └── GameScene holds Layers (push GameLayer)
-          │                 │
-          │                 └── GameLayer owns an ECS registry (entities)
+          │        └── Scene
+          │             │
+          │             ├── ECS registry
+          │             └── Layers
           │
           ▼
-   Game loop  (while window open & engine running)
+   Game loop
           │
-          ├── eventBus.Update()        // deliver queued events
-          ├── HandleEvents(window)      // SFML events -> our events
+          ├── eventBus.Update()       // deliver events queued last frame
+          ├── HandleEvents(window)     // poll SFML + feed Input / window events
+          ├── input.Update(dt)         // input repeat/state processing
           ├── window.Clear()
           ├── renderer.Begin()
-          ├── stack.Update(dt, ctx)     // scenes -> layers -> systems
-          ├── stack.Render(renderer)    // scenes -> layers -> submit quads
-          ├── renderer.End(window)      // batch + draw to GPU
+          ├── stack.Update(dt, ctx)
+          ├── stack.Render(renderer, ctx)
+          ├── renderer.End(window)
           └── window.Display()
 ```
+
+The important ownership boundary is that **Engine owns reusable engine-wide services**, while **Application owns the game loop and application flow**. Scenes own their ECS state and layers.
 
 ---
 
 ## 🧩 Key ideas
 
 ### 1. Engine (singleton)
-`Engine` is a single global object created once. It holds:
 
-- `eventBus` — the central `EventBus` (pub/sub for game events).
+`Engine` is a single global object created once. It currently owns:
+
+- `eventBus` — the central `EventBus` for queued and immediate events.
 - `assetManager` — loads and caches textures.
-- `m_running` — an atomic flag. `Run()` stops when it becomes `false`.
+- `inputSystem` — tracks keyboard/mouse state and converts relevant SFML input events into SSG input events.
+- `m_running` — an atomic flag used to stop the application loop.
+
+The engine deliberately contains **core services**, not game-specific state such as quests, players, inventories, or scene-transfer data.
 
 ### 2. Application (the loop owner)
-`Application` owns the `Window` and the `Renderer`. Its `Run()` method is the
-main loop. It builds the `SceneStack`, feeds SFML events into the `EventBus`,
-and drives update + render every frame.
 
-`ApplicationContext` is a small struct passed around. Right now it only holds
-a reference to the main `Window`, but it is the spot to add shared services
-later (audio, input, etc.).
+`Application` owns the `Window` and `Renderer`. Its `Run()` method drives the main loop and constructs the initial `SceneStack`.
+
+`HandleEvents()` polls raw SFML events. Input events are delegated to `Engine::inputSystem`; application/window events such as close and resize are converted directly into core events.
+
+`ApplicationContext` is intentionally small. It currently provides the main `Window` to scenes and layers. It is not a general-purpose container for every game state or engine service.
 
 ### 3. Scene Stack
-A `SceneStack` is a stack of `IScene` objects. Only the **top** scene updates
-and renders. This makes it easy to model screens / states:
+
+A `SceneStack` owns `std::unique_ptr<IScene>` objects. Only the **top** scene currently updates and renders.
 
 - `Push(scene)` — add a scene on top.
 - `Pop()` — remove the top scene.
-- `Switch(scene)` — pop then push (replace current screen).
-- `Clear()` — remove all.
+- `Switch(scene)` — replace the current scene.
+- `Clear()` — remove all scenes.
+
+Scenes are application/game-flow objects. They are not engine-wide singletons.
 
 ### 4. Scenes & Layers
+
 An `IScene` owns an `entt::registry` and a list of `ILayer` objects.
 
-- A **scene** = a "screen" (menu, game world, pause screen).
-- A **layer** = a slice of logic inside a scene (player, enemies, UI).
+- A **scene** represents a screen or game state such as a world, menu, or pause screen.
+- A **layer** is a focused slice of behaviour inside that scene.
 
-When a scene updates, it calls `OnUpdate` on every layer. Same for render.
-A layer is added with `PushLayer` (which also calls its `OnAttach`).
+A scene forwards update/render calls to its layers. Layers can own or use gameplay systems that operate on the scene's registry.
 
 ### 5. ECS (Entity-Component-System)
-Entities are just `entt::entity` IDs. Data lives in **components**:
+
+Entities are `entt::entity` IDs. Data lives in plain components attached to an EnTT registry.
 
 | Component | Holds |
 | --- | --- |
-| `CTransform` | **local** position, scale (multiplier), rotation |
-| `CWorldTransform` | **derived** absolute position, scale, rotation |
-| `CRelationship` | parent/child links (intrusive linked list) |
+| `CTransform` | local position, scale multiplier, rotation |
+| `CWorldTransform` | derived world position, scale, rotation |
+| `CRelationship` | parent/child links |
 | `CSprite` | color, z-index, origin, pixel size, flip flags |
-| `CTexture` | texture ID + source rectangle (sub-texture) |
+| `CTexture` | texture ID + source rectangle |
 
-A layer (like `GameLayer`) creates entities, attaches these components, and
-reads them in `OnUpdate` / `OnRender`.
-
-> **Write local, read world.** Gameplay edits `CTransform`; everything visual /
-> spatial reads `CWorldTransform`. Exactly one system (`TransformSystem`) derives
-> world from local each frame. See [`HIERARCHY.md`](HIERARCHY.md) for the full
-> pipeline.
+The current transform convention is **write local, read world**: gameplay changes `CTransform`; `TransformSystem` derives `CWorldTransform` from the hierarchy.
 
 ### 5b. Systems
-Systems derive from `ISystem` and operate on the registry once per frame via
-`Update(dt)`:
 
-| System | Purpose |
-| --- | --- |
-| `TransformSystem` | Derives `CWorldTransform` from `CTransform` + hierarchy, parents first. |
-| `SpatialGrid` | Buckets entities by cell for "what is near this point?" queries. |
+Application systems derive from `ISystem` and operate on a scene registry through `Update(dt)`.
 
-Entities are set up through **factories** (`ssg::factory`) that attach a standard
-set of components (transform pair + sprite/texture) to an existing entity, so the
-local + world transform pair always exists together.
+Current systems include:
 
-### 6. Renderer (batched)
-The `Renderer` collects `RenderObject`s through `Submit()`. Each object is
-sorted into a **z-index layer**. At `End()`, it:
+- `TransformSystem` — derives world transforms from local transforms and relationships.
+- `SpatialGrid` — buckets entities into cells for proximity queries.
 
-1. Sorts each layer by texture.
-2. Groups objects that share a texture into a **batch**.
-3. Writes quads into one `sf::VertexBuffer` and draws the batch.
+Entity setup is centralized in `ssg::factory`, whose helpers attach standard component sets to an existing entity.
 
-This means many sprites = few draw calls. 🚀
+### 6. Input
 
-### 7. Events
-Two event worlds exist:
+`Input` is an engine-level service because input state is not specific to one scene. It provides queries such as `IsKeyDown()` and `IsMouseButtonDown()` and also emits input events for systems that prefer event-driven handling.
 
-- **SFML events** — raw OS/window events from `window.PollSFMLEvents()`.
-- **SSG events** — our own event types (e.g. `KeyPressedEvent`) that derive
-  from `IEvent`.
+The flow is:
 
-`Application::HandleEvents` translates SFML events into SSG events and queues
-them on the `EventBus`. Listeners (like `Window` or `GameLayer`) `connect` a
-sink and get called when the bus is updated.
+```text
+SFML event
+    │
+    ▼
+Application::HandleEvents()
+    │
+    ▼
+Input::ProcessEvents()
+    │
+    ├── update input state
+    └── queue SSG input event
+             │
+             ▼
+         EventBus
+```
 
-### 8. Assets & Atlas
-`AssetManager` loads a texture once and gives it a `TextureID`.
-`Atlas` reads a sprite-sheet `.json` (in the TexturePacker format) and maps
-each sub-image name (e.g. `dogbite.jpg`) to its rectangle in the sheet.
-Layered code asks the atlas for a sub-texture rect, then renders it.
+This keeps gameplay code from needing to poll the raw SFML event stream.
+
+### 7. Renderer (batched)
+
+The `Renderer` collects `RenderObject`s through `Submit()`. Objects are grouped by z-index and sorted/batched by texture before being drawn.
+
+The renderer is an engine facility; gameplay code submits render data but does not own the underlying SFML vertex buffers.
+
+### 8. Events
+
+There are two levels of events:
+
+- **SFML events** — raw platform/window/input events returned by `Window::PollSFMLEvents()`.
+- **SSG events** — project-defined events delivered through `EventBus`.
+
+Core/window events and input events live under `src/Core/Events/`. `Input` is responsible for translating relevant SFML input events into SSG input events. `Application` handles window lifecycle events such as close and resize.
+
+`EventBus::Queue()` delivers events on `Update()`, while `EventBus::Emit()` delivers them immediately.
+
+### 9. Assets & Atlas
+
+`AssetManager` loads textures once and identifies them with `TextureID` values. `Atlas` reads TexturePacker-style JSON metadata and exposes sub-texture rectangles.
 
 ---
 
@@ -142,23 +165,23 @@ Layered code asks the atlas for a sub-texture rect, then renders it.
 | Path | Contains |
 | --- | --- |
 | `src/main.cpp` | Entry point |
-| `src/Core/` | Engine, Entity, Rendering, Systems, Events |
-| `src/Core/Rendering/` | `Renderer`, `Window`, `Camera`, `Atlas` |
-| `src/Core/Systems/` | `AssetManager` |
-| `src/Core/Events/` | `EventBus`, `IEvent`, window events |
-| `src/App/` | `Application`, `Scene`, `SceneStack`, `ILayer` |
-| `src/App/Layers/` | `GameLayer` (example layer) |
-| `src/App/Scenes/` | `GameScene` (example scene) |
-| `src/App/Components/` | `CTransform`, `CWorldTransform`, `CRelationship`, `CSprite`, `CTexture` |
-| `src/App/Systems/` | `ISystem`, `TransformSystem`, `SpatialGrid`, `Hierarchy` |
-| `src/App/Factories/` | `Default` (`AddDefault*` entity setup) |
-| `src/App/Events/` | Input events (key, mouse, text) |
-| `src/Shared/` | Shared type aliases (`Types.hpp`) |
+| `src/Core/` | Engine-wide infrastructure |
+| `src/Core/Rendering/` | Renderer, Window, Camera, Atlas |
+| `src/Core/Systems/` | Engine systems such as AssetManager and Input |
+| `src/Core/Events/` | EventBus, IEvent, window and input events |
+| `src/App/` | Application, scenes, layers, and game-side infrastructure |
+| `src/App/Layers/` | Concrete gameplay layers |
+| `src/App/Scenes/` | Concrete scenes |
+| `src/App/Components/` | ECS components |
+| `src/App/Systems/` | Gameplay/ECS systems |
+| `src/App/Factories/` | Entity/component setup helpers |
+| `src/Shared/` | Shared type aliases |
 
 ---
 
-## ➡️ Where to go next
+## 🧭 Where to look next
 
-- New to the code? Read [`CLASSES.md`](CLASSES.md) for a per-class breakdown.
+- New to the code? Read [`CLASSES.md`](CLASSES.md) for the class map.
+- Need hierarchy details? Read [`HIERARCHY.md`](HIERARCHY.md).
 - Adding a dependency? See [`DEPENDENCIES.md`](DEPENDENCIES.md).
-- Want to help? Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- Contributing or unsure where code belongs? Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
