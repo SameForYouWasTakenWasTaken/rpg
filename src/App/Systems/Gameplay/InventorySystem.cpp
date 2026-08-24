@@ -37,7 +37,7 @@ bool AddItem(entt::registry& registry, entt::entity owner, entt::entity item)
     return true;
 }
 
-std::optional<size_t> FindItemindex(entt::registry& registry, entt::entity owner,
+std::optional<size_t> FindItemIndex(entt::registry& registry, entt::entity owner,
                                     std::string_view itemType)
 {
     auto& inventory = registry.get<CInventory>(owner);
@@ -53,7 +53,7 @@ std::optional<size_t> FindItemindex(entt::registry& registry, entt::entity owner
         index++;
     }
 
-    return index;
+    return std::nullopt;
 };
 void RemoveItem(entt::registry& registry, entt::entity owner, size_t index) {}
 
