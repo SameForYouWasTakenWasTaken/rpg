@@ -55,7 +55,6 @@ std::optional<size_t> FindItemIndex(entt::registry& registry, entt::entity owner
 
     return std::nullopt;
 };
-void RemoveItem(entt::registry& registry, entt::entity owner, size_t index) {}
 
 void Equip(entt::registry& registry, entt::entity owner, size_t index)
 {
@@ -64,7 +63,11 @@ void Equip(entt::registry& registry, entt::entity owner, size_t index)
     assert(index <= inventory.capacity); // OOB
 
     entt::entity item = inventory.items[index];
-    assert(item != entt::null); // OOB
+    if (item == entt::null)
+    {
+        LOG_ERROR("Inventory", "Item to equip at index {} is null!", index);
+        return;
+    }
 
     auto& itemData = registry.get<CItem>(item);
 
@@ -90,7 +93,6 @@ void Unequip(entt::registry& registry, entt::entity owner, size_t slot)
     equipment.weapon = entt::null;
 }
 
-// TODO: make work
 void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_t amount) {}
 
 }; // namespace ssg::inventory
