@@ -132,6 +132,11 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
 
         canEquip = !canEquip;
     }
+
+    if (event.key == Input::Key::G)
+    {
+        inventory::Drop(m_Registry, m_LocalPlayer, 0);
+    }
 }
 
 void GameLayer::OnDetach() { m_Registry.clear(); }
