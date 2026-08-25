@@ -6,6 +6,14 @@
 namespace ssg
 {
 
+enum class Direction
+{
+    UP,
+    RIGHT,
+    DOWN,
+    LEFT
+};
+
 struct CSprite
 {
     sf::Color color{sf::Color::White};
@@ -17,6 +25,8 @@ struct CSprite
 
     bool flipX{false}; // TODO: make work
     bool flipY{false}; // TODO: make work
+
+    Direction facingDirection = Direction::RIGHT;
 };
 
 } // namespace ssg

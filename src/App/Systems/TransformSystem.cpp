@@ -33,6 +33,8 @@ void TransformSystem::Update(float /*dt*/)
 
 void TransformSystem::UpdateEntity(entt::entity entity, const WorldTransform& parentWorld)
 {
+    if (entity == entt::null)
+        return;
     const auto& local = m_Registry.get<CTransform>(entity);
 
     // Compose local onto the parent's world transform.
