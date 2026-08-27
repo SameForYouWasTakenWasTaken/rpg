@@ -11,6 +11,7 @@
 #include "Components/Gameplay/CWeapon.hpp"
 #include "Components/Gameplay/Inventory/CInventory.hpp"
 #include "Components/Gameplay/Inventory/CItem.hpp"
+#include "Config/Gameplay/InventoryConfig.hpp"
 #include "Factories/Default.hpp"
 #include "Factories/Gameplay/Items.hpp"
 #include "Logging.hpp"
@@ -220,9 +221,8 @@ void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_
 
     auto& itemTransform = registry.get<CTransform>(worldItem);
     itemTransform.position = ownerTransform.position + ownerSprite.origin * ownerSprite.size;
-
-    constexpr Vec2 DROP_DISTANCE = {100.f, 0.f}; // In pixels
-    itemTransform.position += facingDirection * (ownerSprite.size + Vec2{DROP_DISTANCE});
+    itemTransform.position +=
+        facingDirection * (ownerSprite.size + Config::Inventory::DEFAULT_ITEM_DROP_DISTANCE);
 
     RemoveItemFromInventory(registry, owner, index, amount);
 

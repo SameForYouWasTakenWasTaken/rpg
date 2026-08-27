@@ -20,10 +20,6 @@ using AtlasID = std::string;
 using InventorySlot_t = std::uint32_t;
 using ItemCount_t = std::uint32_t;
 
-// CONSTANTS
-constexpr InventorySlot_t MAX_INVENTORY_SLOTS = 32;
-constexpr ItemCount_t MAX_STACK = 100;
-
 // STANDARD LIB ALIASES
 using String = std::string;
 

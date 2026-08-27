@@ -38,7 +38,6 @@ struct ILogSink
 
 struct MemorySink : ILogSink
 {
-    static constexpr std::size_t Capacity = 1024;
     std::deque<LogEntry> entries;
 
     void Write(const LogEntry& entry) override;

@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include "Config/RenderingConfig.hpp"
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/Rect.hpp"
 #include "SFML/Graphics/Texture.hpp"
@@ -50,10 +51,7 @@ class Renderer
     sf::VertexArray m_sfVertexArray;
     sf::VertexBuffer m_sfVertexBuffer;
 
-    static constexpr std::size_t MAX_LAYERS =
-        static_cast<std::size_t>(std::numeric_limits<zIndex_t>::max()) +
-        1; // +1 cuz indexing starts at 0
-    Array<Vector<RenderObject>, MAX_LAYERS> m_Layers;
+    Array<Vector<RenderObject>, Config::Rendering::Z_INDEX_LAYER_COUNT> m_Layers;
 };
 
 } // namespace ssg
