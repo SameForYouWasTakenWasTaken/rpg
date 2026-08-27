@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
+#include "Config/InputConfig.hpp"
 #include "Events/EventBus.hpp"
 #include "Events/KeyPressedEvent.hpp"
 #include "Events/KeyReleasedEvent.hpp"
@@ -31,15 +32,12 @@ class Input
     void ProcessEvents(std::optional<sf::Event> event);
 
   private:
-    static constexpr float REPEAT_DELAY = 1.0f;
-    static constexpr float REPEAT_INTERVAL = 0.1f;
-
     struct KeyState
     {
         bool held = false;
         float repeatTimer = 0.0f;
-        float repeatDelay = REPEAT_DELAY;
-        float repeatInterval = REPEAT_INTERVAL;
+        float repeatDelay = Config::Input::REPEAT_DELAY;
+        float repeatInterval = Config::Input::REPEAT_INTERVAL;
     };
     std::array<KeyState, sf::Keyboard::KeyCount> m_Keys;
     EventBus& m_EventBus;

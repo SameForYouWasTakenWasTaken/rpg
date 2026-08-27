@@ -5,12 +5,14 @@
 #include <time.h>
 #include <utility>
 
+#include "Config/Config.hpp"
+
 namespace ssg::log
 {
 void MemorySink::Write(const LogEntry& entry)
 {
     entries.push_back(entry);
-    if (entries.size() > Capacity)
+    if (entries.size() > Config::Logging::MEM_SINK_MAX_CAPACITY)
         entries.pop_front();
 }
 
