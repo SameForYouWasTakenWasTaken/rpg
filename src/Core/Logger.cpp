@@ -48,7 +48,7 @@ void ConsoleSink::Write(const LogEntry& entry)
                              entry.category, entry.source, entry.message);
 }
 void Logger::AddSink(std::unique_ptr<ILogSink> sink) { m_Sinks.push_back(std::move(sink)); }
-void Logger::Dispatch(const LogEntry& entry)
+void Logger::Dispatch(const LogEntry& entry) const
 {
     for (auto& sink : m_Sinks)
         if (entry.level >= m_MinLevel && entry.level >= sink->minLevel)

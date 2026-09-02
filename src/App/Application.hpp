@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "EngineContext.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Window.hpp"
 
@@ -23,7 +24,7 @@ struct ApplicationContext
 class Application
 {
   public:
-    Application();
+    Application(EngineContext& engineContext);
 
     Application(const Application& other) = delete;
     Application(Application&& other) noexcept = delete;
@@ -33,12 +34,11 @@ class Application
     void Run();
     void Shutdown();
 
-
     void HandleEvents();
 
   private:
-    Renderer m_renderer;
-    Window m_window{WindowSettings{}};
+    EngineContext& m_EngineContext;
+    Window m_Window{m_EngineContext, WindowSettings{}};
 };
 
 } // namespace ssg

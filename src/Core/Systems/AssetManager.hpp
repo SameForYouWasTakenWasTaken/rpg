@@ -42,10 +42,10 @@ class AssetManager
     const sf::Texture& GetTexture(TextureID);
     const sf::Texture& GetTexture(const Filepath&);
 
-    AtlasID LoadAtlas(AtlasConfig config);
+    AtlasID LoadAtlas(EngineContext& context, AtlasConfig config);
     AtlasID LoadAtlas(
-        const Filepath&,
-        std::string_view name); // Load atlas from a .json field, which contains all configuration
+        EngineContext& context, const Filepath&,
+        std::string_view field); // Load atlas from a .json field, which contains all configuration
 
     Atlas& GetAtlas(AtlasID);
 

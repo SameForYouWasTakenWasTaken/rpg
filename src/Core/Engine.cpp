@@ -6,12 +6,6 @@
 namespace ssg
 {
 
-Engine& Engine::instance()
-{
-    static Engine engine;
-    return engine;
-}
-
 void Engine::initialize()
 {
     m_running.store(true);

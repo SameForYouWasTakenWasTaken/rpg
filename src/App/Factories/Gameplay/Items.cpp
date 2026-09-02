@@ -5,9 +5,10 @@
 
 namespace ssg::factory
 {
-json::json ApplyItemDefinition(entt::registry& r, entt::entity entity, Filepath definition)
+json::json ApplyItemDefinition(EngineContext& context, entt::registry& r, entt::entity entity,
+                               Filepath definition)
 {
-    auto data = ApplyCharacterDefinition(r, entity, definition);
+    auto data = ApplyCharacterDefinition(context, r, entity, definition);
     if (data.is_null())
         return data;
 

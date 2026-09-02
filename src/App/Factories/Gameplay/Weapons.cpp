@@ -3,13 +3,15 @@
 #include "Components/Gameplay/CWeapon.hpp"
 #include "Items.hpp"
 #include "JsonUtil.hpp"
-#include "Logging.hpp"
+#include "Logger.hpp"
 
 namespace ssg::factory
 {
-json::json ApplyWeaponDefinition(entt::registry& r, entt::entity entity, Filepath definition)
+json::json ApplyWeaponDefinition(EngineContext& context, entt::registry& r, entt::entity entity,
+                                 Filepath definition)
 {
-    json::json data = ApplyItemDefinition(r, entity, definition); // Adds sprites, textures, etc
+    json::json data =
+        ApplyItemDefinition(context, r, entity, definition); // Adds sprites, textures, etc
     if (data.is_null())
         return data;
 
@@ -24,11 +26,12 @@ json::json ApplyWeaponDefinition(entt::registry& r, entt::entity entity, Filepat
         weapon.hitWindow.x > weapon.hitWindow.y || weapon.damage < 0 || weapon.range < 0 ||
         weapon.attackSpeed < 0)
     {
-        LOG_FATAL("Factory",
-                  "Error occured during weapon creation: Invalid weapon data!\n\n ID: {}, "
-                  "Hitwindow: {}, {}, Damage: {}, Range: {}, Speed: {}",
-                  weapon.name, weapon.hitWindow.x, weapon.hitWindow.y, weapon.damage, weapon.range,
-                  weapon.attackSpeed);
+        context.logger.Fatal(
+            "Factory",
+            "Error occured during weapon creation: Invalid weapon data!\n\n ID: {}, "
+            "Hitwindow: {}, {}, Damage: {}, Range: {}, Speed: {}",
+            weapon.name, weapon.hitWindow.x, weapon.hitWindow.y, weapon.damage, weapon.range,
+            weapon.attackSpeed);
         return json::json{nullptr};
     }
 

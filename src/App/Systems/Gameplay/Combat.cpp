@@ -6,15 +6,18 @@
 #include "Components/Gameplay/CHealth.hpp"
 #include "Components/Gameplay/CHumanoid.hpp"
 #include "Components/Gameplay/CWeapon.hpp"
+#include "Engine.hpp"
 #include "Events/Gameplay/OnEntityDeath.hpp"
-#include "Logging.hpp"
 
 namespace ssg
 {
-CombatSystem::CombatSystem(entt::registry& registry, EventBus& bus, SpatialGrid& grid)
-    : ISystem(registry, bus), m_SpatialGrid(grid)
+CombatSystem::CombatSystem(entt::registry& registry, EngineContext& engineContext,
+                           SpatialGrid& grid)
+    : ISystem(registry, engineContext), m_SpatialGrid(grid)
 {
-    bus.Sink<OnAttackRequest>().connect<&CombatSystem::OnAttackEvent>(this);
+    engineContext.engine.GetEventBus()
+        .Sink<OnAttackRequest>()
+        .connect<&CombatSystem::OnAttackEvent>(this);
 }
 
 void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target) const
@@ -23,9 +26,10 @@ void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target) con
         m_Registry.get<CWeapon>(m_Registry.get<CCombatState>(attacker).cachedWeapon).damage;
     auto& hp = m_Registry.get<CHealth>(target);
     hp.current -= damage;
-    LOG_INFO("Combat", "HIT ENTITY {} FOR {} DAMAGE", static_cast<std::uint32_t>(attacker), damage);
+    m_EngineContext.logger.Info("Combat", "Hit enemy {} for {}!",
+                                static_cast<std::uint32_t>(target), damage);
     if (hp.current <= 0.0f)
-        m_EventBus.Queue<OnEntityDeath>(target);
+        m_EngineContext.engine.GetEventBus().Queue<OnEntityDeath>(target);
 }
 void CombatSystem::Update(float dt)
 {

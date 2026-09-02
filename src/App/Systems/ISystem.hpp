@@ -2,6 +2,7 @@
 
 #include <entt/entt.hpp>
 
+#include "EngineContext.hpp"
 #include "Events/EventBus.hpp"
 
 namespace ssg
@@ -16,8 +17,8 @@ namespace ssg
 class ISystem
 {
   public:
-    explicit ISystem(entt::registry& registry, EventBus& bus)
-        : m_Registry(registry), m_EventBus(bus)
+    explicit ISystem(entt::registry& registry, EngineContext& engineContext)
+        : m_Registry(registry), m_EngineContext(engineContext)
     {
     }
     virtual ~ISystem() = default;
@@ -31,7 +32,7 @@ class ISystem
 
   protected:
     entt::registry& m_Registry;
-    EventBus& m_EventBus;
+    EngineContext& m_EngineContext;
 };
 
 } // namespace ssg

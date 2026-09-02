@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "Components/CTransform.hpp"
+#include "EngineContext.hpp"
 #include "Systems/ISystem.hpp"
 #include "Types.hpp"
 
@@ -19,8 +20,8 @@ using GridEntityList = Vector<entt::entity>;
 class SpatialGrid : public ISystem
 {
   public:
-    explicit SpatialGrid(entt::registry& registry, EventBus& bus, float gridSize = 1000.0f)
-        : ISystem(registry, bus), m_GridSize(gridSize)
+    explicit SpatialGrid(entt::registry& registry, EngineContext& context, float gridSize = 1000.0f)
+        : ISystem(registry, context), m_GridSize(gridSize)
     {
     }
 

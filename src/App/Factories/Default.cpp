@@ -13,33 +13,37 @@
 #include "Components/Gameplay/CHealth.hpp"
 #include "Components/Gameplay/CHumanoid.hpp"
 #include "Components/Gameplay/Inventory/CInventory.hpp"
-#include "Engine.hpp"
+#include "EngineContext.hpp"
 #include "JsonUtil.hpp"
-#include "Logging.hpp"
+#include "Logger.hpp"
+#include "Systems/AssetManager.hpp"
 
 namespace ssg::factory
 {
 
-json::json ApplyCharacterDefinition(entt::registry& r, entt::entity entity, Filepath definition)
+json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, entt::entity entity,
+                                    Filepath definition)
+
 {
-    LOG_INFO("Factory", "ATTEMPTING TO LOAD JSON OBJECT: {}", definition.string());
-    using namespace nlohmann;
-    auto& assetManager = Engine::instance().assetManager;
+    auto& assetManager = context.assetManager;
+    auto& logger = context.logger;
+
+    logger.Info("Factory", "ATTEMPTING TO LOAD JSON OBJECT: {}", definition.string());
 
     json::json data;
     std::ifstream file(definition);
 
     if (!file.is_open())
     {
-        LOG_FATAL("Factory", "Could not open JSON file: {}", definition.string());
+        logger.Fatal("Factory", "Could not open JSON file: {}", definition.string());
         return json::json{nullptr};
     }
 
     file >> data;
     if (!data.contains("id") || !data.contains("components"))
     {
-        LOG_FATAL("Factory", "Invalid JSON file: {}, missing 'id' or 'components'",
-                  definition.string());
+        logger.Fatal("Factory", "Invalid JSON file: {}, missing 'id' or 'components'",
+                     definition.string());
         return json::json{nullptr};
     }
 

@@ -4,9 +4,10 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
-#include "Engine.hpp"
+#include "EngineContext.hpp"
 #include "JsonUtil.hpp"
 #include "SFML/Graphics/Rect.hpp"
+#include "Systems/AssetManager.hpp"
 #include "Types.hpp"
 
 namespace ssg
@@ -14,7 +15,7 @@ namespace ssg
 
 TextureID Atlas::LoadAtlas(const Filepath& jsonFilepath, const Filepath& textureFilepath)
 {
-    auto& assetManager = Engine::instance().assetManager;
+    auto& assetManager = m_EngineContext.assetManager;
 
     TextureID texID = assetManager.LoadTexture(textureFilepath);
     LoadAtlas(jsonFilepath, texID);
@@ -24,7 +25,7 @@ TextureID Atlas::LoadAtlas(const Filepath& jsonFilepath, const Filepath& texture
 
 void Atlas::LoadAtlas(const Filepath& jsonFilepath, TextureID texID)
 {
-    auto& assetManager = Engine::instance().assetManager;
+    auto& assetManager = m_EngineContext.assetManager;
 
     json::json atlas;
     std::ifstream file(jsonFilepath);
@@ -51,10 +52,10 @@ void Atlas::LoadAtlas(const Filepath& jsonFilepath, TextureID texID)
 
         const auto& frame = json::AccessObjectField(element, "frame");
 
-        float x = json::AttemptAccessField<float>(frame, "x");
-        float y = json::AttemptAccessField<float>(frame, "y");
-        float w = json::AttemptAccessField<float>(frame, "w");
-        float h = json::AttemptAccessField<float>(frame, "h");
+        auto x = json::AttemptAccessField<float>(frame, "x");
+        auto y = json::AttemptAccessField<float>(frame, "y");
+        auto w = json::AttemptAccessField<float>(frame, "w");
+        auto h = json::AttemptAccessField<float>(frame, "h");
 
         m_Regions.emplace(json::AttemptAccessField<String>(element, "filename"),
                           sf::FloatRect{{x, y}, {w, h}});

@@ -8,6 +8,7 @@ add_library(Core STATIC
         Systems/AssetManager.cpp
         Logger.cpp
         Systems/InputSystem.cpp
+        EngineContext.cpp
 )
 
 target_include_directories(Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

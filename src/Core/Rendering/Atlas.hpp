@@ -3,17 +3,17 @@
 #include <unordered_map>
 
 #include "SFML/Graphics/Rect.hpp"
-#include "SFML/Graphics/Texture.hpp"
 #include "Types.hpp"
 
 namespace ssg
 {
+struct EngineContext;
 using Region = sf::FloatRect;
 using RegionList = std::unordered_map<String, Region>;
 class Atlas
 {
   public:
-    Atlas() = default;
+    Atlas(EngineContext& engineContext) : m_EngineContext(engineContext) {}
     ~Atlas() = default;
 
     // Atlas(const Atlas&) = delete;
@@ -38,5 +38,7 @@ class Atlas
     // key: subtexture filename (such as player_walk.jpg)
     // sf::FloatRect: the texture dimensions
     RegionList m_Regions = {};
+
+    EngineContext& m_EngineContext;
 };
 } // namespace ssg

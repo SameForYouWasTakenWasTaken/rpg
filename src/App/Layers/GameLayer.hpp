@@ -4,7 +4,7 @@
 #include <entt/entt.hpp>
 #include <memory>
 
-#include "Engine.hpp"
+#include "EngineContext.hpp"
 #include "Events/KeyPressedEvent.hpp"
 #include "Events/WindowResizeEvent.hpp"
 #include "ILayer.hpp"
@@ -21,8 +21,8 @@ namespace ssg
 class GameLayer final : public ILayer
 {
   public:
-    GameLayer() = default;
-    ~GameLayer() = default;
+    GameLayer(EngineContext& context) : m_EngineContext(context) {}
+    ~GameLayer() override = default;
 
     GameLayer(const GameLayer&) = delete;
     GameLayer(GameLayer&&) = delete;
@@ -38,13 +38,15 @@ class GameLayer final : public ILayer
   private:
     void OnWindowResize(const WindowResizeEvent& event);
     void OnKeyPress(const KeyPressedEvent& event);
-    entt::registry m_Registry;
-    SpatialGrid m_SpatialGrid{m_Registry, Engine::instance().eventBus};
-    TransformSystem m_TransformSystem{m_Registry, Engine::instance().eventBus};
-    CombatSystem m_CombatSystem{m_Registry, Engine::instance().eventBus, m_SpatialGrid};
 
+    EngineContext& m_EngineContext;
     entt::entity m_LocalPlayer{entt::null};
     Camera m_LocalPlayerCamera;
+    entt::registry m_Registry;
+
+    SpatialGrid m_SpatialGrid{m_Registry, m_EngineContext};
+    TransformSystem m_TransformSystem{m_Registry, m_EngineContext};
+    CombatSystem m_CombatSystem{m_Registry, m_EngineContext, m_SpatialGrid};
 };
 
 } // namespace ssg
