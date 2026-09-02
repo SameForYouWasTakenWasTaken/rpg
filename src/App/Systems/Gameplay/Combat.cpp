@@ -34,6 +34,7 @@ void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target) con
 void CombatSystem::Update(float dt)
 {
     auto view = m_Registry.view<CCombatState, CEquipment, CWorldTransform>();
+
     for (auto attacker : view)
     {
         auto& combatState = view.get<CCombatState>(attacker);
