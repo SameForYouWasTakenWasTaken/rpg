@@ -14,6 +14,7 @@
 
 namespace ssg
 {
+struct EngineContext;
 class WindowSetViewEvent;
 
 struct WindowSettings
@@ -29,7 +30,7 @@ struct WindowSettings
 class Window
 {
   public:
-    Window(const WindowSettings& settings);
+    Window(EngineContext& context, const WindowSettings& settings);
     ~Window();
 
     Window(const Window&) = delete;

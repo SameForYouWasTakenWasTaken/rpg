@@ -14,7 +14,7 @@
 #include "Config/Gameplay/InventoryConfig.hpp"
 #include "Factories/Default.hpp"
 #include "Factories/Gameplay/Items.hpp"
-#include "Logging.hpp"
+#include "Logger.hpp"
 #include "Systems/Hierarchy.hpp"
 
 namespace ssg::inventory
@@ -30,7 +30,8 @@ bool IsValidIndex(const CInventory& inventory, size_t index)
 
 } // namespace
 
-bool AddItem(entt::registry& registry, entt::entity owner, entt::entity item)
+bool AddItem(EngineContext& engineContext, entt::registry& registry, entt::entity owner,
+             entt::entity item)
 {
     auto& inventory = registry.get<CInventory>(owner);
     auto& incoming = registry.get<CItem>(item);
@@ -68,8 +69,8 @@ bool AddItem(entt::registry& registry, entt::entity owner, entt::entity item)
     return true;
 }
 
-std::optional<size_t> FindItemIndex(entt::registry& registry, entt::entity owner,
-                                    std::string_view itemType)
+std::optional<size_t> FindItemIndex(EngineContext& engineContext, entt::registry& registry,
+                                    entt::entity owner, std::string_view itemType)
 {
     auto& inventory = registry.get<CInventory>(owner);
 
@@ -88,14 +89,15 @@ std::optional<size_t> FindItemIndex(entt::registry& registry, entt::entity owner
     return std::nullopt;
 }
 
-void Equip(entt::registry& registry, entt::entity owner, size_t index)
+void Equip(EngineContext& engineContext, entt::registry& registry, entt::entity owner, size_t index)
 {
     auto& inventory = registry.get<CInventory>(owner);
     auto& equipment = registry.get<CEquipment>(owner);
     if (index >= inventory.items.size())
     {
-        LOG_ERROR("Inventory", "Inventory index {} is out of bounds! Size: {}", index,
-                  inventory.items.size());
+
+        engineContext.logger.Error("Inventory", "Inventory index {} is out of bounds! Size: {}",
+                                   index, inventory.items.size());
         return;
     }
 
@@ -103,7 +105,7 @@ void Equip(entt::registry& registry, entt::entity owner, size_t index)
 
     if (item == entt::null)
     {
-        LOG_ERROR("Inventory", "Item to equip at index {} is null!", index);
+        engineContext.logger.Error("Inventory", "Item to equip at index {} is null!", index);
         return;
     }
 
@@ -124,10 +126,11 @@ void Equip(entt::registry& registry, entt::entity owner, size_t index)
     const auto offset = static_cast<std::ptrdiff_t>(index);
     inventory.items.erase(inventory.items.begin() + offset);
 
-    LOG_INFO("Inventory", "Equipped {}", itemData.itemTypeId);
+    engineContext.logger.Info("Inventory", "Equipped {}", itemData.itemTypeId);
 }
 
-void Unequip(entt::registry& registry, entt::entity owner, size_t slot)
+void Unequip(EngineContext& engineContext, entt::registry& registry, entt::entity owner,
+             size_t slot)
 {
     // slot is currently unused.
     (void)slot;
@@ -141,24 +144,25 @@ void Unequip(entt::registry& registry, entt::entity owner, size_t slot)
 
     auto& itemData = registry.get<CItem>(weapon);
 
-    if (AddItem(registry, owner, weapon))
+    if (AddItem(engineContext, registry, owner, weapon))
     {
-        LOG_INFO("Inventory", "Unequipped {}", itemData.itemTypeId);
+        engineContext.logger.Info("Inventory", "Unequipped {}", itemData.itemTypeId);
 
         equipment.weapon = entt::null;
         return;
     }
 
-    LOG_WARN("Inventory", "Couldn't unequip {}", itemData.itemTypeId);
+    engineContext.logger.Warn("Inventory", "Couldn't unequip {}", itemData.itemTypeId);
 }
 
-void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_t amount)
+void Drop(EngineContext& engineContext, entt::registry& registry, entt::entity owner, size_t index,
+          ItemCount_t amount)
 {
     auto& inventory = registry.get<CInventory>(owner);
     if (index >= inventory.items.size())
     {
-        LOG_ERROR("Inventory", "Inventory index {} is out of bounds! Size: {}", index,
-                  inventory.items.size());
+        engineContext.logger.Error("Inventory", "Inventory index {} is out of bounds! Size: {}",
+                                   index, inventory.items.size());
         return;
     }
 
@@ -166,7 +170,7 @@ void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_
 
     if (inventoryItem == entt::null)
     {
-        LOG_ERROR("Inventory", "Inventory item at index {} is null!", index);
+        engineContext.logger.Error("Inventory", "Inventory item at index {} is null!", index);
         return;
     }
 
@@ -177,14 +181,14 @@ void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_
     // ReSharper disable once CppDFAConstantConditions
     if (amount == 0)
     {
-        LOG_ERROR("Inventory", "Cannot drop item {} zero items.", item.itemTypeId);
+        engineContext.logger.Error("Inventory", "Cannot drop item {} zero items.", item.itemTypeId);
         return;
     }
 
     if (amount > item.currentCount)
     {
-        LOG_ERROR("Inventory", "Drop count {} of item {} exceeds item count {}!", amount,
-                  item.itemTypeId, item.currentCount);
+        engineContext.logger.Error("Inventory", "Drop count {} of item {} exceeds item count {}!",
+                                   amount, item.itemTypeId, item.currentCount);
         return;
     }
 
@@ -214,7 +218,7 @@ void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_
     // Create a new entity representing the stack that was dropped into the world.
     auto& itemDefinition = registry.get<CDefinition>(inventoryItem);
     entt::entity worldItem = registry.create();
-    factory::ApplyItemDefinition(registry, worldItem, itemDefinition.filepath);
+    factory::ApplyItemDefinition(engineContext, registry, worldItem, itemDefinition.filepath);
 
     auto& worldItemData = registry.get<CItem>(worldItem);
     worldItemData.currentCount = amount; // current count is the items dropped
@@ -224,20 +228,20 @@ void Drop(entt::registry& registry, entt::entity owner, size_t index, ItemCount_
     itemTransform.position +=
         facingDirection * (ownerSprite.size + Config::Inventory::DEFAULT_ITEM_DROP_DISTANCE);
 
-    RemoveItemFromInventory(registry, owner, index, amount);
+    RemoveItemFromInventory(engineContext, registry, owner, index, amount);
 
-    LOG_INFO("Inventory", "Dropped {}x {}", amount, worldItemData.itemTypeId);
+    engineContext.logger.Info("Inventory", "Dropped {}x {}", amount, worldItemData.itemTypeId);
 }
 
-void RemoveItemFromInventory(entt::registry& registry, entt::entity owner, size_t index,
-                             ItemCount_t amount)
+void RemoveItemFromInventory(EngineContext& engineContext, entt::registry& registry,
+                             entt::entity owner, size_t index, ItemCount_t amount)
 {
     auto& inventory = registry.get<CInventory>(owner);
 
     if (index >= inventory.items.size())
     {
-        LOG_ERROR("Inventory", "Inventory index {} is out of bounds! Size: {}", index,
-                  inventory.items.size());
+        engineContext.logger.Error("Inventory", "Inventory index {} is out of bounds! Size: {}",
+                                   index, inventory.items.size());
 
         return;
     }
@@ -246,7 +250,7 @@ void RemoveItemFromInventory(entt::registry& registry, entt::entity owner, size_
 
     if (itemEntity == entt::null)
     {
-        LOG_ERROR("Inventory", "Inventory item at index {} is null!", index);
+        engineContext.logger.Error("Inventory", "Inventory item at index {} is null!", index);
 
         return;
     }
@@ -254,7 +258,8 @@ void RemoveItemFromInventory(entt::registry& registry, entt::entity owner, size_
     auto& item = registry.get<CItem>(itemEntity);
     if (amount > item.currentCount)
     {
-        LOG_ERROR("Inventory", "Remove count {} exceeds item count {}!", amount, item.currentCount);
+        engineContext.logger.Error("Inventory", "Remove count {} exceeds item count {}!", amount,
+                                   item.currentCount);
 
         return;
     }
@@ -272,7 +277,8 @@ void RemoveItemFromInventory(entt::registry& registry, entt::entity owner, size_
     }
 }
 
-void RemoveItemFromHotbar(entt::registry& registry, entt::entity owner, size_t slot)
+void RemoveItemFromHotbar(EngineContext& engineContext, entt::registry& registry,
+                          entt::entity owner, size_t slot)
 {
     // TODO
 }

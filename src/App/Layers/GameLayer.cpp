@@ -8,6 +8,7 @@
 #include "Components/CWorldTransform.hpp"
 #include "Components/Gameplay/CHumanoid.hpp"
 #include "Engine.hpp"
+#include "EngineContext.hpp"
 #include "Events/Gameplay/OnAttackRequest.hpp"
 #include "Events/WindowResizeEvent.hpp"
 #include "Factories/Default.hpp"
@@ -15,7 +16,6 @@
 #include "Rendering/Atlas.hpp"
 #include "Rendering/Renderer.hpp"
 #include "SFML/Graphics/Rect.hpp"
-#include "SFML/Window/Keyboard.hpp"
 #include "Systems/AssetManager.hpp"
 #include "Systems/Gameplay/InventorySystem.hpp"
 #include "Systems/Hierarchy.hpp"
@@ -25,8 +25,10 @@ namespace ssg
 
 void GameLayer::OnAttach()
 {
-    auto& assetManager = Engine::instance().assetManager;
-    auto atlasID = assetManager.LoadAtlas("assets/Textures/Atlas/Atlasses.json", "random");
+    auto& engine = m_EngineContext.engine;
+    auto& assetManager = engine.GetAssetManager();
+    auto atlasID =
+        assetManager.LoadAtlas(m_EngineContext, "assets/Textures/Atlas/Atlasses.json", "random");
     auto& atlas = assetManager.GetAtlas(atlasID);
     auto textureID = atlas.GetTextureID();
 
@@ -38,7 +40,7 @@ void GameLayer::OnAttach()
     auto makeEntity = [&](float x, float y, float size, const Filepath& definition)
     {
         entt::entity entity = m_Registry.create();
-        factory::ApplyCharacterDefinition(m_Registry, entity, definition);
+        factory::ApplyCharacterDefinition(m_EngineContext, m_Registry, entity, definition);
         // modify local transform (scale stays a {1,1} multiplier; size lives on the sprite)
         auto* transform = m_Registry.try_get<CTransform>(entity);
         auto* sprite = m_Registry.try_get<CSprite>(entity);
@@ -57,7 +59,7 @@ void GameLayer::OnAttach()
     auto makeWeapon = [&](const Filepath& definition)
     {
         entt::entity entity = m_Registry.create();
-        factory::ApplyWeaponDefinition(m_Registry, entity, definition);
+        factory::ApplyWeaponDefinition(m_EngineContext, m_Registry, entity, definition);
         return entity;
     };
 
@@ -78,15 +80,15 @@ void GameLayer::OnAttach()
 
     // Inventory
     // add the weapon
-    inventory::AddItem(m_Registry, m_LocalPlayer, someWeapon);
+    inventory::AddItem(m_EngineContext, m_Registry, m_LocalPlayer, someWeapon);
 
     // hierarchies
     // add the weapon to the player
     hierarchy::AttachChild(m_Registry, m_LocalPlayer, someWeapon, hierarchy::AttachMode::KeepWorld);
 
     // Events
-    Engine::instance().eventBus.Sink<WindowResizeEvent>().connect<&GameLayer::OnWindowResize>(this);
-    Engine::instance().eventBus.Sink<KeyPressedEvent>().connect<&GameLayer::OnKeyPress>(this);
+    engine.GetEventBus().Sink<WindowResizeEvent>().connect<&GameLayer::OnWindowResize>(this);
+    engine.GetEventBus().Sink<KeyPressedEvent>().connect<&GameLayer::OnKeyPress>(this);
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)
@@ -108,7 +110,8 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
             auto& definition = m_Registry.get<CDefinition>(entity);
             auto transform_copy = m_Registry.get<CTransform>(entity);
 
-            factory::ApplyCharacterDefinition(m_Registry, entity, definition.filepath);
+            factory::ApplyCharacterDefinition(m_EngineContext, m_Registry, entity,
+                                              definition.filepath);
 
             auto& transform = m_Registry.get<CTransform>(entity);
             transform.position = transform_copy.position;
@@ -118,7 +121,7 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
     // attack
     if (event.key == Input::Key::F)
     {
-        auto& eventBus = Engine::instance().eventBus;
+        auto& eventBus = m_EngineContext.engine.GetEventBus();
         eventBus.Emit<OnAttackRequest>(m_LocalPlayer);
     }
 
@@ -126,16 +129,17 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
     {
         static bool canEquip = true;
         if (canEquip)
-            inventory::Equip(m_Registry, m_LocalPlayer, 0);
+            inventory::Equip(m_EngineContext, m_Registry, m_LocalPlayer, 0);
         else
-            inventory::Unequip(m_Registry, m_LocalPlayer, 0); // 0 is currently unused
+            inventory::Unequip(m_EngineContext, m_Registry, m_LocalPlayer,
+                               0); // 0 is currently unused
 
         canEquip = !canEquip;
     }
 
     if (event.key == Input::Key::G)
     {
-        inventory::Drop(m_Registry, m_LocalPlayer, 0);
+        inventory::Drop(m_EngineContext, m_Registry, m_LocalPlayer, 0);
     }
 }
 
@@ -175,7 +179,7 @@ void GameLayer::OnUpdate(float dt, ApplicationContext& context)
 
 void GameLayer::OnRender(Renderer& renderer, ApplicationContext& context)
 {
-    auto& assetManager = Engine::instance().assetManager;
+    auto& assetManager = m_EngineContext.assetManager;
     auto view = m_Registry.view<CSprite, CTexture, CWorldTransform>();
     for (entt::entity entity : view)
     {

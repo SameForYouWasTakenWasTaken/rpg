@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <tuple>
 
-#include "Engine.hpp"
+#include "EngineContext.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/Texture.hpp"
 #include "SFML/Graphics/Transform.hpp"

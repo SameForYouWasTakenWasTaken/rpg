@@ -30,7 +30,7 @@ class EventBus
     {
         m_Dispatcher.update<TEventU>();
     } // Update single event
-    void Update() { m_Dispatcher.update(); } // Update all events
+    void Update() const { m_Dispatcher.update(); } // Update all events
 
     template <TEvent TEvent> auto Sink() { return m_Dispatcher.sink<TEvent>(); }
 

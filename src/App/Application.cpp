@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "Engine.hpp"
+#include "EngineContext.hpp"
 #include "Events/EventBus.hpp"
 #include "Events/KeyPressedEvent.hpp"
 #include "Events/KeyReleasedEvent.hpp"
@@ -23,56 +24,57 @@
 namespace ssg
 {
 
-Application::Application() {}
+Application::Application(EngineContext& context) : m_EngineContext(context) {}
 
 void Application::Run()
 {
-    Engine& engine = Engine::instance();
-    auto& eventBus = engine.eventBus;
-    m_window.SetSettings({.Width = 600, .Height = 800, .Framerate = 200, .title = "Game!"});
 
-    ApplicationContext Context = (m_window);
+    auto& engine = m_EngineContext.engine;
+    auto& eventBus = engine.GetEventBus();
+    auto& renderer = engine.GetRenderer();
+    m_Window.SetSettings({.Width = 600, .Height = 800, .Framerate = 200, .title = "Game!"});
+
+    ApplicationContext Context{m_Window};
 
     SceneStack stack;
 
     auto scene = std::make_unique<GameScene>();
-    scene->PushLayer(std::make_unique<GameLayer>());
+    scene->PushLayer(std::make_unique<GameLayer>(m_EngineContext));
 
     stack.Push(std::move(scene));
 
     sf::Clock clock;
     clock.start();
-    while (m_window.IsOpen() && engine.isRunning())
+    while (m_Window.IsOpen() && engine.isRunning())
     {
         float dt = clock.restart().asSeconds();
         eventBus.Update(); // Update events at the start of the frame
 
-        HandleEvents(m_window);
+        HandleEvents();
 
-        m_window.Clear(sf::Color::Black);
+        m_Window.Clear(sf::Color::Black);
 
-        m_renderer.Begin();
+        renderer.Begin();
 
         stack.Update(dt, Context);
-        stack.Render(m_renderer, Context);
+        stack.Render(renderer, Context);
 
-        m_renderer.End(m_window);
+        renderer.End(m_Window);
 
-        m_window.Display();
+        m_Window.Display();
     }
 
     Shutdown();
 }
 
-void Application::HandleEvents(Window& window)
+void Application::HandleEvents()
 {
-    auto& engine = Engine::instance();
-    auto& eventBus = engine.eventBus;
-    auto& input = engine.inputSystem;
+    auto& engine = m_EngineContext.engine;
+    auto& eventBus = engine.GetEventBus();
+    auto& input = engine.GetInputSystem();
 
-    while (const std::optional event = window.PollSFMLEvents())
+    while (const std::optional event = m_Window.PollSFMLEvents())
     {
-
         // process input, such as mouse and key presses, releases, movement, etc
         input.ProcessEvents(event);
         if (EventBus::IsSFMLEvent<sf::Event::Closed>(event))
@@ -88,12 +90,11 @@ void Application::HandleEvents(Window& window)
 
 void Application::Shutdown()
 {
-    auto& engine = Engine::instance();
-    engine.terminate();
+    m_EngineContext.engine.terminate();
 
-    if (m_window.IsOpen())
+    if (m_Window.IsOpen())
     {
-        m_window.Close();
+        m_Window.Close();
     }
 }
 

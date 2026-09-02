@@ -4,7 +4,7 @@
 
 #include "Events/EventBus.hpp"
 #include "Logger.hpp"
-#include "Rendering/Window.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Systems/AssetManager.hpp"
 #include "Systems/InputSystem.hpp"
 
@@ -16,7 +16,7 @@ namespace ssg
 class Engine
 {
   public:
-    static Engine& instance();
+    Engine() = default;
 
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
@@ -26,16 +26,32 @@ class Engine
 
     bool isRunning() const;
 
+    [[nodiscard]] const EventBus& GetEventBus() const { return eventBus; }
+    [[nodiscard]] EventBus& GetEventBus() { return eventBus; }
+
+    [[nodiscard]] AssetManager& GetAssetManager() { return assetManager; }
+    [[nodiscard]] const AssetManager& GetAssetManager() const { return assetManager; }
+
+    [[nodiscard]] const log::Logger& GetLogger() const { return logger; }
+    [[nodiscard]] log::Logger& GetLogger() { return logger; }
+
+    [[nodiscard]] const Input& GetInputSystem() const { return inputSystem; }
+    [[nodiscard]] Input& GetInputSystem() { return inputSystem; }
+
+    [[nodiscard]] Renderer& GetRenderer() { return m_renderer; }
+    [[nodiscard]] const Renderer& GetRenderer() const { return m_renderer; }
+
+  private:
     EventBus eventBus;
     AssetManager assetManager;
     log::Logger logger;
+
     Input inputSystem{eventBus};
 
-  private:
-    Engine() = default;
+    Renderer m_renderer;
 
-    std::atomic<bool> m_running{false};
     log::ConsoleSink m_ConsoleSink;
+    std::atomic<bool> m_running{false};
 };
 
 } // namespace ssg

@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "Engine.hpp"
+#include "EngineContext.hpp"
 #include "Events/WindowResizeEvent.hpp"
 #include "Events/WindowSetView.hpp"
 #include "SFML/Graphics/RenderWindow.hpp"
@@ -11,13 +12,13 @@
 
 namespace ssg
 {
-Window::Window(const WindowSettings& settings)
+Window::Window(EngineContext& context, const WindowSettings& settings)
 {
     m_sfRenderWindow.create(sf::VideoMode{{settings.Width, settings.Height}}, settings.title);
 
     SetSettings(settings);
 
-    auto& eventBus = Engine::instance().eventBus;
+    auto& eventBus = context.engine.GetEventBus();
     eventBus.Sink<WindowResizeEvent>().connect<&Window::OnResize>(this);
     eventBus.Sink<WindowCloseEvent>().connect<&Window::OnClose>(this);
 }

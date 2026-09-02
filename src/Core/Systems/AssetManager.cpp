@@ -29,9 +29,9 @@ const sf::Texture& AssetManager::GetTexture(const Filepath& path)
     TextureID id = m_Filepaths[path];
     return GetTexture(id);
 }
-AtlasID AssetManager::LoadAtlas(AtlasConfig config)
+AtlasID AssetManager::LoadAtlas(EngineContext& context, AtlasConfig config)
 {
-    Atlas atlas;
+    Atlas atlas{context};
 
     TextureID textureID = LoadTexture(config.texture);
     atlas.LoadAtlas(config.metadata, textureID);
@@ -42,9 +42,10 @@ AtlasID AssetManager::LoadAtlas(AtlasConfig config)
     return id;
 }
 
-AtlasID AssetManager::LoadAtlas(const Filepath& jsonPath, std::string_view field)
+AtlasID AssetManager::LoadAtlas(EngineContext& context, const Filepath& jsonPath,
+                                std::string_view field)
 {
-    Atlas atlas;
+    Atlas atlas{context};
 
     json::json data;
     std::ifstream file(jsonPath);
