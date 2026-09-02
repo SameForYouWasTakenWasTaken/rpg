@@ -9,66 +9,114 @@ Everything lives in the `ssg` namespace (short for *"super secret game"* 😉).
 ## 🔄 The big picture
 
 ```text
-        main()
-          │
-          ▼
-   Engine::instance()
-          │
-          ├── EventBus
-          ├── AssetManager
-          └── Input
-          │
-          ▼
-   Application::Run()
-          │
-          ├── owns Window + Renderer
-          ├── builds SceneStack
-          │        │
-          │        └── Scene
-          │             │
-          │             ├── ECS registry
-          │             └── Layers
-          │
-          ▼
-   Game loop
-          │
-          ├── eventBus.Update()       // deliver events queued last frame
-          ├── HandleEvents(window)     // poll SFML + feed Input / window events
-          ├── input.Update(dt)         // input repeat/state processing
-          ├── window.Clear()
-          ├── renderer.Begin()
-          ├── stack.Update(dt, ctx)
-          ├── stack.Render(renderer, ctx)
-          ├── renderer.End(window)
-          └── window.Display()
+                         main()
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   Engine    │
+                    │             │
+                    │ EventBus    │
+                    │ AssetManager│
+                    │ Logger      │
+                    │ Input       │
+                    │ Renderer    │
+                    └──────┬──────┘
+                           │
+                    EngineContext
+                           │
+                           ▼
+                    Application
+                           │
+                    owns Window
+                           │
+                           ▼
+                    SceneStack
+                           │
+                           ▼
+                        Scene
+                     ┌─────┴─────┐
+                     │           │
+                ECS registry   Layers
+                     │           │
+                     └─────┬─────┘
+                           │
+                    Gameplay systems
 ```
 
-The important ownership boundary is that **Engine owns reusable engine-wide services**, while **Application owns the game loop and application flow**. Scenes own their ECS state and layers.
+The application frame loop currently follows this order:
+
+```text
+EventBus::Update()
+      │
+      ▼
+HandleEvents() ──► Input::ProcessEvents()
+      │             └── queues input events
+      ├── queue window events
+      └── queue text events
+      │
+      ▼
+Window::Clear()
+      │
+      ▼
+Renderer::Begin()
+      │
+      ▼
+SceneStack::Update()
+      │
+      ▼
+SceneStack::Render()
+      │
+      ▼
+Renderer::End(Window)
+      │
+      ▼
+Window::Display()
+```
+
+The important ownership boundary is that **Engine owns reusable engine-wide services**, while **Application owns the application flow and its Window**. The `Renderer` is currently an Engine-owned service. Scenes own their ECS state and layers.
 
 ---
 
 ## 🧩 Key ideas
 
-### 1. Engine (singleton)
+### 1. Engine
 
-`Engine` is a single global object created once. It currently owns:
+`Engine` is now a normal object rather than a singleton. `main()` creates an `Engine`, initializes it, creates an `EngineContext`, and passes that context into the application.
 
-- `eventBus` — the central `EventBus` for queued and immediate events.
-- `assetManager` — loads and caches textures.
-- `inputSystem` — tracks keyboard/mouse state and converts relevant SFML input events into SSG input events.
-- `m_running` — an atomic flag used to stop the application loop.
+The engine owns reusable services:
 
-The engine deliberately contains **core services**, not game-specific state such as quests, players, inventories, or scene-transfer data.
+- `EventBus` — central event queue and dispatch.
+- `AssetManager` — loads and caches textures and atlases.
+- `Logger` — structured logging and log sinks.
+- `Input` — keyboard/mouse input handling and input event translation.
+- `Renderer` — batched 2D rendering.
+- `m_running` — controls whether the application loop should continue.
 
-### 2. Application (the loop owner)
+Engine should contain reusable infrastructure, not game-specific state such as players, quests, inventories, or scene-transfer data.
 
-`Application` owns the `Window` and `Renderer`. Its `Run()` method drives the main loop and constructs the initial `SceneStack`.
+### 2. EngineContext
 
-`HandleEvents()` polls raw SFML events. Input events are delegated to `Engine::inputSystem`; application/window events such as close and resize are converted directly into core events.
+`EngineContext` is a lightweight reference bundle passed to code that needs access to engine services without relying on global state.
 
-`ApplicationContext` is intentionally small. It currently provides the main `Window` to scenes and layers. It is not a general-purpose container for every game state or engine service.
+It contains:
 
-### 3. Scene Stack
+- `engine` — the owning `Engine` instance.
+- `logger` — convenience reference to the engine logger.
+- `assetManager` — convenience reference to the engine asset manager.
+
+The context does not duplicate ownership. All members are references to objects owned elsewhere.
+
+Systems, layers, and factories that need engine services should receive an `EngineContext&` rather than reaching for a global Engine instance.
+
+### 3. Application (the loop owner)
+
+`Application` receives an `EngineContext&` and owns the main `Window`. It uses the engine context to access the event bus, renderer, input system, and engine lifetime state.
+
+`HandleEvents()` polls raw SFML events. Input-related events are delegated to `Input::ProcessEvents()`, while close, resize, and text events are converted into SSG events directly.
+
+`ApplicationContext` remains intentionally small and currently contains only the main `Window`. It is not a general-purpose service container.
+
+### 4. Scene Stack
 
 A `SceneStack` owns `std::unique_ptr<IScene>` objects. Only the **top** scene currently updates and renders.
 
@@ -77,47 +125,60 @@ A `SceneStack` owns `std::unique_ptr<IScene>` objects. Only the **top** scene cu
 - `Switch(scene)` — replace the current scene.
 - `Clear()` — remove all scenes.
 
-Scenes are application/game-flow objects. They are not engine-wide singletons.
+Scenes are application/game-flow objects and are not global engine services.
 
-### 4. Scenes & Layers
+### 5. Scenes & Layers
 
 An `IScene` owns an `entt::registry` and a list of `ILayer` objects.
 
 - A **scene** represents a screen or game state such as a world, menu, or pause screen.
 - A **layer** is a focused slice of behaviour inside that scene.
 
-A scene forwards update/render calls to its layers. Layers can own or use gameplay systems that operate on the scene's registry.
+A scene forwards update/render calls to its layers. Layers can own gameplay systems that operate on the scene's registry.
 
-### 5. ECS (Entity-Component-System)
+`GameLayer` receives the shared `EngineContext` and passes it to its systems, including `SpatialGrid`, `TransformSystem`, and `CombatSystem`.
 
-Entities are `entt::entity` IDs. Data lives in plain components attached to an EnTT registry.
+### 6. ECS (Entity-Component-System)
+
+Entities are `entt::entity` IDs. Data lives in plain components attached to a scene's EnTT registry.
 
 | Component | Holds |
 | --- | --- |
 | `CTransform` | local position, scale multiplier, rotation |
 | `CWorldTransform` | derived world position, scale, rotation |
 | `CRelationship` | parent/child links |
-| `CSprite` | color, z-index, origin, pixel size, flip flags |
+| `CSprite` | color, z-index, origin, pixel size, flip flags, facing direction |
 | `CTexture` | texture ID + source rectangle |
+| `CHealth` | maximum and current health |
+| `CHumanoid` | movement speed |
+| `CCombatState` | attack state, timing, cached weapon, already-hit entities |
+| `CEquipment` | currently equipped weapon |
+| `CItem` | item type, current quantity, maximum stack |
+| `CInventory` | inventory item entities and capacity |
+| `CWeapon` | weapon damage, range, attack speed, and hit window |
 
-The current transform convention is **write local, read world**: gameplay changes `CTransform`; `TransformSystem` derives `CWorldTransform` from the hierarchy.
+The transform convention is **write local, read world**: gameplay changes `CTransform`; `TransformSystem` derives `CWorldTransform` from the hierarchy.
 
-### 5b. Systems
+### 7. Systems
 
-Application systems derive from `ISystem` and operate on a scene registry through `Update(dt)`.
+Systems derive from `ISystem` and operate on a scene registry. They also receive an `EngineContext&` when they need engine-wide services.
 
-Current systems include:
+Current application systems include:
 
 - `TransformSystem` — derives world transforms from local transforms and relationships.
 - `SpatialGrid` — buckets entities into cells for proximity queries.
+- `CombatSystem` — handles attack requests, timed hit windows, damage, and death events.
+- Inventory functionality in `inventory` — manages item insertion, stacking, equipment, and dropping.
+
+`ISystem` stores references to both the registry it operates on and the shared `EngineContext`.
 
 Entity setup is centralized in `ssg::factory`, whose helpers attach standard component sets to an existing entity.
 
-### 6. Input
+### 8. Input
 
-`Input` is an engine-level service because input state is not specific to one scene. It provides queries such as `IsKeyDown()` and `IsMouseButtonDown()` and also emits input events for systems that prefer event-driven handling.
+`Input` is an engine-owned service. It provides state queries such as `IsKeyDown()` and `IsMouseButtonDown()` and translates relevant SFML input events into SSG input events.
 
-The flow is:
+The event path is:
 
 ```text
 SFML event
@@ -135,28 +196,55 @@ Input::ProcessEvents()
          EventBus
 ```
 
-This keeps gameplay code from needing to poll the raw SFML event stream.
+The input class also contains repeat-timer processing in `Update(dt)`. The current application loop does not call `Input::Update()` yet, so repeat processing is available in the service but is not currently advanced by the main loop.
 
-### 7. Renderer (batched)
+Gameplay code should use the Input API rather than reading raw SFML input events directly.
 
-The `Renderer` collects `RenderObject`s through `Submit()`. Objects are grouped by z-index and sorted/batched by texture before being drawn.
+### 9. Renderer
 
-The renderer is an engine facility; gameplay code submits render data but does not own the underlying SFML vertex buffers.
+The `Renderer` is owned by `Engine` and exposed through `Engine::GetRenderer()`.
 
-### 8. Events
+It collects `RenderObject`s through `Submit()`. Objects are organized by z-index and sorted/batched by texture before being drawn. `Begin()` starts a frame and `End(Window)` submits the batched geometry to the window.
+
+Gameplay code submits render data but does not own the renderer's underlying SFML vertex buffers.
+
+### 10. Events
 
 There are two levels of events:
 
 - **SFML events** — raw platform/window/input events returned by `Window::PollSFMLEvents()`.
 - **SSG events** — project-defined events delivered through `EventBus`.
 
-Core/window events and input events live under `src/Core/Events/`. `Input` is responsible for translating relevant SFML input events into SSG input events. `Application` handles window lifecycle events such as close and resize.
+Core/window and input events live under `src/Core/Events/`. `Input` translates keyboard and mouse events into SSG input events. `Application` handles window lifecycle and text events.
 
-`EventBus::Queue()` delivers events on `Update()`, while `EventBus::Emit()` delivers them immediately.
+`EventBus::Queue()` delivers events on a later `Update()`, while `EventBus::Emit()` delivers an event immediately.
 
-### 9. Assets & Atlas
+### 11. Assets & Atlas
 
-`AssetManager` loads textures once and identifies them with `TextureID` values. `Atlas` reads TexturePacker-style JSON metadata and exposes sub-texture rectangles.
+`AssetManager` loads textures once and identifies them with `TextureID` values. It also loads atlases from configuration or a named field in an atlas JSON file.
+
+`Atlas` reads TexturePacker-style metadata and maps sub-image names to texture rectangles. Atlas loading receives an `EngineContext&` so it can access the owning asset manager without global engine state.
+
+### 12. Logging
+
+`Logger` is an engine-owned service. Gameplay and engine code can access it through `EngineContext::logger`.
+
+The logger supports `Trace`, `Debug`, `Info`, `Warn`, `Error`, and `Fatal` levels. Convenience overloads automatically capture `std::source_location`, while explicit source locations remain available when needed.
+
+The old global logging macros and `Logging.hpp` have been removed; code now calls the logger directly through an appropriate context/reference.
+
+### 13. Configuration
+
+Compile-time configuration values are grouped under `ssg::Config` in `src/Shared/Config/`.
+
+Configuration is split by subsystem, including:
+
+- `Config::Inventory` — inventory limits and item drop distance.
+- `Config::Input` — key repeat timing.
+- `Config::Logging` — memory log capacity.
+- `Config::Rendering` — renderer layer count.
+
+`Config.hpp` provides an aggregate include while individual configuration headers can be included when only one subsystem's settings are needed.
 
 ---
 
@@ -164,10 +252,10 @@ Core/window events and input events live under `src/Core/Events/`. `Input` is re
 
 | Path | Contains |
 | --- | --- |
-| `src/main.cpp` | Entry point |
+| `src/main.cpp` | Engine/application entry point |
 | `src/Core/` | Engine-wide infrastructure |
 | `src/Core/Rendering/` | Renderer, Window, Camera, Atlas |
-| `src/Core/Systems/` | Engine systems such as AssetManager and Input |
+| `src/Core/Systems/` | AssetManager and Input |
 | `src/Core/Events/` | EventBus, IEvent, window and input events |
 | `src/App/` | Application, scenes, layers, and game-side infrastructure |
 | `src/App/Layers/` | Concrete gameplay layers |
@@ -175,7 +263,8 @@ Core/window events and input events live under `src/Core/Events/`. `Input` is re
 | `src/App/Components/` | ECS components |
 | `src/App/Systems/` | Gameplay/ECS systems |
 | `src/App/Factories/` | Entity/component setup helpers |
-| `src/Shared/` | Shared type aliases |
+| `src/Shared/Config/` | Compile-time subsystem configuration |
+| `src/Shared/` | Shared type aliases and utilities |
 
 ---
 
