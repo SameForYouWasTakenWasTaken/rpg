@@ -24,6 +24,11 @@ class SpatialGrid : public ISystem
     {
     }
 
+    SpatialGrid(const SpatialGrid& other) = delete;
+    SpatialGrid(SpatialGrid&& other) noexcept = delete;
+    SpatialGrid& operator=(const SpatialGrid& other) = delete;
+    SpatialGrid& operator=(SpatialGrid&& other) noexcept = delete;
+
     void Update(float /*dt*/) override { Rebuild(); }
 
     void Insert(entt::entity entity);

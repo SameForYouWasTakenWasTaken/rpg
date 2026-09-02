@@ -25,9 +25,16 @@ class Application
   public:
     Application();
 
+    Application(const Application& other) = delete;
+    Application(Application&& other) noexcept = delete;
+    Application& operator=(const Application& other) = delete;
+    Application& operator=(Application&& other) noexcept = delete;
+
     void Run();
     void Shutdown();
-    void HandleEvents(Window& window);
+
+
+    void HandleEvents();
 
   private:
     Renderer m_renderer;

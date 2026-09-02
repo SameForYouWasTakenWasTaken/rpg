@@ -17,7 +17,7 @@ CombatSystem::CombatSystem(entt::registry& registry, EventBus& bus, SpatialGrid&
     bus.Sink<OnAttackRequest>().connect<&CombatSystem::OnAttackEvent>(this);
 }
 
-void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target)
+void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target) const
 {
     float damage =
         m_Registry.get<CWeapon>(m_Registry.get<CCombatState>(attacker).cachedWeapon).damage;
@@ -30,9 +30,9 @@ void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target)
 void CombatSystem::Update(float dt)
 {
     auto view = m_Registry.view<CCombatState, CEquipment, CWorldTransform>();
-    for (auto entity : view)
+    for (auto attacker : view)
     {
-        auto& combatState = view.get<CCombatState>(entity);
+        auto& combatState = view.get<CCombatState>(attacker);
         if (!combatState.isAttacking)
             continue;
 
@@ -44,19 +44,22 @@ void CombatSystem::Update(float dt)
         if (combatState.timeInAttack >= combatState.windowLo &&
             combatState.timeInAttack <= combatState.windowHi)
         {
-            auto& transform = m_Registry.get<CWorldTransform>(entity);
+            auto& transform = m_Registry.get<CWorldTransform>(attacker);
             float range = m_Registry.get<CWeapon>(combatState.cachedWeapon).range;
 
             // query target entities within range of entity, that are a humanoid and alive
             for (entt::entity target : m_SpatialGrid.Query(
-                     transform.position, range, [entity, this](entt::entity target)
-                     { return target != entity && m_Registry.all_of<CHealth, CHumanoid>(target); }))
+                     transform.position, range,
+                     [attacker, this](entt::entity target)
+                     {
+                         return target != attacker && m_Registry.all_of<CHealth, CHumanoid>(target);
+                     }))
             {
                 // skip already cached entities
                 if (std::ranges::contains(combatState.alreadyHit, target))
                     continue;
 
-                ResolveAttack(entity, target);
+                ResolveAttack(attacker, target);
                 combatState.alreadyHit.push_back(target);
             }
         }

@@ -47,7 +47,7 @@ void Application::Run()
         float dt = clock.restart().asSeconds();
         eventBus.Update(); // Update events at the start of the frame
 
-        HandleEvents(m_window);
+        HandleEvents();
 
         m_window.Clear(sf::Color::Black);
 
@@ -64,15 +64,14 @@ void Application::Run()
     Shutdown();
 }
 
-void Application::HandleEvents(Window& window)
+void Application::HandleEvents()
 {
     auto& engine = Engine::instance();
     auto& eventBus = engine.eventBus;
     auto& input = engine.inputSystem;
 
-    while (const std::optional event = window.PollSFMLEvents())
+    while (const std::optional event = m_window.PollSFMLEvents())
     {
-
         // process input, such as mouse and key presses, releases, movement, etc
         input.ProcessEvents(event);
         if (EventBus::IsSFMLEvent<sf::Event::Closed>(event))

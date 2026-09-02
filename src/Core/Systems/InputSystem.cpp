@@ -49,23 +49,23 @@ void Input::Update(float dt)
 }
 void Input::ProcessEvents(std::optional<sf::Event> event)
 {
-    if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::KeyPressed>(event))
-        OnKeyPress(*pEvent);
+    if (auto pKeyPressEvent = EventBus::IsSFMLEvent<sf::Event::KeyPressed>(event))
+        OnKeyPress(*pKeyPressEvent);
 
-    if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::KeyReleased>(event))
-        OnKeyRelease(*pEvent);
+    if (auto pKeyReleaseEvent = EventBus::IsSFMLEvent<sf::Event::KeyReleased>(event))
+        OnKeyRelease(*pKeyReleaseEvent);
 
-    if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseButtonPressed>(event))
-        OnMouseButtonPress(*pEvent);
+    if (auto pKeyMouseBtnPressEvent = EventBus::IsSFMLEvent<sf::Event::MouseButtonPressed>(event))
+        OnMouseButtonPress(*pKeyMouseBtnPressEvent);
 
-    if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseButtonReleased>(event))
-        OnMouseButtonRelease(*pEvent);
+    if (auto pMouseBtnReleaseEvent = EventBus::IsSFMLEvent<sf::Event::MouseButtonReleased>(event))
+        OnMouseButtonRelease(*pMouseBtnReleaseEvent);
 
-    if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseMoved>(event))
-        OnMouseMove(*pEvent);
+    if (auto pMouseMoveEvent = EventBus::IsSFMLEvent<sf::Event::MouseMoved>(event))
+        OnMouseMove(*pMouseMoveEvent);
 
-    if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::MouseWheelScrolled>(event))
-        OnMouseWheelScroll(*pEvent);
+    if (auto pMouseWhlScrollEvent = EventBus::IsSFMLEvent<sf::Event::MouseWheelScrolled>(event))
+        OnMouseWheelScroll(*pMouseWhlScrollEvent);
 }
 
 void Input::OnKeyPress(const sf::Event::KeyPressed& event)
