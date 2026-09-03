@@ -46,7 +46,6 @@ jobs:
             gcc-14 \
             g++-14 \
             ccache \
-            clang-format-18 \
             libx11-dev \
             libxrandr-dev \
             libxinerama-dev \
@@ -169,12 +168,24 @@ jobs:
         run: |
           ccache --show-stats || true
 
-      # ------------------------------------------------------------
-      # Formatting
-      # ------------------------------------------------------------
+  # ------------------------------------------------------------
+  # Formatting
+  # ------------------------------------------------------------
+
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧹 Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-18
 
       - name: 🎨 clang-format check
-        if: runner.os == 'Linux'
         shell: bash
         run: |
           files=$(find src -type f \( -name '*.cpp' -o -name '*.hpp' \))
