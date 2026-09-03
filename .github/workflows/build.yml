@@ -76,11 +76,18 @@ jobs:
       # Windows
       # ------------------------------------------------------------
 
-      - name: 🪟 Install Windows dependencies
+      - name: 🪟 Install MSYS2 UCRT64 toolchain
         if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          choco install ccache --yes
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-ccache
 
       # ------------------------------------------------------------
       # ccache
@@ -97,7 +104,7 @@ jobs:
           key: ccache-${{ matrix.os }}-v1
 
       - name: 🧰 Configure ccache
-        shell: bash
+        shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
         run: |
           ccache --set-config max_size=1.0G
           ccache --set-config compression=true
@@ -134,10 +141,13 @@ jobs:
 
       - name: 🔧 Configure Windows
         if: runner.os == 'Windows'
-        shell: bash
+        shell: msys2 {0}
         run: |
           cmake -S . -B build \
+            -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
@@ -155,8 +165,46 @@ jobs:
       # ------------------------------------------------------------
 
       - name: ⚙️ Build
+        shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
         run: |
           cmake --build build --config Release --parallel 4
+
+      # ------------------------------------------------------------
+      # Package Windows runtime
+      # ------------------------------------------------------------
+
+      - name: 📦 Package Windows runtime
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          mkdir -p package
+          cp build/bin/Game2.exe package/
+
+          # Copy every non-system DLL resolved by Game2.exe.
+          # This includes the exact UCRT64 libstdc++/libgcc runtime
+          # and any SFML/runtime DLLs required by the executable.
+          ldd build/bin/Game2.exe \
+            | sed -n 's/.*=> \([^ ]*\.dll\) (.*/\1/p' \
+            | while read -r dll; do
+                case "$dll" in
+                  /ucrt64/bin/*.dll|/c/*/build/bin/*.dll)
+                    cp -n "$dll" package/ || true
+                    ;;
+                esac
+              done
+
+          cp -r build/bin/assets package/
+          cp -r build/bin/data package/
+
+          7z a Game2-Windows.zip package/*
+
+      - name: 📤 Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Game2-Windows
+          path: Game2-Windows.zip
+          if-no-files-found: error
 
       # ------------------------------------------------------------
       # ccache statistics
@@ -164,7 +212,7 @@ jobs:
 
       - name: 📊 ccache stats
         if: always()
-        shell: bash
+        shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
         run: |
           ccache --show-stats || true
 
