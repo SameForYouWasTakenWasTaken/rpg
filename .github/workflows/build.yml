@@ -104,7 +104,7 @@ jobs:
           key: ccache-${{ matrix.os }}-v1
 
       - name: 🧰 Configure ccache
-        shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
+        shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash' }}
         run: |
           ccache --set-config max_size=1.0G
           ccache --set-config compression=true
@@ -165,7 +165,7 @@ jobs:
       # ------------------------------------------------------------
 
       - name: ⚙️ Build
-        shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
+        shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash' }}
         run: |
           cmake --build build --config Release --parallel 4
 
@@ -212,7 +212,7 @@ jobs:
 
       - name: 📊 ccache stats
         if: always()
-        shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
+        shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash' }}
         run: |
           ccache --show-stats || true
 
