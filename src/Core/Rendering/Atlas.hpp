@@ -7,9 +7,21 @@
 
 namespace ssg
 {
-struct EngineContext;
-using Region = sf::FloatRect;
+struct Region
+{
+    Vec2 position;
+    Vec2 size;
+    Region(Vec2 position = {}, Vec2 size = {}) : position(position), size(size) {};
+
+    operator sf::FloatRect() const
+    {
+        return sf::FloatRect{{position.x, position.y}, {size.x, size.y}};
+    }
+};
+
 using RegionList = std::unordered_map<String, Region>;
+
+struct EngineContext;
 class Atlas
 {
   public:
@@ -24,7 +36,7 @@ class Atlas
 
     TextureID LoadAtlas(const Filepath&, const Filepath&);
     void LoadAtlas(const Filepath&, TextureID);
-    sf::FloatRect GetRegion(const String&);
+    Region GetRegion(const String&);
     const RegionList& GetAllRegions();
 
     const std::string& GetID() const { return m_ID; }

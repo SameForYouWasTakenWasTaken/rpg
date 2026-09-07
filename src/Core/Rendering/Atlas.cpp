@@ -58,7 +58,7 @@ void Atlas::LoadAtlas(const Filepath& jsonFilepath, TextureID texID)
         auto h = json::AttemptAccessField<float>(frame, "h");
 
         m_Regions.emplace(json::AttemptAccessField<String>(element, "filename"),
-                          sf::FloatRect{{x, y}, {w, h}});
+                          Region{{x, y}, {w, h}});
     }
 
     // LoadTexture() already throw std::runtime, no checks needed
@@ -72,7 +72,7 @@ void Atlas::LoadAtlas(const Filepath& jsonFilepath, TextureID texID)
             .string();
 }
 
-sf::FloatRect Atlas::GetRegion(const String& SubTextureFilename)
+Region Atlas::GetRegion(const String& SubTextureFilename)
 {
     return m_Regions.at(SubTextureFilename);
 }
