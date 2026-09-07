@@ -21,36 +21,26 @@ struct Region
 
 using RegionList = std::unordered_map<String, Region>;
 
-struct EngineContext;
 class Atlas
 {
   public:
-    Atlas(EngineContext& engineContext) : m_EngineContext(engineContext) {}
-    ~Atlas() = default;
+    Atlas() = default;
 
-    // Atlas(const Atlas&) = delete;
-    // Atlas(Atlas&&) = delete;
-
-    // Atlas& operator=(const Atlas&) = delete;
-    // Atlas& operator=(Atlas&&) = delete;
-
-    TextureID LoadAtlas(const Filepath&, const Filepath&);
-    void LoadAtlas(const Filepath&, TextureID);
-    Region GetRegion(const String&);
-    const RegionList& GetAllRegions();
+    Atlas(TextureID textureID, std::string id, RegionList regions)
+        : m_TextureID(textureID), m_ID(std::move(id)), m_Regions(std::move(regions))
+    {
+    }
 
     const std::string& GetID() const { return m_ID; }
-    TextureID GetTextureID() { return m_TextureID; }
+    TextureID GetTextureID() const { return m_TextureID; }
+
+    const Region& GetRegion(const String& name) const { return m_Regions.at(name); }
+
+    const RegionList& GetAllRegions() const { return m_Regions; }
 
   private:
-    std::string m_ID{};
-    TextureID m_TextureID{};
-    Filepath m_JsonFilepath = "";
-
-    // key: subtexture filename (such as player_walk.jpg)
-    // sf::FloatRect: the texture dimensions
-    RegionList m_Regions = {};
-
-    EngineContext& m_EngineContext;
+    std::string m_ID;
+    TextureID m_TextureID;
+    RegionList m_Regions;
 };
 } // namespace ssg

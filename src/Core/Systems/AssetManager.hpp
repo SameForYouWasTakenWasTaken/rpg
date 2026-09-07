@@ -5,6 +5,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include "EngineContext.hpp"
 #include "Rendering/Atlas.hpp"
 #include "Types.hpp"
 
@@ -42,10 +43,7 @@ class AssetManager
     const sf::Texture& GetTexture(TextureID);
     const sf::Texture& GetTexture(const Filepath&);
 
-    AtlasID LoadAtlas(EngineContext& context, AtlasConfig config);
-    AtlasID LoadAtlas(
-        EngineContext& context, const Filepath&,
-        std::string_view field); // Load atlas from a .json field, which contains all configuration
+    void LoadAtlas(Atlas atlas);
 
     Atlas& GetAtlas(AtlasID);
 

@@ -11,6 +11,7 @@
 #include "EngineContext.hpp"
 #include "Events/Gameplay/OnAttackRequest.hpp"
 #include "Events/WindowResizeEvent.hpp"
+#include "Factories/AtlasLoader.hpp"
 #include "Factories/Default.hpp"
 #include "Factories/Gameplay/Weapons.hpp"
 #include "Map/api/Tilemap.hpp"
@@ -29,10 +30,9 @@ void GameLayer::OnAttach()
 {
     auto& engine = m_EngineContext.engine;
     auto& assetManager = engine.GetAssetManager();
-    auto atlasID =
-        assetManager.LoadAtlas(m_EngineContext, "assets/Textures/Atlas/Atlasses.json", "random");
-    auto& atlas = assetManager.GetAtlas(atlasID);
-    auto textureID = atlas.GetTextureID();
+    auto atlasTexture = assetManager.LoadTexture("assets/Textures/Atlas/random.png");
+    const auto& atlas = atlas::TexturePacker::Load(
+        m_EngineContext, "assets/Textures/Atlas/random.json", atlasTexture);
 
     Region defaultPNG = atlas.GetRegion("default");
     Region dogbite = atlas.GetRegion("dogbite");
@@ -90,7 +90,7 @@ void GameLayer::OnAttach()
         transform.position = {static_cast<float>(x * tilemap.getTileWidth()),
                               static_cast<float>(y * tilemap.getTileHeight())};
 
-        texture.textureID = textureID;
+        texture.textureID = atlasTexture;
         texture.textureRect = region;
         sprite.size = {static_cast<float>(tilemap.getTileWidth()),
                        static_cast<float>(tilemap.getTileHeight())};
