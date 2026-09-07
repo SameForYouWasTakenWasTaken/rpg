@@ -1,96 +1,80 @@
 # 🗺️ Tilemap System
 
-This document explains the tilemap implementation used by the RPG project, how Tiled maps are imported, how tilesets are represented at runtime, and how a map becomes renderable ECS entities.
+This document describes the tilemap implementation used by the RPG project: how maps are authored in Tiled, how external tilesets are loaded, how tile IDs are resolved, and how the resulting map data can be consumed by the ECS renderer.
 
-The current implementation is intentionally small: it provides the data-loading and rendering foundation for Tiled maps, while leaving more advanced map features for later work.
+The implementation is intentionally focused on the data-loading foundation. Advanced Tiled features are not part of the current runtime contract.
 
 ---
 
 ## 🔄 Overview
 
-The tilemap pipeline is:
+The current asset flow is:
 
 ```text
-                         Tiled
-                           │
-             ┌─────────────┴─────────────┐
-             │                           │
-          map.tmj                    tileset.tsx
-             │                           │
-             │                     tileset metadata
-             │                           │
-             └──────────────┬────────────┘
-                            │
-                            ▼
-                  Tiled::LoadTilemapJSON()
-                            │
-                 ┌──────────┼──────────┐
-                 ▼          ▼          ▼
-             TileLayer   Tileset   ObjectLayer
-                 │          │          │
-                 │          │       (future)
-                 │          │
-                 └──────┬───┘
-                        ▼
-                    Tilemap
-                        │
-                        ▼
-                 GameLayer::OnAttach()
-                        │
-              one ECS entity per tile
-                        │
-             ┌──────────┼──────────┐
-             ▼          ▼          ▼
-          Transform   Texture    Sprite
-             │          │          │
-             └──────────┴──────────┘
-                        │
-                        ▼
-                    Renderer
+Tiled map (.tmj)
+       │
+       ├── tile layers
+       │
+       └── external tilesets
+                │
+                ▼
+       Tileset (.tsx) + image
+                │
+                ▼
+       Tiled::LoadTilemapJSON()
+                │
+                ▼
+             Tilemap
+          ┌─────┴─────┐
+          ▼           ▼
+      TileLayer    Tileset
+          │           │
+          └─────┬─────┘
+                ▼
+          ECS tile data
+                │
+                ▼
+             Renderer
 ```
 
-The important distinction is that **`Tilemap` is map data, not a renderer**. It stores the information necessary to interpret the map. `GameLayer` currently turns that information into ECS entities, and the existing renderer handles those entities like any other sprite.
+`Tilemap` is a data representation of a loaded map. It does not own rendering logic or create ECS entities.
 
 ---
 
 ## 🛠️ Map Creation Tools
 
-The project currently uses two external tools as part of the asset workflow.
+The project currently uses **Tiled** for map creation and **TexturePacker** for atlas generation.
 
 ### Tiled
 
-[Tiled](https://www.mapeditor.org/) is the map editor used to create and edit the game's tilemaps.
+[Tiled](https://www.mapeditor.org/) is the map editor used to create the project's tilemaps.
 
-Its documentation is available at:
+Official documentation:
 
 - [Tiled Documentation](https://doc.mapeditor.org/en/latest/)
 - [Working with Layers](https://doc.mapeditor.org/en/latest/manual/layers/)
 - [Tiled Projects](https://doc.mapeditor.org/en/latest/manual/projects/)
 
-Tiled is responsible for the **map itself**: placing tiles, organizing tile layers, configuring map dimensions, and referencing external tilesets.
+The engine currently consumes Tiled's JSON map format (`.tmj`). The supported map configuration is a finite, orthogonal map containing normal tile layers and references to external tilesets.
 
-The engine currently consumes Tiled's JSON map format (`.tmj`). The map should be a finite, orthogonal map using normal tile layers for the functionality currently implemented.
-
-Tiled supports many more features than the engine currently consumes. For example, Tiled supports object layers, image layers, group layers, infinite maps, custom properties, and other map features. These can be introduced into the engine later without changing the basic purpose of the `Tilemap` class.
+Tiled supports many additional features that are not currently consumed by the loader, including object layers, image layers, group layers, infinite maps, custom properties, tile animations, and tile transformations.
 
 ### TexturePacker
 
-[TexturePacker](https://www.codeandweb.com/texturepacker) is used to build the texture atlases used by the game.
+[TexturePacker](https://www.codeandweb.com/texturepacker) is used to create texture atlases.
 
 Official documentation:
 
 - [TexturePacker Documentation](https://www.codeandweb.com/texturepacker/documentation)
-- [TexturePacker Support / FAQ](https://www.codeandweb.com/texturepacker/support)
+- [TexturePacker Support](https://www.codeandweb.com/texturepacker/support)
 
-TexturePacker takes individual images/sprites and packs them into atlas textures. The resulting atlas can then be referenced by the project's rendering/asset systems.
-
-For tilemaps, the important part is that the image referenced by the Tiled tileset corresponds to the atlas containing the tiles. The `.tsx` file describes the dimensions and layout of the tiles in that image; the actual image is loaded by the engine's `AssetManager`.
+The tilemap loader does not parse TexturePacker's JSON metadata. It loads the image referenced by the tileset and calculates tile regions from the tileset's grid metadata.
 
 ---
 
-## 📁 Recommended Asset Layout
+## 📁 Asset Layout
 
-A map and its external tileset should live together. This keeps the Tiled asset structure easy to move and maintain when importing a map or receiving a complete map/tileset package.
+External tilesets should be kept alongside the map that references them. This is especially useful when maps and their assets are moved as a package.
 
 For example:
 
@@ -103,7 +87,7 @@ assets/
             └── forest.tsx
 ```
 
-The map references the external tileset through the `source` field:
+The map references the tileset through a `source` entry:
 
 ```json
 {
@@ -112,7 +96,7 @@ The map references the external tileset through the `source` field:
 }
 ```
 
-The tileset then describes the atlas image and tile layout:
+The external tileset contains its metadata and image reference:
 
 ```xml
 <tileset
@@ -126,37 +110,41 @@ The tileset then describes the atlas image and tile layout:
 </tileset>
 ```
 
-Keeping the `.tmj` and `.tsx` together means the map's external tileset reference remains straightforward when moving an entire map directory between projects or asset packages.
+### Path handling
 
-> **Current implementation note:** the `.tsx` file is resolved from the map through its `source` field, while the image path inside the `.tsx` is passed to the `AssetManager`. The image path therefore needs to resolve correctly through the project's asset-loading setup.
+The `.tsx` path is resolved relative to the directory containing the `.tmj` file.
+
+The image `source` from the `.tsx` is currently passed directly to `AssetManager::LoadTexture()`. Therefore, the image path must match the project's asset-loading path expectations.
+
+Keeping the map and external tileset together avoids unnecessary complexity when importing a complete map package. The `source` field is the part that must remain correct when the directory is moved.
 
 ---
 
 ## 🧱 Runtime Data Model
 
-The tilemap implementation is split into three main pieces:
+The runtime representation consists of three primary types:
 
 - `Tilemap`
 - `TileLayer`
 - `Tileset`
 
-There is also an `ObjectLayer` type prepared for future support, but object-layer loading is not implemented yet.
+An `ObjectLayer` type also exists, but object-group loading is not implemented yet.
 
 ### `Tilemap`
 
-`Tilemap` is the container for an entire loaded map.
+`Tilemap` stores the data required to interpret an entire map.
 
-It stores:
+It contains:
 
 - map width in tiles
 - map height in tiles
 - tile width in pixels
 - tile height in pixels
-- all tile layers
-- all tilesets
+- tile layers
+- tilesets
 - object layers
 
-The public API currently provides:
+Its current public API includes:
 
 ```cpp
 std::uint32_t getWidth() const;
@@ -171,45 +159,34 @@ const Vector<ObjectLayer>& getObjectLayers() const;
 const Tileset* getTilesetForGid(TileLayer::TileID gid) const;
 ```
 
-The class itself does not create entities or submit anything to the renderer.
-
 ### `TileLayer`
 
 A `TileLayer` represents one Tiled tile layer.
 
-It contains:
+It stores:
 
-- the layer name
+- layer name
 - layer width
 - layer height
-- a flat array of tile GIDs
+- a flat vector of tile GIDs
 
-A tile can be accessed with:
+The tile ID at a coordinate can be retrieved with:
 
 ```cpp
 const auto gid = layer.at(x, y);
 ```
 
-Internally, the two-dimensional coordinate is converted into a row-major array index:
+The underlying data is row-major:
 
 ```text
 index = y * width + x
 ```
 
-So the underlying data is equivalent to:
-
-```text
-row 0: [0, 1, 2, 3, ...]
-row 1: [0, 1, 2, 3, ...]
-row 2: [0, 1, 2, 3, ...]
-...
-```
-
-A GID of `0` represents an empty tile and is skipped by the current rendering code.
+A GID of `0` represents an empty tile and does not produce a rendered tile.
 
 ### `Tileset`
 
-A `Tileset` describes the texture and layout needed to turn a Tiled global tile ID into a texture region.
+A `Tileset` contains the information required to resolve a global Tiled tile ID into a texture and texture region.
 
 It stores:
 
@@ -221,9 +198,29 @@ It stores:
 - `firstgid`
 - the engine's `TextureID`
 
-The important field for map interpretation is `firstgid`.
+The current public API includes:
 
-Tiled assigns global IDs to tilesets. For example:
+```cpp
+std::uint32_t getColumns() const;
+String getName() const;
+std::uint32_t getWidth() const;
+std::uint32_t getHeight() const;
+std::uint32_t getTileCount() const;
+std::uint32_t getFirstGid() const;
+TextureID getTextureID() const;
+
+Region getRegion(std::uint32_t localId) const;
+```
+
+---
+
+## 🔢 Global Tile IDs and `firstgid`
+
+Tiled stores tile IDs in map layers as **global IDs (GIDs)**. A GID is not directly an index into one particular tileset.
+
+Each tileset has a `firstgid` assigned by the map.
+
+For example:
 
 ```text
 Tileset A: firstgid = 1
@@ -231,63 +228,81 @@ Tileset B: firstgid = 1981
 Tileset C: firstgid = 3961
 ```
 
-When a map contains a GID, the engine finds the tileset with the highest `firstgid` that is still less than or equal to that GID.
+Given a GID, the loader finds the tileset whose `firstgid` is the greatest value that is still less than or equal to the GID.
 
-This is what `Tilemap::getTilesetForGid()` does. It searches the tilesets from the back, which is appropriate because later tilesets have higher starting GIDs.
-
-Once the correct tileset is found, the global GID becomes a tileset-local ID:
+After selecting the tileset, the GID is converted into a tileset-local ID:
 
 ```cpp
 const auto localId = gid - tileset->getFirstGid();
 ```
 
+For example, with `firstgid = 1981`:
+
+```text
+gid     = 2026
+localId = 2026 - 1981
+        = 45
+```
+
+This local ID is what the tileset uses to calculate the corresponding texture region.
+
 ---
 
-## 🎨 Converting a Tile ID to an Atlas Region
+## 🎨 Tile Region Calculation
 
-The local tile ID is converted into an atlas rectangle by `Tileset::getRegion()`.
+`Tileset::getRegion()` converts a tileset-local tile ID into a texture rectangle.
 
 Given:
 
 ```text
-columns = 44
+columns   = 44
 tileWidth = 32
 tileHeight = 32
-localId = 45
+localId   = 45
 ```
 
-the tile's position in the atlas is:
+the grid coordinate is calculated as:
 
 ```text
 column = localId % columns
 row    = localId / columns
 ```
 
-The resulting texture rectangle is:
-
-```text
-x = column * tileWidth
-y = row    * tileHeight
-w = tileWidth
-h = tileHeight
-```
-
-For the example above:
+Therefore:
 
 ```text
 column = 45 % 44 = 1
 row    = 45 / 44 = 1
-
-region = (32, 32, 32, 32)
 ```
 
-This is why the `.tsx` metadata must accurately describe the atlas it references. The engine does not need a separate region for every tile; it calculates the region from the tile ID and the tileset's dimensions.
+The resulting region is:
+
+```text
+x = column * tileWidth
+  = 1 * 32
+  = 32
+
+y = row * tileHeight
+  = 1 * 32
+  = 32
+
+width  = 32
+height = 32
+```
+
+So the final rectangle is:
+
+```text
+(32, 32, 32, 32)
+```
+
+This calculation assumes the image is laid out as a regular grid matching the tileset's `tilewidth`, `tileheight`, and `columns` values.
 
 ---
 
-## 📥 Loading a Tiled Map
+## 📥 Loading a Map
 
-Maps are loaded with:
+Maps are loaded through:
 
 ```cpp
 map::Tilemap tilemap =
@@ -297,30 +312,30 @@ map::Tilemap tilemap =
     );
 ```
 
-`LoadTilemapJSON()` performs the following steps:
+The loader performs the following operations.
 
-### 1. Open the `.tmj`
+### 1. Open and parse the `.tmj`
 
-The loader opens the map file as JSON and validates the presence of the main map properties:
+The file is opened as JSON.
 
-- `width`
+The following top-level properties are required:
+
 - `height`
-- `tilewidth`
+- `width`
 - `tileheight`
+- `tilewidth`
 - `layers`
 - `tilesets`
 
-Missing required properties result in an exception.
+Missing required properties cause an exception.
 
 ### 2. Read map dimensions
 
-The map dimensions and tile dimensions become the corresponding `Tilemap` properties.
-
-For example, the current test map is 30 × 20 tiles with 32 × 32 pixel tiles.
+The map's width, height, tile width, and tile height are stored in the resulting `Tilemap`.
 
 ### 3. Load tile layers
 
-Each entry in `layers` is inspected by its Tiled `type`.
+Each entry in `layers` is inspected using its Tiled `type`.
 
 For `tilelayer`, the loader reads:
 
@@ -328,12 +343,15 @@ For `tilelayer`, the loader reads:
 - `width`
 - `height`
 - `data`
+- `id`
 
-and creates a `TileLayer`.
+The `data` array becomes the layer's flat vector of GIDs.
 
-### 4. Load external tilesets
+Object groups and other layer types are currently ignored.
 
-Each map tileset entry must currently provide:
+### 4. Resolve external tilesets
+
+Each entry in `tilesets` must provide:
 
 ```json
 {
@@ -342,85 +360,37 @@ Each map tileset entry must currently provide:
 }
 ```
 
-The `source` is resolved relative to the map's directory and passed to `LoadTilesetXML()`.
+The `source` is combined with the map's parent directory and passed to the XML tileset loader.
 
 ### 5. Parse the `.tsx`
 
-The external tileset is XML, parsed with `tinyxml2`.
+The external tileset is parsed with `tinyxml2`.
 
-The loader reads:
+The loader reads these attributes from the `<tileset>` element:
 
 - `name`
 - `tilewidth`
 - `tileheight`
 - `tilecount`
 - `columns`
-- the `<image source="...">` path
 
-The referenced image is then loaded through the engine's `AssetManager`.
+It then reads the `<image source="...">` element and loads the referenced texture through the engine's `AssetManager`.
 
-The result is a `Tileset` containing both the metadata and the resulting `TextureID`.
+The resulting `Tileset` stores the parsed metadata, the map's `firstgid`, and the resulting `TextureID`.
 
-### 6. Return the `Tilemap`
+### 6. Return the runtime representation
 
-The loaded layers and tilesets are placed into a single `Tilemap` object.
+The loader returns one `Tilemap` containing all successfully loaded tile layers and tilesets.
 
-The map loader currently creates an empty object-layer collection. Object-group parsing is deliberately left for future work.
-
----
-
-## 🖼️ Rendering a Tilemap
-
-The current renderer does not have a specialized `TilemapRenderer`.
-
-Instead, `GameLayer` converts every non-empty tile into a normal ECS entity.
-
-The process is:
-
-```text
-TileLayer
-   │
-   │ gid
-   ▼
-find Tileset
-   │
-   │ local ID
-   ▼
-calculate atlas Region
-   │
-   ▼
-create ECS entity
-   │
-   ├── CTransform
-   ├── CSprite
-   └── CTexture
-```
-
-The tile's world position is calculated from its grid coordinate:
-
-```cpp
-transform.position = {
-    static_cast<float>(x * tilemap.getTileWidth()),
-    static_cast<float>(y * tilemap.getTileHeight())
-};
-```
-
-The entity then receives:
-
-- the tileset's `TextureID`
-- the calculated atlas rectangle
-- a sprite size equal to the map's tile dimensions
-- a z-index corresponding to the tile layer's order
-
-The current `GameLayer` increments the z-index after every tile layer, meaning later tile layers render above earlier ones.
-
-The normal renderer then handles the tile just like any other sprite entity.
+The object-layer collection is currently empty because object-group parsing has not been implemented.
 
 ---
 
-## 💡 Basic Usage Example
+## 🖼️ Consuming Tilemap Data
 
-A minimal consumer currently looks like this:
+The tilemap classes intentionally do not depend on ECS entity creation. A consumer can iterate through the layers and resolve each non-empty GID independently.
+
+A simplified example is:
 
 ```cpp
 map::Tilemap tilemap =
@@ -428,8 +398,6 @@ map::Tilemap tilemap =
         m_EngineContext,
         "data/maps/forest/forest.tmj"
     );
-
-zIndex_t zIndex = 0;
 
 for (const auto& layer : tilemap.getTileLayers())
 {
@@ -449,91 +417,97 @@ for (const auto& layer : tilemap.getTileLayers())
             const auto localId = gid - tileset->getFirstGid();
             const auto region = tileset->getRegion(localId);
 
-            // Create a normal CTexture / CSprite entity here.
+            // Use tileset->getTextureID(), region, and the grid position.
         }
     }
-
-    ++zIndex;
 }
 ```
 
-The actual implementation in `GameLayer` wraps the entity creation into a `makeTile()` helper.
+The tile's position in map space is derived from its grid coordinate:
+
+```cpp
+Vec2 position{
+    static_cast<float>(x * tilemap.getTileWidth()),
+    static_cast<float>(y * tilemap.getTileHeight())
+};
+```
+
+Layer order can be mapped to the renderer's z-index convention by the consuming system.
 
 ---
 
-## 📦 Current File Formats
+## 📦 Supported File Formats
 
 ### `.tmj`
 
-The map format currently consumed by the loader.
+The JSON map format produced by Tiled.
 
-It is Tiled's JSON map representation and contains the map dimensions, layers, and references to tilesets.
+The current loader consumes the map dimensions, tile layers, and external tileset references.
 
 ### `.tsx`
 
-The external tileset format currently consumed by the loader.
+The XML external tileset format produced by Tiled.
 
-It contains tileset metadata and the image used as the tileset texture.
+The current loader consumes the tileset's basic grid metadata and its image source.
 
 ### Atlas image
 
-The image referenced by the `.tsx` is the actual texture containing the tiles. The project uses TexturePacker to produce atlas textures, but the tilemap loader itself does not parse TexturePacker's JSON atlas metadata. It only needs the image and the tile-grid metadata from the `.tsx`.
+The image referenced by the external tileset is loaded as the texture used for the tiles.
+
+The current loader does not consume TexturePacker JSON metadata; the tileset's grid information is sufficient for region calculation.
 
 ---
 
 ## ⚠️ Current Limitations
 
-This implementation is the first foundation rather than a complete Tiled feature set.
-
 Currently supported:
 
-- finite orthogonal Tiled maps
+- finite orthogonal maps
 - external `.tsx` tilesets
 - multiple tile layers
 - multiple tilesets
-- global tile IDs (`gid` / `firstgid`) and tileset lookup
-- atlas region calculation
-- conversion of tiles into normal ECS sprite entities
-- layer ordering through z-index
+- global GID / `firstgid` resolution
+- regular grid-based texture-region calculation
+- loading tileset textures through `AssetManager`
 
 Not currently implemented:
 
-- Tiled object-layer loading
-- object properties and object metadata
+- object-group parsing
+- object properties
 - image layers
 - group layers
-- infinite maps/chunked tile data
-- tile flipping/rotation flags
+- infinite maps / chunked data
+- tile flipping and rotation flags
 - tile animations
-- Tiled custom properties
-- terrain/automapping metadata
-- a dedicated tilemap renderer
-- culling of off-screen tiles
+- custom Tiled properties
+- terrain and automapping metadata
+- dedicated tilemap rendering
+- off-screen tile culling
 
-These limitations are important when creating maps: **the current engine should only be given maps using the subset of Tiled functionality that the loader understands.**
+Maps should therefore stay within the supported subset of Tiled until the corresponding loader functionality is implemented.
 
 ---
 
 ## 🧭 Design Direction
 
-The implementation deliberately keeps Tiled-specific parsing separate from the runtime map representation.
+The tilemap implementation keeps file-format parsing separate from the runtime map representation:
 
 ```text
 Tiled files
     │
     ▼
-Tiled::LoadTilemapJSON
+MapLoader
     │
     ▼
-Runtime Tilemap / TileLayer / Tileset
+Tilemap / TileLayer / Tileset
     │
     ▼
-Game systems
+Consumer / ECS renderer
 ```
 
-This means gameplay code does not need to parse JSON or XML itself. It receives a structured `Tilemap` and can work with tile layers and tilesets directly.
+This separation means gameplay and rendering code can operate on structured map data without needing to parse JSON or XML themselves.
 
-It also leaves room for the map loader to grow. More Tiled features can be added to the loader and represented in the runtime types without forcing the rest of the engine to understand the `.tmj` or `.tsx` file formats directly.
+It also leaves room for additional Tiled features to be added later without coupling the rest of the engine directly to Tiled's file formats.
 
 ---
 
@@ -557,13 +531,14 @@ src/App/
 │   ├── Tileset.cpp
 │   └── Tileset.hpp
 │
-├── Layers/
-│   └── GameLayer.cpp       # currently turns map tiles into ECS entities
-│
 └── data/maps/
-    └── random/
-        ├── random_map.tmj
-        └── test.tsx
+    └── ...
 ```
 
-For the complete implementation history, see the [Tilemap feature PR](https://github.com/SameForYouWasTakenWasTaken/rpg/pull/63).
+The most important entry points are:
+
+```cpp
+map::Tiled::LoadTilemapJSON(...);
+map::Tiled::LoadTileLayerJSON(...);
+map::Tiled::LoadTilesetXML(...);
+```
