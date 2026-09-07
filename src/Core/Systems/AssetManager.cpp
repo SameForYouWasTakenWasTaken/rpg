@@ -10,15 +10,16 @@ namespace ssg
 {
 TextureID AssetManager::LoadTexture(const Filepath& path)
 {
-    if (m_Filepaths.find(path) != m_Filepaths.end())
-        return m_Filepaths[path]; // Texture is already loaded
+    auto fullPath = std::filesystem::canonical(path);
+    if (m_Filepaths.contains(fullPath))
+        return m_Filepaths[fullPath]; // Texture is already loaded
 
-    auto texture = std::make_unique<sf::Texture>(path);
+    auto texture = std::make_unique<sf::Texture>(fullPath);
     if (!texture)
-        throw std::runtime_error("Could not get texture of path " + path.string() + "!");
+        throw std::runtime_error("Could not get texture of path " + fullPath.string() + "!");
 
     m_Textures.emplace(m_NextTextureID, std::move(texture));
-    m_Filepaths.emplace(path, m_NextTextureID);
+    m_Filepaths.emplace(fullPath, m_NextTextureID);
 
     return m_NextTextureID++;
 }

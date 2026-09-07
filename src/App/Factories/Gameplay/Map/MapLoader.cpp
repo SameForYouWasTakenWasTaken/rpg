@@ -1,6 +1,4 @@
-#pragma once
-
-#include "loader.hpp"
+#include "../Map/MapLoader.hpp"
 
 #include <fstream>
 #include <nlohmann/json_fwd.hpp>
@@ -22,7 +20,7 @@ void HandleErrorForJsonProperty(const String& property, const json::json& data,
             std::format("Map from '{}' is missing '{}' property", path.string(), property));
 }
 
-Tilemap Tiled::LoadTilemap(EngineContext& context, const Filepath& path)
+Tilemap Tiled::LoadTilemapJSON(EngineContext& context, const Filepath& path)
 {
     std::ifstream file(path);
     if (!file.is_open())
@@ -55,7 +53,7 @@ Tilemap Tiled::LoadTilemap(EngineContext& context, const Filepath& path)
 
         if (type == "tilelayer")
         {
-            layers.emplace_back(LoadTileLayer(path, layerJson));
+            layers.emplace_back(LoadTileLayerJSON(path, layerJson));
         }
         else if (type == "objectgroup")
         {
@@ -76,12 +74,12 @@ Tilemap Tiled::LoadTilemap(EngineContext& context, const Filepath& path)
         auto source =
             path.parent_path() / json::AttemptAccessField<Filepath>(tilesetJson, "source");
 
-        sets.emplace_back(LoadTileset(context, source, firstGid));
+        sets.emplace_back(LoadTilesetXML(context, source, firstGid));
     }
 
     return Tilemap{width, height, tileHeight, tileWidth, layers, sets, objectLayers};
 }
-TileLayer Tiled::LoadTileLayer(const Filepath& path, const json::json& layerJson)
+TileLayer Tiled::LoadTileLayerJSON(const Filepath& path, const json::json& layerJson)
 {
     HandleErrorForJsonProperty("name", layerJson, path);
     HandleErrorForJsonProperty("width", layerJson, path);
@@ -97,7 +95,7 @@ TileLayer Tiled::LoadTileLayer(const Filepath& path, const json::json& layerJson
     return TileLayer{layerName, layerWidth, layerHeight, layerData};
 }
 
-Tileset Tiled::LoadTileset(EngineContext& context, const Filepath& path, uint32_t firstgid)
+Tileset Tiled::LoadTilesetXML(EngineContext& context, const Filepath& path, uint32_t firstgid)
 {
     using namespace tinyxml2;
 
@@ -107,9 +105,9 @@ Tileset Tiled::LoadTileset(EngineContext& context, const Filepath& path, uint32_
     if (result != XML_SUCCESS)
         throw std::runtime_error("Could not load tileset from " + path.string());
 
-    XMLElement* tileset = doc.FirstChildElement("tileset");
+    XMLElement* tilesetElement = doc.FirstChildElement("tileset");
 
-    if (!tileset)
+    if (!tilesetElement)
         throw std::runtime_error("Missing <tileset> element in " + path.string());
 
     const char* name;
@@ -118,20 +116,29 @@ Tileset Tiled::LoadTileset(EngineContext& context, const Filepath& path, uint32_
     std::int32_t tileCount;
     std::int32_t columns;
 
-    if (tileset->QueryStringAttribute("name", &name) != XML_SUCCESS)
+    if (tilesetElement->QueryStringAttribute("name", &name) != XML_SUCCESS)
         throw std::runtime_error("Missing or invalid 'name' attribute");
 
-    if (tileset->QueryIntAttribute("tilewidth", &tileWidth) != XML_SUCCESS)
+    if (tilesetElement->QueryIntAttribute("tilewidth", &tileWidth) != XML_SUCCESS)
         throw std::runtime_error("Missing or invalid 'tilewidth' tileset attribute");
 
-    if (tileset->QueryIntAttribute("tileheight", &tileHeight) != XML_SUCCESS)
+    if (tilesetElement->QueryIntAttribute("tileheight", &tileHeight) != XML_SUCCESS)
         throw std::runtime_error("Missing or invalid 'tileheight' tileset attribute");
 
-    if (tileset->QueryIntAttribute("tilecount", &tileCount) != XML_SUCCESS)
+    if (tilesetElement->QueryIntAttribute("tilecount", &tileCount) != XML_SUCCESS)
         throw std::runtime_error("Missing or invalid 'tilecount' tileset attribute");
 
-    if (tileset->QueryIntAttribute("columns", &columns) != XML_SUCCESS)
+    if (tilesetElement->QueryIntAttribute("columns", &columns) != XML_SUCCESS)
         throw std::runtime_error("Missing or invalid 'columns' tileset attribute");
+
+    // parse image source
+    const char* imageSource;
+    XMLElement* imageElement = tilesetElement->FirstChildElement("image");
+
+    if (imageElement->QueryStringAttribute("source", &imageSource) != XML_SUCCESS)
+        throw std::runtime_error("Missing or invalid 'source' attribute");
+
+    auto textureID = context.assetManager.LoadTexture(Filepath(imageSource));
 
     // convert int32_t to uint32_t to prevent implicit conversion
     return Tileset{std::string(name),
@@ -140,6 +147,6 @@ Tileset Tiled::LoadTileset(EngineContext& context, const Filepath& path, uint32_
                    static_cast<std::uint32_t>(columns),
                    static_cast<std::uint32_t>(tileCount),
                    firstgid,
-                   static_cast<TextureID>(-1)};
+                   textureID};
 }
 } // namespace ssg::map

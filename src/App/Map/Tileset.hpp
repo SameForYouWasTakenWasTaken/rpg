@@ -24,6 +24,7 @@ class Tileset
     [[nodiscard]] std::uint32_t getHeight() const { return m_tileHeight; }
     [[nodiscard]] std::uint32_t getTileCount() const { return m_tileCount; }
     [[nodiscard]] std::uint32_t getFirstGid() const { return m_firstgid; }
+    [[nodiscard]] TextureID getTextureID() const { return textureID; }
 
     [[nodiscard]] Region getRegion(std::uint32_t localId) const;
 

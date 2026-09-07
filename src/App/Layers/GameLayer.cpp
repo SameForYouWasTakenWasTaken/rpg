@@ -1,5 +1,7 @@
 #include "GameLayer.hpp"
 
+#include "../Factories/Gameplay/Map/MapLoader.hpp"
+#include "../Map/Tilemap.hpp"
 #include "Application.hpp"
 #include "Components/CDefinition.hpp"
 #include "Components/CSprite.hpp"
@@ -14,8 +16,6 @@
 #include "Factories/AtlasLoader.hpp"
 #include "Factories/Default.hpp"
 #include "Factories/Gameplay/Weapons.hpp"
-#include "Map/api/Tilemap.hpp"
-#include "Map/loader.hpp"
 #include "Rendering/Atlas.hpp"
 #include "Rendering/Renderer.hpp"
 #include "SFML/Graphics/Rect.hpp"
@@ -53,6 +53,7 @@ void GameLayer::OnAttach()
         if (sprite)
         {
             sprite->size = {size, size};
+            sprite->zIndex = 1;
         }
 
         return entity;
@@ -66,7 +67,7 @@ void GameLayer::OnAttach()
     };
 
     auto makeTile = [&](const map::Tilemap& tilemap, const map::TileLayer& layer, std::uint32_t x,
-                        std::uint32_t y) -> entt::entity
+                        std::uint32_t y, zIndex_t zIndex) -> entt::entity
     {
         const auto gid = layer.at(x, y);
 
@@ -90,10 +91,11 @@ void GameLayer::OnAttach()
         transform.position = {static_cast<float>(x * tilemap.getTileWidth()),
                               static_cast<float>(y * tilemap.getTileHeight())};
 
-        texture.textureID = atlasTexture;
+        texture.textureID = tileset->getTextureID();
         texture.textureRect = region;
         sprite.size = {static_cast<float>(tilemap.getTileWidth()),
                        static_cast<float>(tilemap.getTileHeight())};
+        sprite.zIndex = zIndex;
 
         return entity;
     };
@@ -116,16 +118,18 @@ void GameLayer::OnAttach()
     // maps
 
     map::Tilemap tilemap =
-        map::Tiled::LoadTilemap(m_EngineContext, "data/maps/random/random_map.tmj");
+        map::Tiled::LoadTilemapJSON(m_EngineContext, "data/maps/random/random_map.tmj");
+    zIndex_t zIndex = 0;
     for (const auto& layer : tilemap.getTileLayers())
     {
         for (std::uint32_t y = 0; y < layer.getHeight(); ++y)
         {
             for (std::uint32_t x = 0; x < layer.getWidth(); ++x)
             {
-                makeTile(tilemap, layer, x, y);
+                makeTile(tilemap, layer, x, y, zIndex);
             }
         }
+        zIndex++;
     }
 
     // Inventory

@@ -12,11 +12,11 @@ add_library(App STATIC
         Factories/Gameplay/Weapons.cpp
         Factories/Gameplay/Items.cpp
         Systems/Gameplay/InventorySystem.cpp
-        Map/loader.cpp
-        Map/loader.cpp
-        Map/api/Tileset.cpp
-        Map/api/TileLayer.cpp
-        Map/api/Tilemap.cpp
+        Factories/Gameplay/Map/MapLoader.cpp
+        Factories/Gameplay/Map/MapLoader.cpp
+        Map/Tileset.cpp
+        Map/TileLayer.cpp
+        Map/Tilemap.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -70,7 +70,7 @@ const Atlas& Load(EngineContext& context, const Filepath& jsonFilepath, TextureI
 
     const auto image = json::AttemptAccessField<String>(meta, "image");
 
-    const auto id = std::filesystem::path(image).stem().string();
+    const auto id = Filepath(image).stem().string();
 
     context.assetManager.LoadAtlas(Atlas{textureID, id, std::move(regions)});
     return context.assetManager.GetAtlas(id);
