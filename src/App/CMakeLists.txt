@@ -12,6 +12,11 @@ add_library(App STATIC
         Factories/Gameplay/Weapons.cpp
         Factories/Gameplay/Items.cpp
         Systems/Gameplay/InventorySystem.cpp
+        Factories/Gameplay/Map/MapLoader.cpp
+        Factories/Gameplay/Map/MapLoader.cpp
+        Map/Tileset.cpp
+        Map/TileLayer.cpp
+        Map/Tilemap.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -23,6 +28,7 @@ target_link_libraries(App
         SFML::Graphics
         SFML::Window
         SFML::System
+        tinyxml2::tinyxml2
 )
 
 target_compile_features(App PRIVATE cxx_std_23)

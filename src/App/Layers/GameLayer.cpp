@@ -1,5 +1,7 @@
 #include "GameLayer.hpp"
 
+#include "../Factories/Gameplay/Map/MapLoader.hpp"
+#include "../Map/Tilemap.hpp"
 #include "Application.hpp"
 #include "Components/CDefinition.hpp"
 #include "Components/CSprite.hpp"
@@ -11,6 +13,7 @@
 #include "EngineContext.hpp"
 #include "Events/Gameplay/OnAttackRequest.hpp"
 #include "Events/WindowResizeEvent.hpp"
+#include "Factories/AtlasLoader.hpp"
 #include "Factories/Default.hpp"
 #include "Factories/Gameplay/Weapons.hpp"
 #include "Rendering/Atlas.hpp"
@@ -27,10 +30,9 @@ void GameLayer::OnAttach()
 {
     auto& engine = m_EngineContext.engine;
     auto& assetManager = engine.GetAssetManager();
-    auto atlasID =
-        assetManager.LoadAtlas(m_EngineContext, "assets/Textures/Atlas/Atlasses.json", "random");
-    auto& atlas = assetManager.GetAtlas(atlasID);
-    auto textureID = atlas.GetTextureID();
+    auto atlasTexture = assetManager.LoadTexture("assets/Textures/Atlas/random.png");
+    const auto& atlas = atlas::TexturePacker::Load(
+        m_EngineContext, "assets/Textures/Atlas/random.json", atlasTexture);
 
     Region defaultPNG = atlas.GetRegion("default");
     Region dogbite = atlas.GetRegion("dogbite");
@@ -51,6 +53,7 @@ void GameLayer::OnAttach()
         if (sprite)
         {
             sprite->size = {size, size};
+            sprite->zIndex = 1;
         }
 
         return entity;
@@ -63,11 +66,45 @@ void GameLayer::OnAttach()
         return entity;
     };
 
+    auto makeTile = [&](const map::Tilemap& tilemap, const map::TileLayer& layer, std::uint32_t x,
+                        std::uint32_t y, zIndex_t zIndex) -> entt::entity
+    {
+        const auto gid = layer.at(x, y);
+
+        if (gid == 0)
+            return entt::null;
+
+        const auto* tileset = tilemap.getTilesetForGid(gid);
+
+        if (!tileset)
+            return entt::null;
+
+        const auto localId = gid - tileset->getFirstGid();
+        const auto region = tileset->getRegion(localId);
+
+        entt::entity entity = m_Registry.create();
+
+        auto& transform = m_Registry.emplace<CTransform>(entity);
+        auto& sprite = m_Registry.emplace<CSprite>(entity);
+        auto& texture = m_Registry.emplace<CTexture>(entity);
+
+        transform.position = {static_cast<float>(x * tilemap.getTileWidth()),
+                              static_cast<float>(y * tilemap.getTileHeight())};
+
+        texture.textureID = tileset->getTextureID();
+        texture.textureRect = region;
+        sprite.size = {static_cast<float>(tilemap.getTileWidth()),
+                       static_cast<float>(tilemap.getTileHeight())};
+        sprite.zIndex = zIndex;
+
+        return entity;
+    };
+
     auto someWeapon = makeWeapon("data/items/weapons/some_weapon.json");
-    makeEntity(100.0f, 100.0f, 200.0f, "data/characters/default.json");
-    makeEntity(340.0f, 100.0f, 200.0f, "data/characters/default.json");
-    makeEntity(100.0f, 340.0f, 200.0f, "data/characters/default.json");
-    auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
+    // makeEntity(100.0f, 100.0f, 200.0f, "data/characters/default.json");
+    // makeEntity(340.0f, 100.0f, 200.0f, "data/characters/default.json");
+    // makeEntity(100.0f, 340.0f, 200.0f, "data/characters/default.json");
+    // auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
 
     m_LocalPlayer = makeEntity(500.f, 500.f, 200.f, "data/characters/player.json");
     auto& localPlayerWorld = m_Registry.get<CWorldTransform>(m_LocalPlayer);
@@ -77,6 +114,23 @@ void GameLayer::OnAttach()
     m_TransformSystem.Update(0.0f);
     auto& worldWeapon = m_Registry.get<CWorldTransform>(someWeapon);
     worldWeapon.position = localPlayerWorld.position + Vec2{100.f, 0.f};
+
+    // maps
+
+    map::Tilemap tilemap =
+        map::Tiled::LoadTilemapJSON(m_EngineContext, "data/maps/random/random_map.tmj");
+    zIndex_t zIndex = 0;
+    for (const auto& layer : tilemap.getTileLayers())
+    {
+        for (std::uint32_t y = 0; y < layer.getHeight(); ++y)
+        {
+            for (std::uint32_t x = 0; x < layer.getWidth(); ++x)
+            {
+                makeTile(tilemap, layer, x, y, zIndex);
+            }
+        }
+        zIndex++;
+    }
 
     // Inventory
     // add the weapon

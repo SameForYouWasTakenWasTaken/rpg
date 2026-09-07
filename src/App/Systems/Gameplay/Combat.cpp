@@ -55,8 +55,7 @@ void CombatSystem::Update(float dt)
             // query target entities within range of entity, that are a humanoid and alive
             for (entt::entity target : m_SpatialGrid.Query(
                      transform.position, range,
-                     [attacker, this](entt::entity target)
-                     {
+                     [attacker, this](entt::entity target) {
                          return target != attacker && m_Registry.all_of<CHealth, CHumanoid>(target);
                      }))
             {

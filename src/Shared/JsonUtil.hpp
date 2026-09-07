@@ -14,7 +14,7 @@ TExpected AttemptAccessField(const nlohmann::json& data, std::string_view field)
     auto it = data.find(field);
     if (it == data.end())
         throw std::runtime_error(
-            std::format("Missing required field in JSON for entity: {}", std::string(field)));
+            std::format("Missing required field in JSON for entity: {}", field));
 
     try
     {

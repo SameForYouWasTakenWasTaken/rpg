@@ -10,15 +10,16 @@ namespace ssg
 {
 TextureID AssetManager::LoadTexture(const Filepath& path)
 {
-    if (m_Filepaths.find(path) != m_Filepaths.end())
-        return m_Filepaths[path]; // Texture is already loaded
+    auto fullPath = std::filesystem::canonical(path);
+    if (m_Filepaths.contains(fullPath))
+        return m_Filepaths[fullPath]; // Texture is already loaded
 
-    auto texture = std::make_unique<sf::Texture>(path);
+    auto texture = std::make_unique<sf::Texture>(fullPath);
     if (!texture)
-        throw std::runtime_error("Could not get texture of path " + path.string() + "!");
+        throw std::runtime_error("Could not get texture of path " + fullPath.string() + "!");
 
     m_Textures.emplace(m_NextTextureID, std::move(texture));
-    m_Filepaths.emplace(path, m_NextTextureID);
+    m_Filepaths.emplace(fullPath, m_NextTextureID);
 
     return m_NextTextureID++;
 }
@@ -29,42 +30,13 @@ const sf::Texture& AssetManager::GetTexture(const Filepath& path)
     TextureID id = m_Filepaths[path];
     return GetTexture(id);
 }
-AtlasID AssetManager::LoadAtlas(EngineContext& context, AtlasConfig config)
+void AssetManager::LoadAtlas(Atlas atlas)
 {
-    Atlas atlas{context};
+    auto it = m_Atlases.find(atlas.GetID());
+    if (it != m_Atlases.end())
+        return;
 
-    TextureID textureID = LoadTexture(config.texture);
-    atlas.LoadAtlas(config.metadata, textureID);
-
-    AtlasID id = atlas.GetID();
-    m_Atlases.emplace(id, std::move(atlas));
-
-    return id;
-}
-
-AtlasID AssetManager::LoadAtlas(EngineContext& context, const Filepath& jsonPath,
-                                std::string_view field)
-{
-    Atlas atlas{context};
-
-    json::json data;
-    std::ifstream file(jsonPath);
-    if (!file.is_open())
-        throw std::runtime_error("Could not open atlas .json file: " + jsonPath.string());
-
-    file >> data;
-
-    auto atlasConfig = json::AccessObjectField(data, field);
-    auto texture = json::AttemptAccessField<Filepath>(atlasConfig, "texture");
-    auto jsonMetadata = json::AttemptAccessField<Filepath>(atlasConfig, "metadata");
-
-    TextureID textureID = LoadTexture(texture);
-    atlas.LoadAtlas(jsonMetadata, textureID);
-
-    AtlasID id = atlas.GetID();
-    m_Atlases.emplace(id, std::move(atlas));
-
-    return id;
+    m_Atlases.emplace(atlas.GetID(), atlas);
 }
 
 Atlas& AssetManager::GetAtlas(AtlasID id)
@@ -89,23 +61,23 @@ EntityDefinition AssetManager::GetEntityDefinition(const Filepath& filepath)
 
     file >> data;
 
-    if (!ssg::json::Has(data, "id") || !ssg::json::Has(data, "components"))
+    if (!json::Has(data, "id") || !json::Has(data, "components"))
     {
         return EntityDefinition{};
     }
 
-    const auto& components = ssg::json::AccessObjectField(data, "components");
+    const auto& components = json::AccessObjectField(data, "components");
 
-    if (!ssg::json::Has(components, "sprite"))
+    if (!json::Has(components, "sprite"))
         return EntityDefinition{};
 
-    const auto& spriteField = ssg::json::AccessObjectField(components, "sprite");
+    const auto& spriteField = json::AccessObjectField(components, "sprite");
 
-    definition.nameID = ssg::json::AttemptAccessField<String>(data, "id");
+    definition.nameID = json::AttemptAccessField<String>(data, "id");
 
-    definition.atlasID = ssg::json::AttemptAccessField<String>(spriteField, "atlas");
+    definition.atlasID = json::AttemptAccessField<String>(spriteField, "atlas");
 
-    const String regionName = ssg::json::AttemptAccessField<String>(spriteField, "region");
+    const String regionName = json::AttemptAccessField<String>(spriteField, "region");
 
     definition.region = GetAtlas(definition.atlasID).GetRegion(regionName);
 
