@@ -1,0 +1,8 @@
+{
+  "random": {
+    "filepath": "data/maps/random/random_map.tmj"
+  },
+  "other_random": {
+    "filepath": "data/maps/other_random_map/mapWithTree.tmj"
+  }
+}

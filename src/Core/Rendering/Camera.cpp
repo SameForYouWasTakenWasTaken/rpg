@@ -18,7 +18,11 @@ Vec2 Camera::GetCenter() const
     return Vec2{center.x, center.y};
 }
 
-void Camera::SetSize(const Vec2& size) { m_View.setSize(sf::Vector2f(size.x, size.y)); }
+void Camera::SetSize(const Vec2& size)
+{
+    m_BaseSize = size;
+    m_View.setSize(sf::Vector2f(m_BaseSize.x * m_Zoom, m_BaseSize.y * m_Zoom));
+}
 
 Vec2 Camera::GetSize() const
 {
@@ -38,7 +42,12 @@ void Camera::Move(const Vec2& offset) { m_View.move(sf::Vector2f(offset.x, offse
 
 void Camera::Rotate(float degrees) { m_View.rotate(sf::degrees(degrees)); }
 
-void Camera::Zoom(float factor) { m_View.zoom(factor); }
+void Camera::Zoom(float factor) { SetZoom(factor * m_Zoom); }
+void Camera::SetZoom(float zoom)
+{
+    m_Zoom = zoom;
+    SetSize(m_BaseSize); // internally does m_BaseSize * zoom
+}
 
 void Camera::SetView(const Vec2& center, const Vec2& size)
 {

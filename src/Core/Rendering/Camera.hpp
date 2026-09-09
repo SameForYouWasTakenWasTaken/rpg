@@ -34,12 +34,15 @@ class Camera
     void Move(const Vec2& offset);
     void Rotate(float degrees);
     void Zoom(float factor);
+    void SetZoom(float zoom);
 
     void SetView(const Vec2& center, const Vec2& size);
     const sf::View& GetView() const;
 
   private:
     sf::View m_View;
+    Vec2 m_BaseSize;
+    float m_Zoom = 1.0f;
 };
 
 } // namespace ssg

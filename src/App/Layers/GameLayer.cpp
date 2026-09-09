@@ -106,9 +106,10 @@ void GameLayer::OnAttach()
     // makeEntity(100.0f, 340.0f, 200.0f, "data/characters/default.json");
     // auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
 
-    m_LocalPlayer = makeEntity(500.f, 500.f, 200.f, "data/characters/player.json");
+    m_LocalPlayer = makeEntity(500.f, 500.f, 100.f, "data/characters/player.json");
     auto& localPlayerWorld = m_Registry.get<CWorldTransform>(m_LocalPlayer);
     m_LocalPlayerCamera.SetCenter(localPlayerWorld.position);
+    m_LocalPlayerCamera.SetZoom(.35f);
 
     // World transforms must be current for KeepWorld rebasing to be correct.
     m_TransformSystem.Update(0.0f);
@@ -116,9 +117,8 @@ void GameLayer::OnAttach()
     worldWeapon.position = localPlayerWorld.position + Vec2{100.f, 0.f};
 
     // maps
-
-    map::Tilemap tilemap =
-        map::Tiled::LoadTilemapJSON(m_EngineContext, "data/maps/random/random_map.tmj");
+    map::MapEntry mapEntry = map::LookUpMapEntry("other_random");
+    map::Tilemap tilemap = map::Tiled::LoadTilemapJSON(m_EngineContext, mapEntry.mapConfigPath);
     zIndex_t zIndex = 0;
     for (const auto& layer : tilemap.getTileLayers())
     {
