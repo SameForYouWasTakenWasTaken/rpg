@@ -20,7 +20,28 @@ void HandleErrorForJsonProperty(const String& property, const json::json& data,
             std::format("Map from '{}' is missing '{}' property", path.string(), property));
 }
 
-Tilemap Tiled::LoadTilemapJSON(EngineContext& context, const Filepath& path)
+MapEntry LookUpMapEntry(const String& field, const Filepath& filepath)
+{
+    std::ifstream file(filepath);
+    if (!file.is_open())
+        throw std::runtime_error("Failed to open file " + filepath.string() + "!");
+
+    json::json data;
+    file >> data;
+
+    HandleErrorForJsonProperty(field, data, filepath);
+    auto mapField = json::AccessObjectField(data, field);
+
+    HandleErrorForJsonProperty("filepath", mapField, filepath);
+    auto configFilepath = json::AttemptAccessField<Filepath>(mapField, "filepath");
+
+    return MapEntry{configFilepath};
+}
+} // namespace ssg::map
+
+namespace ssg::map::Tiled
+{
+Tilemap LoadTilemapJSON(EngineContext& context, const Filepath& path)
 {
     std::ifstream file(path);
     if (!file.is_open())
@@ -79,7 +100,7 @@ Tilemap Tiled::LoadTilemapJSON(EngineContext& context, const Filepath& path)
 
     return Tilemap{width, height, tileHeight, tileWidth, layers, sets, objectLayers};
 }
-TileLayer Tiled::LoadTileLayerJSON(const Filepath& path, const json::json& layerJson)
+TileLayer LoadTileLayerJSON(const Filepath& path, const json::json& layerJson)
 {
     HandleErrorForJsonProperty("name", layerJson, path);
     HandleErrorForJsonProperty("width", layerJson, path);
@@ -95,7 +116,7 @@ TileLayer Tiled::LoadTileLayerJSON(const Filepath& path, const json::json& layer
     return TileLayer{layerName, layerWidth, layerHeight, layerData};
 }
 
-Tileset Tiled::LoadTilesetXML(EngineContext& context, const Filepath& path, uint32_t firstgid)
+Tileset LoadTilesetXML(EngineContext& context, const Filepath& path, uint32_t firstgid)
 {
     using namespace tinyxml2;
 
@@ -149,4 +170,4 @@ Tileset Tiled::LoadTilesetXML(EngineContext& context, const Filepath& path, uint
                    firstgid,
                    textureID};
 }
-} // namespace ssg::map
+} // namespace ssg::map::Tiled
