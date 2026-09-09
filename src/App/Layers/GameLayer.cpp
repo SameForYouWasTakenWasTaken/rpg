@@ -118,7 +118,7 @@ void GameLayer::OnAttach()
     // maps
 
     map::Tilemap tilemap =
-        map::Tiled::LoadTilemapJSON(m_EngineContext, "data/maps/random/random_map.tmj");
+        map::Tiled::LoadTilemapJSON(m_EngineContext, "data/maps/other_random_map/mapWithTree.tmj");
     zIndex_t zIndex = 0;
     for (const auto& layer : tilemap.getTileLayers())
     {
