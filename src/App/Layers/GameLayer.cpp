@@ -109,6 +109,7 @@ void GameLayer::OnAttach()
     m_LocalPlayer = makeEntity(500.f, 500.f, 100.f, "data/characters/player.json");
     auto& localPlayerWorld = m_Registry.get<CWorldTransform>(m_LocalPlayer);
     m_LocalPlayerCamera.SetCenter(localPlayerWorld.position);
+    m_LocalPlayerCamera.SetZoom(.35f);
 
     // World transforms must be current for KeepWorld rebasing to be correct.
     m_TransformSystem.Update(0.0f);
