@@ -17,6 +17,7 @@ add_library(App STATIC
         Map/Tileset.cpp
         Map/TileLayer.cpp
         Map/Tilemap.cpp
+        Factories/Application.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
