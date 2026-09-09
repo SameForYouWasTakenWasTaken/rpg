@@ -25,6 +25,8 @@ struct WindowSettings
     Size Width{100}, Height{100};
     Fps Framerate{60};
     String title{"Window"};
+    bool vSync{true};
+    Filepath IconFilepath{};
 };
 
 class Window
@@ -43,6 +45,8 @@ class Window
     void SetFramerate(WindowSettings::Fps);
     void SetSize(WindowSettings::Size, WindowSettings::Size);
     void SetView(const sf::View& view);
+    void SetVSync(bool vsync);
+    void SetIcon(const Filepath& path);
 
     template <typename... TArgs> void Draw(TArgs&&... args)
     {
