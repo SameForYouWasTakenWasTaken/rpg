@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include "Config/Config.hpp"
 #include "Engine.hpp"
 #include "EngineContext.hpp"
 #include "Events/EventBus.hpp"
@@ -13,6 +14,7 @@
 #include "Events/MouseWheelScrolledEvent.hpp"
 #include "Events/TextEnteredEvent.hpp"
 #include "Events/WindowCloseEvent.hpp"
+#include "Factories/Application.hpp"
 #include "Layers/GameLayer.hpp"
 #include "Rendering/Atlas.hpp"
 #include "Rendering/Window.hpp"
@@ -32,7 +34,9 @@ void Application::Run()
     auto& engine = m_EngineContext.engine;
     auto& eventBus = engine.GetEventBus();
     auto& renderer = engine.GetRenderer();
-    m_Window.SetSettings({.Width = 600, .Height = 800, .Framerate = 200, .title = "Game!"});
+
+    WindowSettings windowSettings = factory::LoadWindowSettings(Config::GAMES_JSON_FILEPATH);
+    m_Window.SetSettings(windowSettings);
 
     ApplicationContext Context{m_Window};
 

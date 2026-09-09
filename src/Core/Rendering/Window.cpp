@@ -33,6 +33,10 @@ void Window::SetSettings(const WindowSettings& settings)
     SetSize(settings.Width, settings.Height);
     SetTitle(settings.title);
     SetFramerate(settings.Framerate);
+    SetVSync(settings.vSync);
+
+    if (settings.IconFilepath != Filepath{})
+        SetIcon(settings.IconFilepath);
 }
 
 void Window::SetTitle(const String& title) { m_sfRenderWindow.setTitle(title); }
@@ -47,6 +51,8 @@ void Window::SetSize(WindowSettings::Size width, WindowSettings::Size height)
 }
 
 void Window::SetView(const sf::View& view) { m_sfRenderWindow.setView(view); }
+void Window::SetVSync(bool vsync) { m_sfRenderWindow.setVerticalSyncEnabled(vsync); }
+void Window::SetIcon(const Filepath& path) { m_sfRenderWindow.setIcon(sf::Image(path)); }
 
 std::optional<sf::Event> Window::PollSFMLEvents() { return m_sfRenderWindow.pollEvent(); }
 
