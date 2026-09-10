@@ -1,5 +1,7 @@
 #pragma once
 
+#include <entt/entt.hpp>
+
 #include "Config/Gameplay/Map/MapConfig.hpp"
 #include "EngineContext.hpp"
 #include "JsonUtil.hpp"
@@ -14,6 +16,11 @@ struct MapEntry
 
 MapEntry LookUpMapEntry(const String& field,
                         const Filepath& filepath = Config::map::DEFAULT_MAPS_PATH);
+
+namespace O_N2
+{
+void CreateEntitiesForMap(entt::registry& registry, Tilemap& tilemap);
+}
 namespace Tiled
 {
 Tilemap LoadTilemapJSON(EngineContext& context, const Filepath& path);
