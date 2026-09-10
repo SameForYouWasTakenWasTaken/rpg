@@ -13,9 +13,6 @@
 #include "Logger.hpp"
 #include "Systems/AssetManager.hpp"
 
-namespace ssg
-{
-}
 namespace ssg::map
 {
 
