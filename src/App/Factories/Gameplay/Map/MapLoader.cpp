@@ -145,7 +145,7 @@ Tilemap LoadTilemapJSON(EngineContext& context, const Filepath& path)
         auto source =
             path.parent_path() / json::AttemptAccessField<Filepath>(tilesetJson, "source");
 
-        sets.emplace_back(LoadTilesetXML(context, source, firstGid));
+        sets.emplace_back(LoadTilesetJSON(context, source, firstGid));
     }
 
     return Tilemap{width, height, tileHeight, tileWidth, layers, sets, objectLayers};
@@ -166,58 +166,38 @@ TileLayer LoadTileLayerJSON(const Filepath& path, const json::json& layerJson)
     return TileLayer{layerName, layerWidth, layerHeight, layerData};
 }
 
-Tileset LoadTilesetXML(EngineContext& context, const Filepath& path, uint32_t firstgid)
+Tileset LoadTilesetJSON(EngineContext& context, const Filepath& path, uint32_t firstgid)
 {
-    using namespace tinyxml2;
+    std::ifstream file(path);
+    if (!file.is_open())
+        throw std::runtime_error("Failed to open file " + path.string() + "!");
 
-    XMLDocument doc;
-    XMLError result = doc.LoadFile(path.string().c_str());
+    json::json data;
+    file >> data;
 
-    if (result != XML_SUCCESS)
-        throw std::runtime_error("Could not load tileset from " + path.string());
+    HandleErrorForJsonProperty("name", data, path);
+    HandleErrorForJsonProperty("tilewidth", data, path);
+    HandleErrorForJsonProperty("tileheight", data, path);
+    HandleErrorForJsonProperty("tilecount", data, path);
+    HandleErrorForJsonProperty("columns", data, path);
+    HandleErrorForJsonProperty("type", data, path);
+    HandleErrorForJsonProperty("image", data, path);
 
-    XMLElement* tilesetElement = doc.FirstChildElement("tileset");
+    // verify its type is a tileset
+    if (json::AttemptAccessField<String>(data, "type") != "tileset")
+        throw std::runtime_error("Tileset type inconsistent with json data! Filepath: " +
+                                 path.string());
 
-    if (!tilesetElement)
-        throw std::runtime_error("Missing <tileset> element in " + path.string());
+    auto name = json::AttemptAccessField<String>(data, "name");
+    auto imageSource = json::AttemptAccessField<Filepath>(data, "image");
+    auto tileWidth = json::AttemptAccessField<std::uint32_t>(data, "tilewidth");
+    auto tileHeight = json::AttemptAccessField<std::uint32_t>(data, "tileheight");
+    auto tileCount = json::AttemptAccessField<std::uint32_t>(data, "tilecount");
+    auto columns = json::AttemptAccessField<std::uint32_t>(data, "columns");
 
-    const char* name;
-    std::int32_t tileWidth;
-    std::int32_t tileHeight;
-    std::int32_t tileCount;
-    std::int32_t columns;
-
-    if (tilesetElement->QueryStringAttribute("name", &name) != XML_SUCCESS)
-        throw std::runtime_error("Missing or invalid 'name' attribute");
-
-    if (tilesetElement->QueryIntAttribute("tilewidth", &tileWidth) != XML_SUCCESS)
-        throw std::runtime_error("Missing or invalid 'tilewidth' tileset attribute");
-
-    if (tilesetElement->QueryIntAttribute("tileheight", &tileHeight) != XML_SUCCESS)
-        throw std::runtime_error("Missing or invalid 'tileheight' tileset attribute");
-
-    if (tilesetElement->QueryIntAttribute("tilecount", &tileCount) != XML_SUCCESS)
-        throw std::runtime_error("Missing or invalid 'tilecount' tileset attribute");
-
-    if (tilesetElement->QueryIntAttribute("columns", &columns) != XML_SUCCESS)
-        throw std::runtime_error("Missing or invalid 'columns' tileset attribute");
-
-    // parse image source
-    const char* imageSource;
-    XMLElement* imageElement = tilesetElement->FirstChildElement("image");
-
-    if (imageElement->QueryStringAttribute("source", &imageSource) != XML_SUCCESS)
-        throw std::runtime_error("Missing or invalid 'source' attribute");
-
-    auto textureID = context.assetManager.LoadTexture(Filepath(imageSource));
+    TextureHandle textureID = context.assetManager.LoadTexture(imageSource);
 
     // convert int32_t to uint32_t to prevent implicit conversion
-    return Tileset{std::string(name),
-                   static_cast<std::uint32_t>(tileWidth),
-                   static_cast<std::uint32_t>(tileHeight),
-                   static_cast<std::uint32_t>(columns),
-                   static_cast<std::uint32_t>(tileCount),
-                   firstgid,
-                   textureID};
+    return Tileset{name, tileWidth, tileHeight, columns, tileCount, firstgid, textureID};
 }
 } // namespace ssg::map::Tiled

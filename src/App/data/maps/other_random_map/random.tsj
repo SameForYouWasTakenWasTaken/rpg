@@ -1,0 +1,15 @@
+{
+    "columns": 44,
+    "image": "assets/Textures/Atlas/random.png",
+    "imageheight": 1441,
+    "imagewidth": 1413,
+    "margin": 0,
+    "name": "random",
+    "spacing": 0,
+    "tilecount": 1980,
+    "tiledversion": "1.12.1",
+    "tileheight": 32,
+    "tilewidth": 32,
+    "type": "tileset",
+    "version": "1.10"
+}
