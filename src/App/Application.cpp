@@ -16,7 +16,7 @@
 #include "Events/WindowCloseEvent.hpp"
 #include "Factories/Application.hpp"
 #include "Layers/GameLayer.hpp"
-#include "Rendering/Atlas.hpp"
+#include "Rendering/SpriteSink.hpp"
 #include "Rendering/Window.hpp"
 #include "SFML/Graphics/Rect.hpp"
 #include "SFML/Graphics/Texture.hpp"
@@ -40,6 +40,10 @@ void Application::Run()
 
     ApplicationContext Context{m_Window};
 
+    // Initialize render sinks
+    renderer.AddSink(std::make_unique<rendering::SpriteSink>());
+
+    // Scenes
     SceneStack stack;
 
     auto scene = std::make_unique<GameScene>();

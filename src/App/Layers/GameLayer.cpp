@@ -18,6 +18,7 @@
 #include "Factories/Gameplay/Weapons.hpp"
 #include "Rendering/Atlas.hpp"
 #include "Rendering/Renderer.hpp"
+#include "Rendering/SpriteSink.hpp"
 #include "SFML/Graphics/Rect.hpp"
 #include "Systems/AssetManager.hpp"
 #include "Systems/Gameplay/InventorySystem.hpp"
@@ -29,6 +30,7 @@ namespace ssg
 void GameLayer::OnAttach()
 {
     auto& engine = m_EngineContext.engine;
+    auto& renderer = engine.GetRenderer();
     auto& assetManager = engine.GetAssetManager();
     auto atlasTexture = assetManager.LoadTexture("assets/Textures/Atlas/random.png");
     const auto& atlas = atlas::TexturePacker::Load(
@@ -100,6 +102,8 @@ void GameLayer::OnAttach()
     // Events
     engine.GetEventBus().Sink<WindowResizeEvent>().connect<&GameLayer::OnWindowResize>(this);
     engine.GetEventBus().Sink<KeyPressedEvent>().connect<&GameLayer::OnKeyPress>(this);
+
+    m_SpriteSink = &renderer.GetSink<rendering::SpriteSink>();
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)
@@ -198,7 +202,7 @@ void GameLayer::OnRender(Renderer& renderer, ApplicationContext& context)
         auto& texture = view.get<CTexture>(entity);
         auto& transform = view.get<CWorldTransform>(entity);
 
-        RenderObject obj;
+        rendering::RenderObject obj;
         obj.color = sprite.color;
         obj.origin = sprite.origin;
         obj.zIndex = sprite.zIndex;
@@ -214,7 +218,7 @@ void GameLayer::OnRender(Renderer& renderer, ApplicationContext& context)
         obj.texture = &assetManager.GetTexture(texture.textureID);
         obj.texRect = texture.textureRect;
 
-        renderer.Submit(obj);
+        m_SpriteSink->Submit(obj);
     }
 }
 
