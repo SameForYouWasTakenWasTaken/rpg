@@ -36,6 +36,7 @@ struct TextureHandle
     TextureHandle(value_type id) : id(id) {}
 
     [[nodiscard]] bool IsValid() const { return id != static_cast<value_type>(-1); }
+    [[nodiscard]] static value_type GetInvalidValue() { return static_cast<value_type>(-1); }
 
     friend bool operator==(const TextureHandle& lhs, const TextureHandle& rhs)
     {

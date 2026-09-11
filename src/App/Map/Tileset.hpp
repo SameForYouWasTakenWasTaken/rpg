@@ -34,6 +34,6 @@ class Tileset
     std::uint32_t m_tileWidth, m_tileHeight, m_Columns = 0;
     std::uint32_t m_tileCount = 0;
     std::uint32_t m_firstgid = 0;
-    TextureHandle textureID = -1;
+    TextureHandle textureID = TextureHandle::GetInvalidValue();
 };
 } // namespace ssg::map
