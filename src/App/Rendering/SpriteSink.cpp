@@ -1,5 +1,7 @@
 #include "SpriteSink.hpp"
 
+#include <algorithm>
+
 namespace ssg::rendering
 {
 
