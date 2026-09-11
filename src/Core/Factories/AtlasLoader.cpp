@@ -9,7 +9,7 @@ namespace ssg::atlas
 {
 namespace TexturePacker
 {
-const Atlas& Load(EngineContext& context, const Filepath& jsonFilepath, TextureID textureID)
+const Atlas& Load(EngineContext& context, const Filepath& jsonFilepath, TextureHandle textureID)
 {
     json::json atlas;
     std::ifstream file(jsonFilepath);

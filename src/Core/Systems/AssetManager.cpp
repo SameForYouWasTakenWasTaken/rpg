@@ -8,7 +8,7 @@
 
 namespace ssg
 {
-TextureID AssetManager::LoadTexture(const Filepath& path)
+TextureHandle AssetManager::LoadTexture(const Filepath& path)
 {
     auto fullPath = std::filesystem::canonical(path);
     if (m_Filepaths.contains(fullPath))
@@ -24,13 +24,16 @@ TextureID AssetManager::LoadTexture(const Filepath& path)
     return m_NextTextureID++;
 }
 
-const sf::Texture& AssetManager::GetTexture(TextureID id) { return *(m_Textures[id]); }
+const sf::Texture& AssetManager::GetTexture(TextureHandle handle)
+{
+    return *(m_Textures[handle.id]);
+}
 const sf::Texture& AssetManager::GetTexture(const Filepath& path)
 {
-    TextureID id = m_Filepaths[path];
+    TextureHandle id = m_Filepaths[path];
     return GetTexture(id);
 }
-void AssetManager::LoadAtlas(Atlas atlas)
+void AssetManager::LoadAtlas(const Atlas& atlas)
 {
     auto it = m_Atlases.find(atlas.GetID());
     if (it != m_Atlases.end())
@@ -39,7 +42,7 @@ void AssetManager::LoadAtlas(Atlas atlas)
     m_Atlases.emplace(atlas.GetID(), atlas);
 }
 
-Atlas& AssetManager::GetAtlas(AtlasID id)
+Atlas& AssetManager::GetAtlas(const AtlasID& id)
 {
     auto it = m_Atlases.find(id);
 

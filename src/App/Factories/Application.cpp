@@ -28,7 +28,8 @@ WindowSettings LoadWindowSettings(const Filepath& settingsJsonPath)
     auto framerate = json::AttemptAccessField<WindowSettings::Fps>(data, "framerate");
     auto vsync = json::AttemptAccessField<bool>(data, "vsync");
 
-    // optional settings that don't need strict checks, and can be passed in as "null" or default values
+    // optional settings that don't need strict checks, and can be passed in as "null" or
+    // default values
     Filepath iconFilepath{};
 
     if (json::Has(data, "icon"))

@@ -7,6 +7,6 @@ namespace ssg::atlas
 {
 namespace TexturePacker
 {
-const Atlas& Load(EngineContext& context, const Filepath& jsonFilepath, TextureID textureID);
+const Atlas& Load(EngineContext& context, const Filepath& jsonFilepath, TextureHandle textureID);
 }
 } // namespace ssg::atlas
