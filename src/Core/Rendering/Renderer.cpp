@@ -13,24 +13,19 @@
 
 namespace ssg
 {
-
-Renderer::Renderer()
-{
-    // Make enough room for 1k sprites
-}
-void Renderer::Begin()
+void Renderer::Begin() const
 {
     for (auto& sink : m_Sinks)
         sink->Begin();
 }
 
-void Renderer::ForwardEvent(const sf::Event& e)
+void Renderer::ForwardEvent(const sf::Event& e) const
 {
     for (auto& sink : m_Sinks)
         sink->HandleEvents(e);
 }
 
-void Renderer::End(Window& window)
+void Renderer::End(Window& window) const
 {
     for (auto& sink : m_Sinks)
         sink->End(window);
