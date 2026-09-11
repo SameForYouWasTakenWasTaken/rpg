@@ -9,7 +9,7 @@ For the architectural overview, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ### `Engine`
 
-A normal engine object that owns reusable engine-wide services. It is no longer a singleton.
+A normal engine object that owns reusable engine-wide services. It is not a singleton.
 
 | Member / Method | Purpose |
 | --- | --- |
@@ -17,7 +17,7 @@ A normal engine object that owns reusable engine-wide services. It is no longer 
 | `AssetManager` | Loads and caches textures and atlases. |
 | `Logger` | Structured logging and log sinks. |
 | `Input` | Tracks/translates keyboard and mouse input. |
-| `Renderer` | Batched 2D rendering. |
+| `Renderer` | Rendering orchestration and registered render sinks. |
 | `initialize()` | Starts the engine. |
 | `terminate()` | Stops the application loop. |
 | `isRunning()` | Reads the running flag. |
@@ -41,10 +41,6 @@ A non-owning reference bundle used to pass engine dependencies explicitly.
 
 `EngineContext` does not own any of these services.
 
-### `Entity`
-
-A legacy placeholder. The active ECS model uses `entt::entity` IDs directly.
-
 ### `Input`
 
 Engine-level input service.
@@ -67,11 +63,11 @@ Receives an `EngineContext`, owns the main `Window`, and runs the application lo
 | --- | --- |
 | `Run()` | Runs the frame loop and creates the initial scene stack. |
 | `Shutdown()` | Stops the engine and closes the window. |
-| `HandleEvents()` | Polls raw SFML events and routes them to input/window handling. |
+| `HandleEvents()` | Owns raw SFML event polling, application event conversion, input processing, and renderer event forwarding. |
 | `m_EngineContext` | Reference to shared engine dependencies. |
 | `m_Window` | Application-owned main window. |
 
-The renderer is not owned by `Application`; it is owned by `Engine`.
+The renderer is not owned by `Application`; it is owned by `Engine`. The application does, however, register application-specific render sinks with the renderer.
 
 ### `ApplicationContext`
 
@@ -122,7 +118,7 @@ Current concrete `IScene` example. It installs the `GameLayer` and forwards upda
 
 Current concrete `ILayer` example. Receives an `EngineContext` and owns a scene-local registry plus gameplay systems.
 
-It demonstrates player movement, camera following, entity factories, atlas loading, transforms, combat, inventory interaction, and rendering.
+It demonstrates player movement, camera following, entity factories, atlas loading, transforms, combat, inventory interaction, tilemap entity creation, and rendering through the registered `SpriteSink`.
 
 ---
 
@@ -183,9 +179,37 @@ See [`HIERARCHY.md`](HIERARCHY.md) for the transform/hierarchy rules.
 
 ---
 
-## 🏭 Factories
+## 🗺️ Map factories
 
-`ssg::factory` contains helpers for attaching standard component sets to an **existing** entity.
+### `map::Tiled`
+
+Loads Tiled map data from JSON.
+
+- `LoadTilemapJSON()` loads a `.tmj` map.
+- `LoadTileLayerJSON()` converts a Tiled tile-layer JSON object into `TileLayer` data.
+- `LoadTilesetJSON()` loads an external JSON `.tsj` tileset and its referenced texture.
+
+The loader resolves each external tileset relative to the map's directory before loading it.
+
+### `map::O_N2::CreateEntitiesForMap()`
+
+Converts tilemap data into ECS entities using a straightforward nested traversal.
+
+For every valid tile it creates an entity and attaches `CTransform`, `CSprite`, and `CTexture`. Tile positions, texture regions, texture handles, sprite sizes, and layer-based z-index values are preserved.
+
+The function intentionally lives in the `O_N2` namespace to make its **O(n²), non-chunked** implementation explicit. It is a simple data-to-ECS conversion helper, not a spatially optimized map renderer.
+
+---
+
+## 🏭 Other factories
+
+`ssg::factory` contains helpers for application configuration and standard component setup.
+
+### `LoadWindowSettings()`
+
+Loads and validates `data/game.json` and returns a `WindowSettings` value. It keeps JSON parsing out of `Application` and `Window`.
+
+The configuration includes the window title, dimensions, framerate, VSync state, and an optional icon.
 
 ### `ApplyCharacterDefinition()`
 
@@ -199,7 +223,7 @@ Builds on the character definition flow and attaches `CItem` data such as item t
 
 Builds on the item definition flow and attaches `CWeapon` data such as damage, range, attack speed, and hit window.
 
-The factories do not create the entity themselves; callers create an entity and pass its ID to the factory.
+The gameplay factories do not create the entity themselves; callers create an entity and pass its ID to the factory.
 
 ---
 
@@ -207,11 +231,42 @@ The factories do not create the entity themselves; callers create an entity and 
 
 ### `Renderer`
 
-Engine-owned batched 2D renderer. `Submit()` queues render objects; `Begin()` starts a frame; `End(Window)` sorts/batches and draws them.
+Engine-owned rendering orchestrator. It owns registered `IRenderSink` instances rather than implementing a specific rendering technique itself.
+
+| Method | Purpose |
+| --- | --- |
+| `AddSink()` | Registers a render sink. |
+| `FindSink<T>()` | Optionally finds a registered sink of type `T`. Returns `nullptr` if absent. |
+| `GetSink<T>()` | Retrieves a required sink of type `T`; throws if it is not registered. |
+| `Begin()` | Invokes `Begin()` on every registered sink. |
+| `ForwardEvent()` | Forwards a raw SFML event to every registered sink. It does not poll the window. |
+| `End(Window)` | Invokes `End()` on every registered sink. |
+
+Sink registration order is also the renderer's execution order. This keeps the ordering deterministic without introducing a separate ordering system.
+
+### `IRenderSink`
+
+Generic rendering-backend interface under `src/Core/Rendering/Sinks/`.
+
+```cpp
+virtual void Begin() = 0;
+virtual void HandleEvents(const sf::Event& e) {}
+virtual void End(Window& window) = 0;
+```
+
+`Begin()` and `End()` are renderer-driven lifecycle callbacks, not functions that application/game code should call directly. `HandleEvents()` is used only when a rendering backend needs raw SFML events.
+
+### `SpriteSink`
+
+Application-side implementation of `IRenderSink` for sprite rendering.
+
+It contains the batched sprite renderer previously implemented directly by `Renderer`. `Submit()` queues a `RenderObject`; the sink groups objects by z-index, sorts them by texture, builds vertex data, and draws texture batches to the `Window` during `End()`.
+
+Because it is application-specific, `SpriteSink` lives under `src/App/Rendering/` rather than Core.
 
 ### `Window`
 
-Application-owned wrapper around the SFML render window and view. It polls raw SFML events and listens for relevant window events through the event bus.
+Application-owned wrapper around the SFML render window and view. It polls raw SFML events and applies `WindowSettings`.
 
 ### `Camera`
 
@@ -219,7 +274,7 @@ Thin wrapper around `sf::View` for center, size, rotation, viewport, and relativ
 
 ### `Atlas`
 
-Loads TexturePacker-style JSON metadata and maps sub-image names to texture rectangles. Atlas instances retain an `EngineContext&` so they can access the engine asset manager.
+Loads TexturePacker-style JSON metadata and maps sub-image names to texture rectangles.
 
 ---
 
@@ -227,14 +282,21 @@ Loads TexturePacker-style JSON metadata and maps sub-image names to texture rect
 
 ### `AssetManager`
 
-Engine-owned service that loads textures and atlases and exposes them through IDs.
+Engine-owned service that loads textures and atlases and exposes them through strongly typed handles.
 
-- `LoadTexture(path)` loads/reuses a texture.
-- `GetTexture(id/path)` accesses a loaded texture.
-- `LoadAtlas(context, config)` loads an atlas from an `AtlasConfig`.
-- `LoadAtlas(context, path, field)` loads an atlas configuration from a named JSON field.
+- `LoadTexture(path)` loads/reuses a texture and returns a `TextureHandle`.
+- `GetTexture(handle/path)` accesses a loaded texture.
+- `LoadAtlas(...)` loads an atlas.
 - `GetAtlas(id)` accesses a loaded atlas.
 - `GetEntityDefinition(path)` reads an entity definition and its sprite region.
+
+### `TextureHandle`
+
+A small strongly typed texture identifier stored in `src/Shared/Types.hpp`.
+
+It wraps the underlying numeric ID, supports equality comparison, exposes `IsValid()`, and has an explicit conversion back to the underlying value type.
+
+The handle is used by `AssetManager`, `CTexture`, `Tileset`, and `Atlas` instead of a generic `uint32_t`/`TextureID` alias.
 
 ### `Logger`
 
@@ -283,7 +345,7 @@ Plain structs stored on scene registries.
 | `CWorldTransform` | Derived world position, scale, rotation. |
 | `CRelationship` | Parent/child hierarchy links. |
 | `CSprite` | Sprite appearance, render properties, and facing direction. |
-| `CTexture` | Texture ID and source rectangle. |
+| `CTexture` | `TextureHandle` and source rectangle. |
 | `CDefinition` | Source JSON definition path. |
 | `CHealth` | Maximum and current health. |
 | `CHumanoid` | Movement speed. |
@@ -306,10 +368,10 @@ Compile-time configuration lives under `src/Shared/Config/` and is grouped by su
 - `Config::Logging` — memory sink capacity.
 - `Config::Rendering` — renderer z-index layer count.
 
-`Config.hpp` provides an aggregate include for these configuration headers.
+Runtime window configuration is stored separately in `data/game.json` and loaded by `factory::LoadWindowSettings()`.
 
 ---
 
 ## 🔤 Shared types
 
-`src/Shared/Types.hpp` contains commonly used aliases such as `Vec2`, `Vec3`, `TextureID`, `AtlasID`, `String`, `Vector<T>`, `Array<T, N>`, and `Filepath`, along with shared inventory count/slot types.
+`src/Shared/Types.hpp` contains commonly used aliases such as `Vec2`, `Vec3`, `AtlasID`, `String`, `Vector<T>`, `Array<T, N>`, and `Filepath`, along with shared inventory count/slot types and the strongly typed `TextureHandle`.
