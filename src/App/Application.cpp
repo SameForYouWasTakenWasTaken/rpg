@@ -38,7 +38,7 @@ void Application::Run()
     WindowSettings windowSettings = factory::LoadWindowSettings(Config::GAMES_JSON_FILEPATH);
     m_Window.SetSettings(windowSettings);
 
-    ApplicationContext Context{m_Window};
+    ApplicationContext context{m_Window};
 
     // Initialize render sinks
     renderer.AddSink(std::make_unique<rendering::SpriteSink>());
@@ -64,8 +64,8 @@ void Application::Run()
 
         renderer.Begin();
 
-        stack.Update(dt, Context);
-        stack.Render(renderer, Context);
+        stack.Update(dt, context);
+        stack.Render(renderer, context);
 
         renderer.End(m_Window);
 

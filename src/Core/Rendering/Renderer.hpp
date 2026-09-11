@@ -27,25 +27,25 @@ class Renderer
     Renderer(Renderer&&) = delete;
     Renderer& operator=(const Renderer&) = delete;
     Renderer& operator=(Renderer&&) = delete;
-    template <typename RenderSink> void AddSink(std::unique_ptr<RenderSink> sink)
+    template <RenderSink T> void AddSink(std::unique_ptr<T> sink)
     {
         m_Sinks.push_back(std::move(sink));
     }
 
-    template <typename RenderSink> RenderSink* FindSink()
+    template <RenderSink T> T* FindSink()
     {
         for (auto& sink : m_Sinks)
         {
-            if (auto* result = dynamic_cast<RenderSink*>(sink.get()))
+            if (auto* result = dynamic_cast<T*>(sink.get()))
                 return result;
         }
 
         return nullptr;
     }
 
-    template <typename RenderSink> RenderSink& GetSink()
+    template <RenderSink T> T& GetSink()
     {
-        if (auto* sink = FindSink<RenderSink>())
+        if (auto* sink = FindSink<T>())
             return *sink;
 
         throw std::runtime_error("Requested render sink is not registered!");

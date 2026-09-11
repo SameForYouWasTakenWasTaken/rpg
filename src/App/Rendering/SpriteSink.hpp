@@ -26,7 +26,7 @@ class SpriteSink : public IRenderSink
     SpriteSink();
 
     void Begin() override;
-    void Submit(RenderObject& object);
+    void Submit(const RenderObject& object);
     void End(Window& window) override;
 
   private:

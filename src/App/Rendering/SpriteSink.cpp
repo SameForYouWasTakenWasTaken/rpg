@@ -17,10 +17,7 @@ void SpriteSink::Begin()
 
     m_sfVertexArray.clear();
 }
-void SpriteSink::Submit(RenderObject& object)
-{
-    m_Layers[object.zIndex].push_back(std::move(object));
-}
+void SpriteSink::Submit(const RenderObject& object) { m_Layers[object.zIndex].push_back(object); }
 void SpriteSink::End(Window& window)
 {
     for (auto& layer : m_Layers)
