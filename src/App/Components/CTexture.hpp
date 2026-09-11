@@ -8,7 +8,7 @@ namespace ssg
 
 struct CTexture
 {
-    TextureID textureID{0};
+    TextureHandle textureID{0};
     sf::FloatRect textureRect{{0.0f, 0.0f}, {0.0f, 0.0f}};
 };
 

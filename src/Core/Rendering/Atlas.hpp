@@ -26,13 +26,13 @@ class Atlas
   public:
     Atlas() = default;
 
-    Atlas(TextureID textureID, std::string id, RegionList regions)
+    Atlas(TextureHandle textureID, std::string id, RegionList regions)
         : m_TextureID(textureID), m_ID(std::move(id)), m_Regions(std::move(regions))
     {
     }
 
     const std::string& GetID() const { return m_ID; }
-    TextureID GetTextureID() const { return m_TextureID; }
+    TextureHandle GetTextureID() const { return m_TextureID; }
 
     const Region& GetRegion(const String& name) const { return m_Regions.at(name); }
 
@@ -40,7 +40,7 @@ class Atlas
 
   private:
     std::string m_ID;
-    TextureID m_TextureID;
+    TextureHandle m_TextureID;
     RegionList m_Regions;
 };
 } // namespace ssg

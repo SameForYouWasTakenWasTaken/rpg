@@ -38,22 +38,22 @@ class AssetManager
     AssetManager& operator=(AssetManager&&) = delete;
     AssetManager& operator=(const AssetManager&) = delete;
 
-    TextureID LoadTexture(const Filepath&);
+    TextureHandle LoadTexture(const Filepath&);
 
-    const sf::Texture& GetTexture(TextureID);
+    const sf::Texture& GetTexture(TextureHandle);
     const sf::Texture& GetTexture(const Filepath&);
 
-    void LoadAtlas(Atlas atlas);
+    void LoadAtlas(const Atlas& atlas);
 
-    Atlas& GetAtlas(AtlasID);
+    Atlas& GetAtlas(const AtlasID&);
 
     EntityDefinition GetEntityDefinition(const Filepath&);
 
   private:
-    TextureID m_NextTextureID = 0;
+    TextureHandle::value_type m_NextTextureID = 0;
 
-    std::unordered_map<TextureID, std::unique_ptr<sf::Texture>> m_Textures = {};
-    std::unordered_map<Filepath, TextureID> m_Filepaths = {};
+    std::unordered_map<TextureHandle::value_type, std::unique_ptr<sf::Texture>> m_Textures;
+    std::unordered_map<Filepath, TextureHandle> m_Filepaths = {};
 
     std::unordered_map<AtlasID, Atlas> m_Atlases;
 };
