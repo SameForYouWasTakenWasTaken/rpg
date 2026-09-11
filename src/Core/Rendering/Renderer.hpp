@@ -52,6 +52,7 @@ class Renderer
     }
 
     void Begin();
+    void ForwardEvent(const sf::Event& e);
     void End(Window& window);
 
   private:

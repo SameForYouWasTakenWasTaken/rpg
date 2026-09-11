@@ -21,17 +21,19 @@ Renderer::Renderer()
 void Renderer::Begin()
 {
     for (auto& sink : m_Sinks)
-    {
         sink->Begin();
-    }
+}
+
+void Renderer::ForwardEvent(const sf::Event& e)
+{
+    for (auto& sink : m_Sinks)
+        sink->HandleEvents(e);
 }
 
 void Renderer::End(Window& window)
 {
     for (auto& sink : m_Sinks)
-    {
         sink->End(window);
-    }
 }
 
 } // namespace ssg

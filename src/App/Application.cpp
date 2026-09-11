@@ -78,6 +78,7 @@ void Application::Run()
 void Application::HandleEvents()
 {
     auto& engine = m_EngineContext.engine;
+    auto& renderer = engine.GetRenderer();
     auto& eventBus = engine.GetEventBus();
     auto& input = engine.GetInputSystem();
 
@@ -85,6 +86,8 @@ void Application::HandleEvents()
     {
         // process input, such as mouse and key presses, releases, movement, etc
         input.ProcessEvents(event);
+
+        // window
         if (EventBus::IsSFMLEvent<sf::Event::Closed>(event))
             eventBus.Queue<WindowCloseEvent>();
 
@@ -93,6 +96,11 @@ void Application::HandleEvents()
 
         if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::TextEntered>(event))
             eventBus.Queue<TextEnteredEvent>(static_cast<uint32_t>(pEvent->unicode));
+
+        // if any backend needs SFML related events, forward them with this, otherwise use the
+        // engines event bus (pls do!! don't use this crap unless you need to!!!!!!)
+        if (event)
+            renderer.ForwardEvent(*event);
     }
 }
 
