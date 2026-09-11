@@ -1,9 +1,13 @@
-#include "../Map/MapLoader.hpp"
+#include "MapLoader.hpp"
 
+#include <entt/entt.hpp>
 #include <fstream>
 #include <nlohmann/json_fwd.hpp>
 #include <tinyxml2.h>
 
+#include "Components/CSprite.hpp"
+#include "Components/CTexture.hpp"
+#include "Components/CTransform.hpp"
 #include "EngineContext.hpp"
 #include "JsonUtil.hpp"
 #include "Logger.hpp"
@@ -11,6 +15,51 @@
 
 namespace ssg::map
 {
+
+namespace O_N2
+{
+void CreateEntitiesForMap(entt::registry& registry, Tilemap& tilemap)
+{
+    zIndex_t zIndex = 0;
+    for (const auto& layer : tilemap.getTileLayers())
+    {
+        for (std::uint32_t y = 0; y < layer.getHeight(); ++y)
+        {
+            for (std::uint32_t x = 0; x < layer.getWidth(); ++x)
+            {
+                const auto gid = layer.at(x, y);
+
+                if (gid == 0)
+                    continue;
+
+                const auto* tileset = tilemap.getTilesetForGid(gid);
+
+                if (!tileset)
+                    continue;
+
+                const auto localId = gid - tileset->getFirstGid();
+                const auto region = tileset->getRegion(localId);
+
+                entt::entity entity = registry.create();
+
+                auto& transform = registry.emplace<CTransform>(entity);
+                auto& sprite = registry.emplace<CSprite>(entity);
+                auto& texture = registry.emplace<CTexture>(entity);
+
+                transform.position = {static_cast<float>(x * tilemap.getTileWidth()),
+                                      static_cast<float>(y * tilemap.getTileHeight())};
+
+                texture.textureID = tileset->getTextureID();
+                texture.textureRect = region;
+                sprite.size = {static_cast<float>(tilemap.getTileWidth()),
+                               static_cast<float>(tilemap.getTileHeight())};
+                sprite.zIndex = zIndex;
+            }
+        }
+        zIndex++;
+    }
+}
+} // namespace O_N2
 
 void HandleErrorForJsonProperty(const String& property, const json::json& data,
                                 const Filepath& path)
@@ -37,6 +86,7 @@ MapEntry LookUpMapEntry(const String& field, const Filepath& filepath)
 
     return MapEntry{configFilepath};
 }
+
 } // namespace ssg::map
 
 namespace ssg::map::Tiled

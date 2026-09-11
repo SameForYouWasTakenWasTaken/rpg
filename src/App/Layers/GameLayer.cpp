@@ -66,40 +66,6 @@ void GameLayer::OnAttach()
         return entity;
     };
 
-    auto makeTile = [&](const map::Tilemap& tilemap, const map::TileLayer& layer, std::uint32_t x,
-                        std::uint32_t y, zIndex_t zIndex) -> entt::entity
-    {
-        const auto gid = layer.at(x, y);
-
-        if (gid == 0)
-            return entt::null;
-
-        const auto* tileset = tilemap.getTilesetForGid(gid);
-
-        if (!tileset)
-            return entt::null;
-
-        const auto localId = gid - tileset->getFirstGid();
-        const auto region = tileset->getRegion(localId);
-
-        entt::entity entity = m_Registry.create();
-
-        auto& transform = m_Registry.emplace<CTransform>(entity);
-        auto& sprite = m_Registry.emplace<CSprite>(entity);
-        auto& texture = m_Registry.emplace<CTexture>(entity);
-
-        transform.position = {static_cast<float>(x * tilemap.getTileWidth()),
-                              static_cast<float>(y * tilemap.getTileHeight())};
-
-        texture.textureID = tileset->getTextureID();
-        texture.textureRect = region;
-        sprite.size = {static_cast<float>(tilemap.getTileWidth()),
-                       static_cast<float>(tilemap.getTileHeight())};
-        sprite.zIndex = zIndex;
-
-        return entity;
-    };
-
     auto someWeapon = makeWeapon("data/items/weapons/some_weapon.json");
     // makeEntity(100.0f, 100.0f, 200.0f, "data/characters/default.json");
     // makeEntity(340.0f, 100.0f, 200.0f, "data/characters/default.json");
@@ -118,19 +84,10 @@ void GameLayer::OnAttach()
 
     // maps
     map::MapEntry mapEntry = map::LookUpMapEntry("other_random");
+    map::MapEntry otherMapEntry = map::LookUpMapEntry("random");
     map::Tilemap tilemap = map::Tiled::LoadTilemapJSON(m_EngineContext, mapEntry.mapConfigPath);
-    zIndex_t zIndex = 0;
-    for (const auto& layer : tilemap.getTileLayers())
-    {
-        for (std::uint32_t y = 0; y < layer.getHeight(); ++y)
-        {
-            for (std::uint32_t x = 0; x < layer.getWidth(); ++x)
-            {
-                makeTile(tilemap, layer, x, y, zIndex);
-            }
-        }
-        zIndex++;
-    }
+
+    map::O_N2::CreateEntitiesForMap(m_Registry, tilemap);
 
     // Inventory
     // add the weapon
