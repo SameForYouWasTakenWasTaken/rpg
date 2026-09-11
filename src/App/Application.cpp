@@ -16,7 +16,7 @@
 #include "Events/WindowCloseEvent.hpp"
 #include "Factories/Application.hpp"
 #include "Layers/GameLayer.hpp"
-#include "Rendering/Atlas.hpp"
+#include "Rendering/SpriteSink.hpp"
 #include "Rendering/Window.hpp"
 #include "SFML/Graphics/Rect.hpp"
 #include "SFML/Graphics/Texture.hpp"
@@ -38,8 +38,12 @@ void Application::Run()
     WindowSettings windowSettings = factory::LoadWindowSettings(Config::GAMES_JSON_FILEPATH);
     m_Window.SetSettings(windowSettings);
 
-    ApplicationContext Context{m_Window};
+    ApplicationContext context{m_Window};
 
+    // Initialize render sinks
+    renderer.AddSink(std::make_unique<rendering::SpriteSink>());
+
+    // Scenes
     SceneStack stack;
 
     auto scene = std::make_unique<GameScene>();
@@ -60,8 +64,8 @@ void Application::Run()
 
         renderer.Begin();
 
-        stack.Update(dt, Context);
-        stack.Render(renderer, Context);
+        stack.Update(dt, context);
+        stack.Render(renderer, context);
 
         renderer.End(m_Window);
 
@@ -74,6 +78,7 @@ void Application::Run()
 void Application::HandleEvents()
 {
     auto& engine = m_EngineContext.engine;
+    auto& renderer = engine.GetRenderer();
     auto& eventBus = engine.GetEventBus();
     auto& input = engine.GetInputSystem();
 
@@ -81,6 +86,8 @@ void Application::HandleEvents()
     {
         // process input, such as mouse and key presses, releases, movement, etc
         input.ProcessEvents(event);
+
+        // window
         if (EventBus::IsSFMLEvent<sf::Event::Closed>(event))
             eventBus.Queue<WindowCloseEvent>();
 
@@ -89,6 +96,11 @@ void Application::HandleEvents()
 
         if (auto pEvent = EventBus::IsSFMLEvent<sf::Event::TextEntered>(event))
             eventBus.Queue<TextEnteredEvent>(static_cast<uint32_t>(pEvent->unicode));
+
+        // if any backend needs SFML related events, forward them with this, otherwise use the
+        // engines event bus (pls do!! don't use this crap unless you need to!!!!!!)
+        if (event)
+            renderer.ForwardEvent(*event);
     }
 }
 

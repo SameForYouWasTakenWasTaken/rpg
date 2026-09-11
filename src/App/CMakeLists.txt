@@ -18,6 +18,8 @@ add_library(App STATIC
         Map/TileLayer.cpp
         Map/Tilemap.cpp
         Factories/Application.cpp
+        Rendering/SpriteSink.hpp
+        Rendering/SpriteSink.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

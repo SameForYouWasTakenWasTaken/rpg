@@ -10,6 +10,7 @@
 #include "ILayer.hpp"
 #include "Rendering/Camera.hpp"
 #include "Rendering/Renderer.hpp"
+#include "Rendering/SpriteSink.hpp"
 #include "Systems/Gameplay/Combat.hpp"
 #include "Systems/SpatialGrid.hpp"
 #include "Systems/TransformSystem.hpp"
@@ -38,6 +39,8 @@ class GameLayer final : public ILayer
   private:
     void OnWindowResize(const WindowResizeEvent& event);
     void OnKeyPress(const KeyPressedEvent& event);
+
+    rendering::SpriteSink* m_SpriteSink;
 
     EngineContext& m_EngineContext;
     entt::entity m_LocalPlayer{entt::null};
