@@ -11,7 +11,7 @@ struct Region
 {
     Vec2 position;
     Vec2 size;
-    Region(Vec2 position = {}, Vec2 size = {}) : position(position), size(size) {};
+    Region(Vec2 position = {}, Vec2 size = {}) : position(position), size(size) {}
 
     operator sf::FloatRect() const
     {
