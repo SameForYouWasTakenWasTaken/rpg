@@ -52,12 +52,12 @@ void CombatSystem::Update(float dt)
             auto& transform = m_Registry.get<CWorldTransform>(attacker);
             float range = m_Registry.get<CWeapon>(combatState.cachedWeapon).range;
 
+            auto filterEntities = [attacker, this](entt::entity target)
+            { return target != attacker && m_Registry.all_of<CHealth, CHumanoid>(target); };
+
             // query target entities within range of entity, that are a humanoid and alive
-            for (entt::entity target : m_SpatialGrid.Query(
-                     transform.position, range,
-                     [attacker, this](entt::entity target) {
-                         return target != attacker && m_Registry.all_of<CHealth, CHumanoid>(target);
-                     }))
+            for (entt::entity target :
+                 m_SpatialGrid.Query(transform.position, range, filterEntities))
             {
                 // skip already cached entities
                 if (std::ranges::contains(combatState.alreadyHit, target))
