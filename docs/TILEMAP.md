@@ -1,6 +1,6 @@
 # 🗺️ Tilemap System
 
-This document describes the tilemap implementation used by the RPG project: how maps are authored in Tiled, how external tilesets are loaded, how tile IDs are resolved, and how the resulting map data can be consumed by the ECS renderer.
+This document describes the tilemap implementation used by the RPG project: how maps are authored in Tiled, how external tilesets are loaded, how tile IDs are resolved, and how the resulting map data can be consumed by ECS code.
 
 The implementation is intentionally focused on the data-loading foundation. Advanced Tiled features are not part of the current runtime contract.
 
@@ -18,7 +18,7 @@ Tiled map (.tmj)
        └── external tilesets
                 │
                 ▼
-       Tileset (.tsx) + image
+       Tileset (.tsj) + image
                 │
                 ▼
        Tiled::LoadTilemapJSON()
@@ -31,10 +31,10 @@ Tiled map (.tmj)
           │           │
           └─────┬─────┘
                 ▼
-          ECS tile data
+       optional ECS conversion
                 │
                 ▼
-             Renderer
+      O_N2::CreateEntitiesForMap()
 ```
 
 `Tilemap` is a data representation of a loaded map. It does not own rendering logic or create ECS entities.
@@ -55,7 +55,7 @@ Official documentation:
 - [Working with Layers](https://doc.mapeditor.org/en/latest/manual/layers/)
 - [Tiled Projects](https://doc.mapeditor.org/en/latest/manual/projects/)
 
-The engine currently consumes Tiled's JSON map format (`.tmj`). The supported map configuration is a finite, orthogonal map containing normal tile layers and references to external tilesets.
+The engine currently consumes Tiled's JSON map format (`.tmj`). The supported map configuration is a finite, orthogonal map containing normal tile layers and references to external JSON tilesets (`.tsj`).
 
 Tiled supports many additional features that are not currently consumed by the loader, including object layers, image layers, group layers, infinite maps, custom properties, tile animations, and tile transformations.
 
@@ -84,7 +84,7 @@ assets/
     └── maps/
         └── forest/
             ├── forest.tmj
-            └── forest.tsx
+            └── forest.tsj
 ```
 
 The map references the tileset through a `source` entry:
@@ -92,31 +92,37 @@ The map references the tileset through a `source` entry:
 ```json
 {
     "firstgid": 1,
-    "source": "forest.tsx"
+    "source": "forest.tsj"
 }
 ```
 
-The external tileset contains its metadata and image reference:
+The external tileset contains its metadata and image reference as JSON:
 
-```xml
-<tileset
-    version="1.10"
-    name="forest"
-    tilewidth="32"
-    tileheight="32"
-    tilecount="1980"
-    columns="44">
-    <image source="assets/Textures/Atlas/forest.png" />
-</tileset>
+```json
+{
+    "columns": 44,
+    "image": "assets/Textures/Atlas/forest.png",
+    "imageheight": 1441,
+    "imagewidth": 1413,
+    "margin": 0,
+    "name": "forest",
+    "spacing": 0,
+    "tilecount": 1980,
+    "tiledversion": "1.12.1",
+    "tileheight": 32,
+    "tilewidth": 32,
+    "type": "tileset",
+    "version": "1.10"
+}
 ```
 
 ### Path handling
 
-The `.tsx` path is resolved relative to the directory containing the `.tmj` file.
+The `.tsj` path is resolved relative to the directory containing the `.tmj` file.
 
-The image `source` from the `.tsx` is currently passed directly to `AssetManager::LoadTexture()`. Therefore, the image path must match the project's asset-loading path expectations.
+The image path inside the `.tsj` is then passed to `AssetManager::LoadTexture()`. In this project, asset paths ultimately follow the executable-relative asset layout used by the application. The tileset JSON paths are deliberately written to remain compatible with the project's directory/indexing layout.
 
-Keeping the map and external tileset together avoids unnecessary complexity when importing a complete map package. The `source` field is the part that must remain correct when the directory is moved.
+Keeping the map and external tileset together avoids unnecessary complexity when importing a complete map package. The `source` field is the part that must remain correct when the map package is moved.
 
 ---
 
@@ -182,7 +188,7 @@ The underlying data is row-major:
 index = y * width + x
 ```
 
-A GID of `0` represents an empty tile and does not produce a rendered tile.
+A GID of `0` represents an empty tile and does not produce a tile entity in the current ECS conversion helper.
 
 ### `Tileset`
 
@@ -196,7 +202,7 @@ It stores:
 - number of columns
 - tile count
 - `firstgid`
-- the engine's `TextureID`
+- the engine's `TextureHandle`
 
 The current public API includes:
 
@@ -207,7 +213,7 @@ std::uint32_t getWidth() const;
 std::uint32_t getHeight() const;
 std::uint32_t getTileCount() const;
 std::uint32_t getFirstGid() const;
-TextureID getTextureID() const;
+TextureHandle getTextureID() const;
 
 Region getRegion(std::uint32_t localId) const;
 ```
@@ -255,10 +261,10 @@ This local ID is what the tileset uses to calculate the corresponding texture re
 Given:
 
 ```text
-columns   = 44
-tileWidth = 32
+columns    = 44
+tileWidth  = 32
 tileHeight = 32
-localId   = 45
+localId    = 45
 ```
 
 the grid coordinate is calculated as:
@@ -356,27 +362,29 @@ Each entry in `tilesets` must provide:
 ```json
 {
     "firstgid": 1,
-    "source": "test.tsx"
+    "source": "test.tsj"
 }
 ```
 
-The `source` is combined with the map's parent directory and passed to the XML tileset loader.
+The `source` is combined with the map's parent directory and passed to the JSON tileset loader.
 
-### 5. Parse the `.tsx`
+### 5. Parse the `.tsj`
 
-The external tileset is parsed with `tinyxml2`.
+The external tileset is parsed as JSON.
 
-The loader reads these attributes from the `<tileset>` element:
+The loader validates and reads these fields:
 
 - `name`
 - `tilewidth`
 - `tileheight`
 - `tilecount`
 - `columns`
+- `type`
+- `image`
 
-It then reads the `<image source="...">` element and loads the referenced texture through the engine's `AssetManager`.
+The `type` must be `"tileset"`.
 
-The resulting `Tileset` stores the parsed metadata, the map's `firstgid`, and the resulting `TextureID`.
+The `image` path is passed to the engine's `AssetManager`, which loads/reuses the texture and returns a `TextureHandle`.
 
 ### 6. Return the runtime representation
 
@@ -386,19 +394,38 @@ The object-layer collection is currently empty because object-group parsing has 
 
 ---
 
-## 🖼️ Consuming Tilemap Data
+## 🧩 Converting Tilemaps to ECS Entities
 
-The tilemap classes intentionally do not depend on ECS entity creation. A consumer can iterate through the layers and resolve each non-empty GID independently.
+Tilemap loading and entity creation are deliberately separate responsibilities.
 
-A simplified example is:
+The current straightforward conversion helper is:
 
 ```cpp
-map::Tilemap tilemap =
-    map::Tiled::LoadTilemapJSON(
-        m_EngineContext,
-        "data/maps/forest/forest.tmj"
-    );
+map::O_N2::CreateEntitiesForMap(registry, tilemap);
+```
 
+For every non-empty GID, it:
+
+1. Finds the corresponding tileset.
+2. Converts the GID to a tileset-local ID.
+3. Calculates the texture region.
+4. Creates an EnTT entity.
+5. Adds `CTransform`, `CSprite`, and `CTexture`.
+6. Stores the tileset's `TextureHandle` and calculated texture region.
+7. Positions the entity using the tile's grid coordinates.
+8. Uses the tile layer's order as the sprite z-index.
+
+The implementation is intentionally placed in `ssg::map::O_N2`. It performs a nested traversal over every tile in every layer and does not use spatial chunking or partitioning. The namespace makes that O(n²) characteristic explicit rather than hiding it behind a generic function name.
+
+This function is an ECS conversion helper, not a dedicated tilemap renderer. The `Tilemap` classes remain independent of EnTT entity creation.
+
+---
+
+## 🖼️ Consuming Tilemap Data Directly
+
+A consumer can still iterate through the layers and resolve each non-empty GID independently:
+
+```cpp
 for (const auto& layer : tilemap.getTileLayers())
 {
     for (std::uint32_t y = 0; y < layer.getHeight(); ++y)
@@ -442,13 +469,13 @@ Layer order can be mapped to the renderer's z-index convention by the consuming 
 
 The JSON map format produced by Tiled.
 
-The current loader consumes the map dimensions, tile layers, and external tileset references.
+The current loader consumes the map dimensions, tile layers, and external `.tsj` tileset references.
 
-### `.tsx`
+### `.tsj`
 
-The XML external tileset format produced by Tiled.
+The JSON external tileset format produced by Tiled.
 
-The current loader consumes the tileset's basic grid metadata and its image source.
+The current loader consumes the tileset's basic grid metadata, validates that the JSON represents a tileset, and loads its image reference.
 
 ### Atlas image
 
@@ -463,12 +490,13 @@ The current loader does not consume TexturePacker JSON metadata; the tileset's g
 Currently supported:
 
 - finite orthogonal maps
-- external `.tsx` tilesets
+- external `.tsj` tilesets
 - multiple tile layers
 - multiple tilesets
 - global GID / `firstgid` resolution
 - regular grid-based texture-region calculation
 - loading tileset textures through `AssetManager`
+- straightforward O(n²) tile-to-ECS conversion through `O_N2::CreateEntitiesForMap()`
 
 Not currently implemented:
 
@@ -483,6 +511,7 @@ Not currently implemented:
 - terrain and automapping metadata
 - dedicated tilemap rendering
 - off-screen tile culling
+- spatially chunked tile entity creation
 
 Maps should therefore stay within the supported subset of Tiled until the corresponding loader functionality is implemented.
 
@@ -490,7 +519,7 @@ Maps should therefore stay within the supported subset of Tiled until the corres
 
 ## 🧭 Design Direction
 
-The tilemap implementation keeps file-format parsing separate from the runtime map representation:
+The tilemap implementation keeps file-format parsing separate from the runtime map representation and ECS conversion:
 
 ```text
 Tiled files
@@ -501,11 +530,15 @@ MapLoader
     ▼
 Tilemap / TileLayer / Tileset
     │
-    ▼
-Consumer / ECS renderer
+    ├── direct consumer
+    │
+    └── O_N2::CreateEntitiesForMap()
+              │
+              ▼
+        scene-local ECS registry
 ```
 
-This separation means gameplay and rendering code can operate on structured map data without needing to parse JSON or XML themselves.
+This separation means gameplay and rendering code can operate on structured map data without needing to parse JSON themselves.
 
 It also leaves room for additional Tiled features to be added later without coupling the rest of the engine directly to Tiled's file formats.
 
@@ -540,5 +573,6 @@ The most important entry points are:
 ```cpp
 map::Tiled::LoadTilemapJSON(...);
 map::Tiled::LoadTileLayerJSON(...);
-map::Tiled::LoadTilesetXML(...);
+map::Tiled::LoadTilesetJSON(...);
+map::O_N2::CreateEntitiesForMap(...);
 ```
