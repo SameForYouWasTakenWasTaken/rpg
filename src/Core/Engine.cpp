@@ -9,7 +9,9 @@ namespace ssg
 void Engine::initialize()
 {
     m_running.store(true);
+
     logger.AddSink(std::make_unique<log::ConsoleSink>(m_ConsoleSink));
+    logger.AddSink(std::make_unique<log::MemorySink>(m_MemorySink));
 }
 
 void Engine::terminate() { m_running.store(false); }

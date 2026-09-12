@@ -9,6 +9,7 @@
 #include "Events/WindowResizeEvent.hpp"
 #include "ILayer.hpp"
 #include "Rendering/Camera.hpp"
+#include "Rendering/ImGuiSink.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Rendering/SpriteSink.hpp"
 #include "Systems/Gameplay/Combat.hpp"
@@ -22,7 +23,7 @@ namespace ssg
 class GameLayer final : public ILayer
 {
   public:
-    GameLayer(EngineContext& context) : m_EngineContext(context) {}
+    GameLayer(EngineContext& context) : m_SpriteSink(nullptr), m_EngineContext(context) {}
     ~GameLayer() override = default;
 
     GameLayer(const GameLayer&) = delete;

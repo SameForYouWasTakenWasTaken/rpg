@@ -51,6 +51,7 @@ class Engine
     Renderer m_renderer;
 
     log::ConsoleSink m_ConsoleSink;
+    log::MemorySink m_MemorySink;
     std::atomic<bool> m_running{false};
 };
 
