@@ -1,104 +1,123 @@
 include(FetchContent)
 
-function(setup_sfml)
-    find_package(SFML 3 COMPONENTS Graphics Window System QUIET)
-    if (NOT SFML_FOUND)
-        message(STATUS "SFML not found locally; attempting to fetch via FetchContent")
-        FetchContent_Declare(
-                SFML
-                GIT_REPOSITORY https://github.com/SFML/SFML.git
-                GIT_TAG 3.1.0
-        )
-        FetchContent_MakeAvailable(SFML)
-    endif ()
-endfunction()
+include(FetchContent)
 
-function(setup_glm)
-    find_package(glm QUIET)
-    if (glm_FOUND)
-        if (NOT TARGET glm::glm)
-            add_library(glm::glm ALIAS glm)
-        endif ()
+function(setup_dependency)
+    cmake_parse_arguments(
+            PARSE_ARGV 0
+            ARG
+            ""
+            "NAME;FIND_NAME;REPO;TAG"
+            "TARGETS"
+    )
+
+    if (NOT ARG_FIND_NAME)
+        set(ARG_FIND_NAME "${ARG_NAME}")
+    endif ()
+
+    find_package(${ARG_FIND_NAME} QUIET)
+
+    if (${ARG_FIND_NAME}_FOUND OR ${ARG_NAME}_FOUND)
+        message(STATUS "Found local package: ${ARG_FIND_NAME}")
     else ()
-        message(STATUS "GLM not found locally; attempting to fetch via FetchContent")
+        message(STATUS "${ARG_FIND_NAME} not found locally; fetching via FetchContent")
         FetchContent_Declare(
-                glm
-                GIT_REPOSITORY https://github.com/g-truc/glm.git
-                GIT_TAG 1.0.1
+                ${ARG_NAME}
+                GIT_REPOSITORY ${ARG_REPO}
+                GIT_TAG ${ARG_TAG}
         )
-        FetchContent_MakeAvailable(glm)
-        if (NOT TARGET glm::glm)
-            add_library(glm::glm ALIAS glm)
-        endif ()
+        FetchContent_MakeAvailable(${ARG_NAME})
+
+        # create the directory paths
+        string(TOLOWER "${ARG_NAME}" lowercase_name)
+        set(${lowercase_name}_SOURCE_DIR "${${lowercase_name}_SOURCE_DIR}" PARENT_SCOPE)
+    endif ()
+
+    # Create alias targets ONLY if TARGETS were explicitly provided
+    if (ARG_TARGETS)
+        foreach (target_pair IN LISTS ARG_TARGETS)
+            string(REPLACE ":" ";" pair_list "${target_pair}")
+            list(GET pair_list 0 ALIAS_NAME)
+            list(GET pair_list -1 ACTUAL_TARGET)
+
+            if (NOT TARGET ${ALIAS_NAME})
+                if (TARGET ${ACTUAL_TARGET})
+                    add_library(${ALIAS_NAME} ALIAS ${ACTUAL_TARGET})
+                elseif (TARGET ${ARG_NAME})
+                    add_library(${ALIAS_NAME} ALIAS ${ARG_NAME})
+                endif ()
+            endif ()
+        endforeach ()
     endif ()
 endfunction()
 
-function(setup_entt)
-    find_package(EnTT QUIET)
-    if (EnTT_FOUND)
-        if (NOT TARGET EnTT::EnTT)
-            add_library(EnTT::EnTT ALIAS EnTT)
-        endif ()
-    else ()
-        message(STATUS "EnTT not found locally; attempting to fetch via FetchContent")
-        FetchContent_Declare(
-                EnTT
-                GIT_REPOSITORY https://github.com/skypjack/entt.git
-                GIT_TAG v3.13.2
-        )
-        FetchContent_MakeAvailable(EnTT)
-        if (NOT TARGET EnTT::EnTT)
-            add_library(EnTT::EnTT ALIAS EnTT)
-        endif ()
-    endif ()
-endfunction()
+setup_dependency(
+        NAME SFML
+        REPO https://github.com/SFML/SFML.git
+        TAG 3.1.0
+        TARGETS SFML::Graphics SFML::Window SFML::System
+)
 
-function(setup_nlohmann_json)
-    find_package(nlohmann_json QUIET)
-    if (nlohmann_json_FOUND)
-        if (NOT TARGET nlohmann_json::nlohmann_json)
-            add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
-        endif ()
-    else ()
-        message(STATUS "nlohmann_json not found locally; attempting to fetch via FetchContent")
-        FetchContent_Declare(
-                nlohmann_json
-                GIT_REPOSITORY https://github.com/nlohmann/json.git
-                GIT_TAG v3.12.0
-        )
-        FetchContent_MakeAvailable(nlohmann_json)
-        if (NOT TARGET nlohmann_json::nlohmann_json)
-            add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
-        endif ()
-    endif ()
-endfunction()
+setup_dependency(
+        NAME glm
+        REPO https://github.com/g-truc/glm.git
+        TAG 1.0.1
+        TARGETS glm::glm
+)
 
-function(setup_tinyxml2)
-    find_package(tinyxml2 QUIET)
+setup_dependency(
+        NAME EnTT
+        REPO https://github.com/skypjack/entt.git
+        TAG v3.13.2
+        TARGETS EnTT::EnTT
+)
 
-    if (tinyxml2_FOUND)
-        if (NOT TARGET tinyxml2::tinyxml2)
-            add_library(tinyxml2::tinyxml2 ALIAS tinyxml2)
-        endif ()
-    else ()
-        message(STATUS "tinyxml2 not found locally; attempting to fetch via FetchContent")
+setup_dependency(
+        NAME nlohmann_json
+        REPO https://github.com/nlohmann/json.git
+        TAG v3.12.0
+        TARGETS nlohmann_json::nlohmann_json
+)
 
-        FetchContent_Declare(
-                tinyxml2
-                GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
-                GIT_TAG 11.0.0
-        )
+setup_dependency(
+        NAME tinyxml2
+        REPO https://github.com/leethomason/tinyxml2.git
+        TAG 11.0.0
+        TARGETS tinyxml2::tinyxml2
+)
 
-        FetchContent_MakeAvailable(tinyxml2)
+setup_dependency(
+        NAME imgui
+        REPO https://github.com/ocornut/imgui.git
+        TAG v1.91.1
+)
 
-        if (NOT TARGET tinyxml2::tinyxml2)
-            add_library(tinyxml2::tinyxml2 ALIAS tinyxml2)
-        endif ()
-    endif ()
-endfunction()
+# Point ImGui-SFML to the fetched ImGui directory
+set(IMGUI_DIR "${imgui_SOURCE_DIR}" CACHE PATH "Path to Dear ImGui" FORCE)
+set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "" FORCE)
+set(IMGUI_SFML_IMGUI_REPO "" CACHE STRING "" FORCE)
 
-setup_sfml()
-setup_glm()
-setup_entt()
-setup_nlohmann_json()
-setup_tinyxml2()
+setup_dependency(
+        NAME ImGui-SFML
+        REPO https://github.com/SFML/imgui-sfml.git
+        TAG v3.0
+        TARGETS ImGui-SFML::ImGui-SFML
+)
+
+# GLAD
+FetchContent_Declare(
+        glad
+        GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+        GIT_TAG v2.0.8
+        SOURCE_SUBDIR cmake
+)
+
+FetchContent_MakeAvailable(glad)
+
+glad_add_library(
+        glad_gl_compatibility
+        STATIC
+        REPRODUCIBLE
+        LOADER
+        API gl:compatibility=2.1
+)

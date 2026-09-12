@@ -75,6 +75,7 @@ void GameLayer::OnAttach()
     // auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
 
     m_LocalPlayer = makeEntity(500.f, 500.f, 100.f, "data/characters/player.json");
+
     auto& localPlayerWorld = m_Registry.get<CWorldTransform>(m_LocalPlayer);
     m_LocalPlayerCamera.SetCenter(localPlayerWorld.position);
     m_LocalPlayerCamera.SetZoom(.35f);
@@ -112,11 +113,14 @@ void GameLayer::OnWindowResize(const WindowResizeEvent& event)
 }
 void GameLayer::OnKeyPress(const KeyPressedEvent& event)
 {
+    if (!m_Window.IsFocused() || m_EngineContext.engine.GetInputGate().WantsKeyboard())
+        return;
+
     if (event.key == Input::Key::R)
     {
         Vector<entt::entity> reloadTargets;
 
-        auto view = m_Registry.view<CDefinition>();
+        auto view = m_Registry.view<CDefinition, CTransform, CSprite>();
 
         reloadTargets.assign(view.begin(), view.end());
 
@@ -124,12 +128,16 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
         {
             auto& definition = m_Registry.get<CDefinition>(entity);
             auto transform_copy = m_Registry.get<CTransform>(entity);
+            auto sprite_copy = m_Registry.get<CSprite>(entity);
 
             factory::ApplyCharacterDefinition(m_EngineContext, m_Registry, entity,
                                               definition.filepath);
 
             auto& transform = m_Registry.get<CTransform>(entity);
             transform.position = transform_copy.position;
+
+            auto& sprite = m_Registry.get<CSprite>(entity);
+            sprite.zIndex = sprite_copy.zIndex;
         }
     }
 
@@ -166,17 +174,20 @@ void GameLayer::OnUpdate(float dt, ApplicationContext& context)
     auto& transform = m_Registry.get<CTransform>(m_LocalPlayer);
     const auto& speed = m_Registry.get<CHumanoid>(m_LocalPlayer).speed;
 
-    if (Input::IsKeyDown(Input::Key::W))
-        transform.position.y -= speed * dt;
+    if (m_Window.IsFocused() && !m_EngineContext.engine.GetInputGate().WantsKeyboard())
+    {
+        if (Input::IsKeyDown(Input::Key::W))
+            transform.position.y -= speed * dt;
 
-    if (Input::IsKeyDown(Input::Key::S))
-        transform.position.y += speed * dt;
+        if (Input::IsKeyDown(Input::Key::S))
+            transform.position.y += speed * dt;
 
-    if (Input::IsKeyDown(Input::Key::A))
-        transform.position.x -= speed * dt;
+        if (Input::IsKeyDown(Input::Key::A))
+            transform.position.x -= speed * dt;
 
-    if (Input::IsKeyDown(Input::Key::D))
-        transform.position.x += speed * dt;
+        if (Input::IsKeyDown(Input::Key::D))
+            transform.position.x += speed * dt;
+    }
 
     // 2. Derive world transforms from local + hierarchy.
     m_TransformSystem.Update(dt);

@@ -57,10 +57,12 @@ class Window
 
     void Close() { m_sfRenderWindow.close(); }
 
-    bool IsOpen() { return m_sfRenderWindow.isOpen(); };
+    bool IsOpen() const { return m_sfRenderWindow.isOpen(); };
+    bool IsFocused() const { return m_sfRenderWindow.hasFocus(); };
 
     void UpdateView(std::invocable<sf::View&> auto&& func);
-    const sf::Window& GetSFMLWindow() const { return m_sfRenderWindow; }
+    const sf::RenderWindow& GetSFMLWindow() const { return m_sfRenderWindow; }
+    sf::RenderWindow& GetSFMLWindow() { return m_sfRenderWindow; }
 
     std::optional<sf::Event> PollSFMLEvents();
 

@@ -6,6 +6,7 @@
 #include "Logger.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Systems/AssetManager.hpp"
+#include "Systems/InputGate.hpp"
 #include "Systems/InputSystem.hpp"
 
 #define SSG_ENGINE_HPP_INCLUDED
@@ -41,16 +42,21 @@ class Engine
     [[nodiscard]] Renderer& GetRenderer() { return m_renderer; }
     [[nodiscard]] const Renderer& GetRenderer() const { return m_renderer; }
 
+    [[nodiscard]] const InputGate& GetInputGate() const { return inputGate; }
+    [[nodiscard]] InputGate& GetInputGate() { return inputGate; }
+
   private:
     EventBus eventBus;
     AssetManager assetManager;
     log::Logger logger;
 
     Input inputSystem{eventBus};
+    InputGate inputGate{};
 
     Renderer m_renderer;
 
     log::ConsoleSink m_ConsoleSink;
+    log::MemorySink m_MemorySink;
     std::atomic<bool> m_running{false};
 };
 

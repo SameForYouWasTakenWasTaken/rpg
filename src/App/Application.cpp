@@ -15,7 +15,9 @@
 #include "Events/TextEnteredEvent.hpp"
 #include "Events/WindowCloseEvent.hpp"
 #include "Factories/Application.hpp"
+#include "Layers/Console.hpp"
 #include "Layers/GameLayer.hpp"
+#include "Rendering/ImGuiSink.hpp"
 #include "Rendering/SpriteSink.hpp"
 #include "Rendering/Window.hpp"
 #include "SFML/Graphics/Rect.hpp"
@@ -42,12 +44,14 @@ void Application::Run()
 
     // Initialize render sinks
     renderer.AddSink(std::make_unique<rendering::SpriteSink>());
+    renderer.AddSink(std::make_unique<rendering::ImGuiSink>(engine.GetInputGate(), m_Window));
 
     // Scenes
     SceneStack stack;
 
     auto scene = std::make_unique<GameScene>();
-    scene->PushLayer(std::make_unique<GameLayer>(m_EngineContext));
+    scene->PushLayer(std::make_unique<GameLayer>(m_EngineContext, m_Window));
+    scene->PushLayer(std::make_unique<Console>(m_EngineContext));
 
     stack.Push(std::move(scene));
 
