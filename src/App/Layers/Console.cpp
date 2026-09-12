@@ -173,7 +173,11 @@ void Console::ExecuteCommand(const std::string& command, EngineContext& context)
     }
     else if (command == "help")
     {
-        context.logger.Info("Console", "Available commands: help, clear, fps");
+        context.logger.Info("Console", "Available commands: help, clear, ping");
+    }
+    else if (command == "ping")
+    {
+        context.logger.Info("Console", "pong!");
     }
     else
     {

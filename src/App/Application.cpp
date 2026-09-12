@@ -44,13 +44,13 @@ void Application::Run()
 
     // Initialize render sinks
     renderer.AddSink(std::make_unique<rendering::SpriteSink>());
-    renderer.AddSink(std::make_unique<rendering::ImGuiSink>(m_Window));
+    renderer.AddSink(std::make_unique<rendering::ImGuiSink>(engine.GetInputGate(), m_Window));
 
     // Scenes
     SceneStack stack;
 
     auto scene = std::make_unique<GameScene>();
-    scene->PushLayer(std::make_unique<GameLayer>(m_EngineContext));
+    scene->PushLayer(std::make_unique<GameLayer>(m_EngineContext, m_Window));
     scene->PushLayer(std::make_unique<Console>(m_EngineContext));
 
     stack.Push(std::move(scene));

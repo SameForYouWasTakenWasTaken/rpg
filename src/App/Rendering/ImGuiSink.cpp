@@ -6,13 +6,15 @@
 namespace ssg::rendering
 {
 
-ImGuiSink::ImGuiSink(Window& window) : m_Window(window)
+ImGuiSink::ImGuiSink(InputGate& gate, Window& window) : m_Window(window)
 {
     if (!gladLoaderLoadGL())
         throw std::runtime_error("Couldn't initialize glad!");
 
     if (!ImGui::SFML::Init(window.GetSFMLWindow()))
         throw std::runtime_error("Failed to initialize ImGUI");
+
+    gate.RegisterProvider(m_Provider);
 }
 void ImGuiSink::Begin()
 {
