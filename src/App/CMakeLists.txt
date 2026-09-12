@@ -20,6 +20,8 @@ add_library(App STATIC
         Factories/Application.cpp
         Rendering/SpriteSink.hpp
         Rendering/SpriteSink.cpp
+        Rendering/ImGuiSink.cpp
+        Layers/Console.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -32,6 +34,8 @@ target_link_libraries(App
         SFML::Window
         SFML::System
         tinyxml2::tinyxml2
+        ImGui-SFML::ImGui-SFML
+        glad_gl_compatibility
 )
 
 target_compile_features(App PRIVATE cxx_std_23)

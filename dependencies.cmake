@@ -89,7 +89,7 @@ setup_dependency(
 setup_dependency(
         NAME imgui
         REPO https://github.com/ocornut/imgui.git
-        TAG v1.92.9b
+        TAG v1.91.1
 )
 
 # Point ImGui-SFML to the fetched ImGui directory
@@ -102,4 +102,22 @@ setup_dependency(
         REPO https://github.com/SFML/imgui-sfml.git
         TAG v3.0
         TARGETS ImGui-SFML::ImGui-SFML
+)
+
+# GLAD
+FetchContent_Declare(
+        glad
+        GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+        GIT_TAG v2.0.8
+        SOURCE_SUBDIR cmake
+)
+
+FetchContent_MakeAvailable(glad)
+
+glad_add_library(
+        glad_gl_compatibility
+        STATIC
+        REPRODUCIBLE
+        LOADER
+        API gl:compatibility=2.1
 )

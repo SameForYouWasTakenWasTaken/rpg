@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.28)
 
 project(Game2
         VERSION 0.1.0
-        LANGUAGES CXX
+        LANGUAGES CXX C
 )
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
