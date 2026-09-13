@@ -57,7 +57,8 @@ class Window
 
     void Close() { m_sfRenderWindow.close(); }
 
-    bool IsOpen() { return m_sfRenderWindow.isOpen(); };
+    bool IsOpen() const { return m_sfRenderWindow.isOpen(); };
+    bool IsFocused() const { return m_sfRenderWindow.hasFocus(); };
 
     void UpdateView(std::invocable<sf::View&> auto&& func);
     const sf::RenderWindow& GetSFMLWindow() const { return m_sfRenderWindow; }

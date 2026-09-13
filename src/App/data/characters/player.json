@@ -1,49 +1,49 @@
 {
-    "id": "player",
-    "components": {
-        "sprite": {
-            "atlas": "random",
-            "region": "shocked",
-            "z-index": 0,
-            "color": {
-                "r": 255,
-                "g": 255,
-                "b": 255,
-                "a": 255
-            },
-            "origin": {
-                "x": 0.5,
-                "y": 0.5
-            },
-            "size": {
-                "x": 200.0,
-                "y": 200.0
-            },
-            "flip-x": false,
-            "flip-y": false
-        },
-        "transform": {
-            "position": {
-                "x": 0.0,
-                "y": 0.0
-            },
-            "scale": {
-                "x": 1.0,
-                "y": 1.0
-            },
-            "rotation": 0.0
-        },
-        "health": {
-            "max": 100.0,
-            "current": 100.0
-        },
-        "humanoid": {
-            "speed": 500.0
-        },
-        "combatState": {},
-        "equipment": {},
-        "inventory": {
-            "capacity": 10
-        }
+  "id": "player",
+  "components": {
+    "sprite": {
+      "atlas": "random",
+      "region": "shocked",
+      "z-index": 0,
+      "color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "origin": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "x": 100.0,
+        "y": 100.0
+      },
+      "flip-x": false,
+      "flip-y": false
+    },
+    "transform": {
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "scale": {
+        "x": 1.0,
+        "y": 1.0
+      },
+      "rotation": 0.0
+    },
+    "health": {
+      "max": 100.0,
+      "current": 100.0
+    },
+    "humanoid": {
+      "speed": 500.0
+    },
+    "combatState": {},
+    "equipment": {},
+    "inventory": {
+      "capacity": 10
     }
+  }
 }

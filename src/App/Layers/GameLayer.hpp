@@ -23,7 +23,10 @@ namespace ssg
 class GameLayer final : public ILayer
 {
   public:
-    GameLayer(EngineContext& context) : m_SpriteSink(nullptr), m_EngineContext(context) {}
+    GameLayer(EngineContext& context, Window& window)
+        : m_SpriteSink(nullptr), m_Window(window), m_EngineContext(context)
+    {
+    }
     ~GameLayer() override = default;
 
     GameLayer(const GameLayer&) = delete;
@@ -42,6 +45,7 @@ class GameLayer final : public ILayer
     void OnKeyPress(const KeyPressedEvent& event);
 
     rendering::SpriteSink* m_SpriteSink;
+    Window& m_Window;
 
     EngineContext& m_EngineContext;
     entt::entity m_LocalPlayer{entt::null};
