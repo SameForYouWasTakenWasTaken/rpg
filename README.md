@@ -14,12 +14,12 @@ working demo scene with a player you can move around with WASD.
 
 Pick the doc you need. Each one is short and to the point.
 
-| Doc | What it is for |
-| --- | --- |
+| Doc                                            | What it is for                                                    |
+|------------------------------------------------|-------------------------------------------------------------------|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the pieces fit together (flow, layers, ECS). Read this first. |
-| [`docs/CLASSES.md`](docs/CLASSES.md) | A plain reference of every core class and what it does. |
-| [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) | Every third-party library and where to find it. |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | How to build, the code style, and where to add stuff. |
+| [`docs/CLASSES.md`](docs/CLASSES.md)           | A plain reference of every core class and what it does.           |
+| [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) | Every third-party library and where to find it.                   |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | How to build, the code style, and where to add stuff.             |
 
 ---
 
@@ -70,11 +70,11 @@ bin\Game2.exe      # Windows
 
 ## 🎯 Controls (current demo)
 
-| Key | Action |
-| --- | --- |
-| `W` `A` `S` `D` | Move the player |
-| Mouse / Wheel | Events are captured (no action yet) |
-| Close window | Quits the game |
+| Key             | Action                              |
+|-----------------|-------------------------------------|
+| `W` `A` `S` `D` | Move the player                     |
+| Mouse / Wheel   | Events are captured (no action yet) |
+| Close window    | Quits the game                      |
 
 ---
 
