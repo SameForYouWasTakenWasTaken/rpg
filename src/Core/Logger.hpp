@@ -36,6 +36,9 @@ struct ILogSink
     LogLevel minLevel = LogLevel::Trace;
 };
 
+template <typename T>
+concept LogSink = std::derived_from<T, ILogSink>;
+
 struct MemorySink : ILogSink
 {
     std::deque<LogEntry> entries;
@@ -53,6 +56,26 @@ class Logger final
 {
   public:
     void AddSink(std::unique_ptr<ILogSink> sink);
+
+    template <LogSink T> T* FindSink()
+    {
+        for (auto& sink : m_Sinks)
+        {
+            if (auto* result = dynamic_cast<T*>(sink.get()))
+                return result;
+        }
+
+        return nullptr;
+    }
+
+    template <LogSink T> T& GetSink()
+    {
+        if (auto* sink = FindSink<T>())
+            return *sink;
+
+        throw std::runtime_error("Requested log sink is not registered!");
+    }
+
     void SetLevel(LogLevel level) { m_MinLevel = level; }
 
     // Full logging function
@@ -64,8 +87,6 @@ class Logger final
     template <typename... Args>
     void Log(LogLevel level, std::string_view category, std::format_string<Args...> fmt,
              Args&&... args) const;
-
-    [[nodiscard]] MemorySink* GetMemorySink() const { return m_MemorySink; }
 
     // Convenience functions
     template <typename... Args>
@@ -119,7 +140,6 @@ class Logger final
     void Dispatch(const LogEntry& entry) const;
 
     Vector<std::unique_ptr<ILogSink>> m_Sinks;
-    MemorySink* m_MemorySink = nullptr;
     LogLevel m_MinLevel = LogLevel::Info;
 };
 
