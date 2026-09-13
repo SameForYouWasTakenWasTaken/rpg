@@ -1,0 +1,15 @@
+{
+  "columns": 3,
+  "image": "assets/Textures/tree.png",
+  "imageheight": 100,
+  "imagewidth": 100,
+  "margin": 0,
+  "name": "tree",
+  "spacing": 0,
+  "tilecount": 9,
+  "tiledversion": "1.12.1",
+  "tileheight": 32,
+  "tilewidth": 32,
+  "type": "tileset",
+  "version": "1.10"
+}

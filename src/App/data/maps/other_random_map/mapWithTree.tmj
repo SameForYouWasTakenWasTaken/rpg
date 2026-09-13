@@ -73,11 +73,11 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"random.tsx"
+         "source":"random.tsj"
         }, 
         {
          "firstgid":1981,
-         "source":"tree.tsx"
+         "source":"tree.tsj"
         }],
  "tilewidth":32,
  "type":"map",

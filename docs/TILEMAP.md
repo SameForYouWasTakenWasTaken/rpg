@@ -2,7 +2,8 @@
 
 This document describes the tilemap implementation used by the RPG project: how maps are authored in Tiled, how external tilesets are loaded, how tile IDs are resolved, and how the resulting map data can be consumed by ECS code.
 
-The implementation is intentionally focused on the data-loading foundation. Advanced Tiled features are not part of the current runtime contract.
+The implementation is intentionally focused on the data-loading foundation. Advanced Tiled features are not part of the
+current runtime contract.
 
 ---
 
@@ -57,7 +58,8 @@ Official documentation:
 
 The engine currently consumes Tiled's JSON map format (`.tmj`). The supported map configuration is a finite, orthogonal map containing normal tile layers and references to external JSON tilesets (`.tsj`).
 
-Tiled supports many additional features that are not currently consumed by the loader, including object layers, image layers, group layers, infinite maps, custom properties, tile animations, and tile transformations.
+Tiled supports many additional features that are not currently consumed by the loader, including object layers, image
+layers, group layers, infinite maps, custom properties, tile animations, and tile transformations.
 
 ### TexturePacker
 
@@ -68,13 +70,15 @@ Official documentation:
 - [TexturePacker Documentation](https://www.codeandweb.com/texturepacker/documentation)
 - [TexturePacker Support](https://www.codeandweb.com/texturepacker/support)
 
-The tilemap loader does not parse TexturePacker's JSON metadata. It loads the image referenced by the tileset and calculates tile regions from the tileset's grid metadata.
+The tilemap loader does not parse TexturePacker's JSON metadata. It loads the image referenced by the tileset and
+calculates tile regions from the tileset's grid metadata.
 
 ---
 
 ## 📁 Asset Layout
 
-External tilesets should be kept alongside the map that references them. This is especially useful when maps and their assets are moved as a package.
+External tilesets should be kept alongside the map that references them. This is especially useful when maps and their
+assets are moved as a package.
 
 For example:
 
@@ -222,7 +226,8 @@ Region getRegion(std::uint32_t localId) const;
 
 ## 🔢 Global Tile IDs and `firstgid`
 
-Tiled stores tile IDs in map layers as **global IDs (GIDs)**. A GID is not directly an index into one particular tileset.
+Tiled stores tile IDs in map layers as **global IDs (GIDs)**. A GID is not directly an index into one particular
+tileset.
 
 Each tileset has a `firstgid` assigned by the map.
 
@@ -234,7 +239,8 @@ Tileset B: firstgid = 1981
 Tileset C: firstgid = 3961
 ```
 
-Given a GID, the loader finds the tileset whose `firstgid` is the greatest value that is still less than or equal to the GID.
+Given a GID, the loader finds the tileset whose `firstgid` is the greatest value that is still less than or equal to the
+GID.
 
 After selecting the tileset, the GID is converted into a tileset-local ID:
 
@@ -302,7 +308,8 @@ So the final rectangle is:
 (32, 32, 32, 32)
 ```
 
-This calculation assumes the image is laid out as a regular grid matching the tileset's `tilewidth`, `tileheight`, and `columns` values.
+This calculation assumes the image is laid out as a regular grid matching the tileset's `tilewidth`, `tileheight`, and
+`columns` values.
 
 ---
 
@@ -481,7 +488,8 @@ The current loader consumes the tileset's basic grid metadata, validates that th
 
 The image referenced by the external tileset is loaded as the texture used for the tiles.
 
-The current loader does not consume TexturePacker JSON metadata; the tileset's grid information is sufficient for region calculation.
+The current loader does not consume TexturePacker JSON metadata; the tileset's grid information is sufficient for region
+calculation.
 
 ---
 
@@ -513,7 +521,8 @@ Not currently implemented:
 - off-screen tile culling
 - spatially chunked tile entity creation
 
-Maps should therefore stay within the supported subset of Tiled until the corresponding loader functionality is implemented.
+Maps should therefore stay within the supported subset of Tiled until the corresponding loader functionality is
+implemented.
 
 ---
 
@@ -540,7 +549,8 @@ Tilemap / TileLayer / Tileset
 
 This separation means gameplay and rendering code can operate on structured map data without needing to parse JSON themselves.
 
-It also leaves room for additional Tiled features to be added later without coupling the rest of the engine directly to Tiled's file formats.
+It also leaves room for additional Tiled features to be added later without coupling the rest of the engine directly to
+Tiled's file formats.
 
 ---
 

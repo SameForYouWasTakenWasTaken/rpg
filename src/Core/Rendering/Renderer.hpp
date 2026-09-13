@@ -19,7 +19,7 @@ concept RenderSink = std::derived_from<T, rendering::IRenderSink>;
 class Renderer
 {
   public:
-    Renderer();
+    Renderer() = default;
     ~Renderer() = default;
 
     Renderer(const Renderer&) = delete;
@@ -51,12 +51,12 @@ class Renderer
         throw std::runtime_error("Requested render sink is not registered!");
     }
 
-    void Begin();
-    void ForwardEvent(const sf::Event& e);
-    void End(Window& window);
+    void Begin() const;
+    void ForwardEvent(const sf::Event& e) const;
+    void End(Window& window) const;
 
   private:
-    std::vector<std::unique_ptr<rendering::IRenderSink>> m_Sinks;
+    Vector<std::unique_ptr<rendering::IRenderSink>> m_Sinks;
 };
 
 } // namespace ssg
