@@ -25,9 +25,9 @@ void register_all(sol::table& table, EngineContext& context)
 
                                              "get_invalid_value", &TextureHandle::GetInvalidValue);
     assets_table.new_usertype<sf::Texture>(
-        "Texture", sol::no_constructor,
-        "width", sol::readonly_property([](const sf::Texture& t) { return t.getSize().x; }),
-        "height", sol::readonly_property([](const sf::Texture& t) { return t.getSize().y; }),
+        "Texture", sol::no_constructor, "width",
+        sol::readonly_property([](const sf::Texture& t) { return t.getSize().x; }), "height",
+        sol::readonly_property([](const sf::Texture& t) { return t.getSize().y; }),
 
         "smooth", sol::readonly_property(&sf::Texture::isSmooth), "repeated",
         sol::readonly_property(&sf::Texture::isRepeated), "srgb",
