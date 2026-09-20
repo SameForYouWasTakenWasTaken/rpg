@@ -3,7 +3,6 @@
 #include <entt/entt.hpp>
 #include <fstream>
 #include <nlohmann/json_fwd.hpp>
-#include <tinyxml2.h>
 
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
@@ -49,7 +48,7 @@ void CreateEntitiesForMap(entt::registry& registry, Tilemap& tilemap)
                 transform.position = {static_cast<float>(x * tilemap.getTileWidth()),
                                       static_cast<float>(y * tilemap.getTileHeight())};
 
-                texture.textureID = tileset->getTextureID();
+                texture.textureHandle = tileset->getTextureID();
                 texture.textureRect = region;
                 sprite.size = {static_cast<float>(tilemap.getTileWidth()),
                                static_cast<float>(tilemap.getTileHeight())};

@@ -5,29 +5,27 @@
 namespace ssg
 {
 
-GameScene::GameScene() {}
-
 GameScene::~GameScene()
 {
     for (auto& layer : m_Layers)
     {
-        layer->OnDetach();
+        layer->OnDetach(m_SceneContext);
     }
 }
 
-void GameScene::OnUpdate(float dt, ApplicationContext& context)
+void GameScene::OnUpdate(float dt)
 {
     for (auto& layer : m_Layers)
     {
-        layer->OnUpdate(dt, context);
+        layer->OnUpdate(dt, m_SceneContext);
     }
 }
 
-void GameScene::OnRender(Renderer& renderer, ApplicationContext& context)
+void GameScene::OnRender()
 {
     for (auto& layer : m_Layers)
     {
-        layer->OnRender(renderer, context);
+        layer->OnRender(m_SceneContext);
     }
 }
 

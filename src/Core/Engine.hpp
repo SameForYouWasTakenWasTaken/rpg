@@ -5,6 +5,7 @@
 #include "Events/EventBus.hpp"
 #include "Logger.hpp"
 #include "Rendering/Renderer.hpp"
+#include "Scripting/ScriptEngine.hpp"
 #include "Systems/AssetManager.hpp"
 #include "Systems/InputSystem.hpp"
 
@@ -41,12 +42,16 @@ class Engine
     [[nodiscard]] Renderer& GetRenderer() { return m_renderer; }
     [[nodiscard]] const Renderer& GetRenderer() const { return m_renderer; }
 
+    [[nodiscard]] lua::ScriptEngine& GetScriptEngine() { return scriptEngine; }
+    [[nodiscard]] const lua::ScriptEngine& GetScriptEngine() const { return scriptEngine; }
+
   private:
     EventBus eventBus;
     AssetManager assetManager;
     log::Logger logger;
 
     Input inputSystem{eventBus};
+    lua::ScriptEngine scriptEngine;
 
     Renderer m_renderer;
 

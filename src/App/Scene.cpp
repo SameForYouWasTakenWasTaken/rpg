@@ -7,7 +7,7 @@ namespace ssg
 void IScene::PushLayer(std::unique_ptr<ILayer> layer)
 {
     m_Layers.push_back(std::move(layer));
-    m_Layers.back()->OnAttach();
+    m_Layers.back()->OnAttach(m_SceneContext);
 }
 
 std::unique_ptr<ILayer> IScene::PopLayer(std::unique_ptr<ILayer> layer)
@@ -19,7 +19,7 @@ std::unique_ptr<ILayer> IScene::PopLayer(std::unique_ptr<ILayer> layer)
 
     m_Layers.pop_back();
 
-    popped->OnDetach();
+    popped->OnDetach(m_SceneContext);
 
     return popped;
 }

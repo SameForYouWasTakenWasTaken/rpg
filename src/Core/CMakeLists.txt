@@ -9,6 +9,7 @@ add_library(Core STATIC
         Systems/InputSystem.cpp
         EngineContext.cpp
         Factories/AtlasLoader.cpp
+        Scripting/ScriptEngine.cpp
 )
 
 target_include_directories(Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -20,6 +21,8 @@ target_link_libraries(Core
         SFML::Graphics
         glm::glm
         EnTT::EnTT
+        lua
+        sol2::sol2
 )
 
 target_compile_features(Core PRIVATE cxx_std_23)

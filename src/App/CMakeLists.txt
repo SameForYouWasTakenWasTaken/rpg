@@ -20,6 +20,12 @@ add_library(App STATIC
         Factories/Application.cpp
         Rendering/SpriteSink.hpp
         Rendering/SpriteSink.cpp
+        Scripting/MainAPI.cpp
+        Scripting/Entity.cpp
+        Scripting/Types/ScriptEntity.cpp
+        Scripting/Systems/AssetManager.cpp
+        Scripting/Types/FloatRect.cpp
+        Scripting/Types/SSGTypes.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -31,7 +37,6 @@ target_link_libraries(App
         SFML::Graphics
         SFML::Window
         SFML::System
-        tinyxml2::tinyxml2
 )
 
 target_compile_features(App PRIVATE cxx_std_23)

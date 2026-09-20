@@ -27,14 +27,23 @@
 namespace ssg
 {
 
-void GameLayer::OnAttach()
+void GameLayer::OnAttach(context::SceneContext& sceneContext)
 {
-    auto& engine = m_EngineContext.engine;
+    auto& engine = sceneContext.engine_context.engine;
     auto& renderer = engine.GetRenderer();
     auto& assetManager = engine.GetAssetManager();
     auto atlasTexture = assetManager.LoadTexture("assets/Textures/Atlas/random.png");
+
+    auto& systemRegistry = sceneContext.systemRegistry;
+
+    m_SpatialGrid = &systemRegistry.Get<SpatialGrid>();
+    m_TransformSystem = &systemRegistry.Get<TransformSystem>();
+    m_CombatSystem = &systemRegistry.Get<CombatSystem>();
+    m_EngineContext = &sceneContext.engine_context;
+    m_Registry = &sceneContext.registry;
+
     const auto& atlas = atlas::TexturePacker::Load(
-        m_EngineContext, "assets/Textures/Atlas/random.json", atlasTexture);
+        *m_EngineContext, "assets/Textures/Atlas/random.json", atlasTexture);
 
     Region defaultPNG = atlas.GetRegion("default");
     Region dogbite = atlas.GetRegion("dogbite");
@@ -43,11 +52,11 @@ void GameLayer::OnAttach()
 
     auto makeEntity = [&](float x, float y, float size, const Filepath& definition)
     {
-        entt::entity entity = m_Registry.create();
-        factory::ApplyCharacterDefinition(m_EngineContext, m_Registry, entity, definition);
+        entt::entity entity = m_Registry->create();
+        factory::ApplyCharacterDefinition(*m_EngineContext, *m_Registry, entity, definition);
         // modify local transform (scale stays a {1,1} multiplier; size lives on the sprite)
-        auto* transform = m_Registry.try_get<CTransform>(entity);
-        auto* sprite = m_Registry.try_get<CSprite>(entity);
+        auto* transform = m_Registry->try_get<CTransform>(entity);
+        auto* sprite = m_Registry->try_get<CSprite>(entity);
         if (transform)
         {
             transform->position = {x, y};
@@ -63,8 +72,8 @@ void GameLayer::OnAttach()
 
     auto makeWeapon = [&](const Filepath& definition)
     {
-        entt::entity entity = m_Registry.create();
-        factory::ApplyWeaponDefinition(m_EngineContext, m_Registry, entity, definition);
+        entt::entity entity = m_Registry->create();
+        factory::ApplyWeaponDefinition(*m_EngineContext, *m_Registry, entity, definition);
         return entity;
     };
 
@@ -75,35 +84,39 @@ void GameLayer::OnAttach()
     // auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
 
     m_LocalPlayer = makeEntity(500.f, 500.f, 100.f, "data/characters/player.json");
-    auto& localPlayerWorld = m_Registry.get<CWorldTransform>(m_LocalPlayer);
+    auto& localPlayerWorld = m_Registry->get<CWorldTransform>(m_LocalPlayer);
     m_LocalPlayerCamera.SetCenter(localPlayerWorld.position);
     m_LocalPlayerCamera.SetZoom(.35f);
 
     // World transforms must be current for KeepWorld rebasing to be correct.
-    m_TransformSystem.Update(0.0f);
-    auto& worldWeapon = m_Registry.get<CWorldTransform>(someWeapon);
+    m_TransformSystem->Update(0.0f);
+    auto& worldWeapon = m_Registry->get<CWorldTransform>(someWeapon);
     worldWeapon.position = localPlayerWorld.position + Vec2{100.f, 0.f};
 
     // maps
     map::MapEntry mapEntry = map::LookUpMapEntry("other_random");
     map::MapEntry otherMapEntry = map::LookUpMapEntry("random");
-    map::Tilemap tilemap = map::Tiled::LoadTilemapJSON(m_EngineContext, mapEntry.mapConfigPath);
+    map::Tilemap tilemap = map::Tiled::LoadTilemapJSON(*m_EngineContext, mapEntry.mapConfigPath);
 
-    map::O_N2::CreateEntitiesForMap(m_Registry, tilemap);
+    map::O_N2::CreateEntitiesForMap(*m_Registry, tilemap);
 
     // Inventory
     // add the weapon
-    inventory::AddItem(m_EngineContext, m_Registry, m_LocalPlayer, someWeapon);
+    inventory::AddItem(*m_EngineContext, *m_Registry, m_LocalPlayer, someWeapon);
 
     // hierarchies
     // add the weapon to the player
-    hierarchy::AttachChild(m_Registry, m_LocalPlayer, someWeapon, hierarchy::AttachMode::KeepWorld);
+    hierarchy::AttachChild(*m_Registry, m_LocalPlayer, someWeapon,
+                           hierarchy::AttachMode::KeepWorld);
 
     // Events
     engine.GetEventBus().Sink<WindowResizeEvent>().connect<&GameLayer::OnWindowResize>(this);
     engine.GetEventBus().Sink<KeyPressedEvent>().connect<&GameLayer::OnKeyPress>(this);
 
     m_SpriteSink = &renderer.GetSink<rendering::SpriteSink>();
+
+    auto& scriptEngine = engine.GetScriptEngine();
+    scriptEngine.runFile("scripts/other_test.lua");
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)
@@ -116,19 +129,19 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
     {
         Vector<entt::entity> reloadTargets;
 
-        auto view = m_Registry.view<CDefinition>();
+        auto view = m_Registry->view<CDefinition>();
 
         reloadTargets.assign(view.begin(), view.end());
 
         for (auto entity : reloadTargets)
         {
-            auto& definition = m_Registry.get<CDefinition>(entity);
-            auto transform_copy = m_Registry.get<CTransform>(entity);
+            auto& definition = m_Registry->get<CDefinition>(entity);
+            auto transform_copy = m_Registry->get<CTransform>(entity);
 
-            factory::ApplyCharacterDefinition(m_EngineContext, m_Registry, entity,
+            factory::ApplyCharacterDefinition(*m_EngineContext, *m_Registry, entity,
                                               definition.filepath);
 
-            auto& transform = m_Registry.get<CTransform>(entity);
+            auto& transform = m_Registry->get<CTransform>(entity);
             transform.position = transform_copy.position;
         }
     }
@@ -136,7 +149,7 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
     // attack
     if (event.key == Input::Key::F)
     {
-        auto& eventBus = m_EngineContext.engine.GetEventBus();
+        auto& eventBus = m_EngineContext->engine.GetEventBus();
         eventBus.Emit<OnAttackRequest>(m_LocalPlayer);
     }
 
@@ -144,9 +157,9 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
     {
         static bool canEquip = true;
         if (canEquip)
-            inventory::Equip(m_EngineContext, m_Registry, m_LocalPlayer, 0);
+            inventory::Equip(*m_EngineContext, *m_Registry, m_LocalPlayer, 0);
         else
-            inventory::Unequip(m_EngineContext, m_Registry, m_LocalPlayer,
+            inventory::Unequip(*m_EngineContext, *m_Registry, m_LocalPlayer,
                                0); // 0 is currently unused
 
         canEquip = !canEquip;
@@ -154,17 +167,17 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
 
     if (event.key == Input::Key::G)
     {
-        inventory::Drop(m_EngineContext, m_Registry, m_LocalPlayer, 0);
+        inventory::Drop(*m_EngineContext, *m_Registry, m_LocalPlayer, 0);
     }
 }
 
-void GameLayer::OnDetach() { m_Registry.clear(); }
+void GameLayer::OnDetach(context::SceneContext& context) { m_Registry->clear(); }
 
-void GameLayer::OnUpdate(float dt, ApplicationContext& context)
+void GameLayer::OnUpdate(float dt, context::SceneContext& context)
 {
     // 1. Gameplay writes LOCAL transforms.
-    auto& transform = m_Registry.get<CTransform>(m_LocalPlayer);
-    const auto& speed = m_Registry.get<CHumanoid>(m_LocalPlayer).speed;
+    auto& transform = m_Registry->get<CTransform>(m_LocalPlayer);
+    const auto& speed = m_Registry->get<CHumanoid>(m_LocalPlayer).speed;
 
     if (Input::IsKeyDown(Input::Key::W))
         transform.position.y -= speed * dt;
@@ -179,23 +192,23 @@ void GameLayer::OnUpdate(float dt, ApplicationContext& context)
         transform.position.x += speed * dt;
 
     // 2. Derive world transforms from local + hierarchy.
-    m_TransformSystem.Update(dt);
+    m_TransformSystem->Update(dt);
 
     // 3. Spatial grid rebuilds
-    m_SpatialGrid.Rebuild();
+    m_SpatialGrid->Rebuild();
 
     // 4. combat system resolves attacks.
-    m_CombatSystem.Update(dt);
+    m_CombatSystem->Update(dt);
 
     // 5. Camera follows the player's world position.
-    m_LocalPlayerCamera.SetCenter(m_Registry.get<CWorldTransform>(m_LocalPlayer).position);
-    context.MainWindow.SetView(m_LocalPlayerCamera.GetView());
+    m_LocalPlayerCamera.SetCenter(m_Registry->get<CWorldTransform>(m_LocalPlayer).position);
+    context.application_context.MainWindow.SetView(m_LocalPlayerCamera.GetView());
 }
 
-void GameLayer::OnRender(Renderer& renderer, ApplicationContext& context)
+void GameLayer::OnRender(context::SceneContext& context)
 {
-    auto& assetManager = m_EngineContext.assetManager;
-    auto view = m_Registry.view<CSprite, CTexture, CWorldTransform>();
+    auto& assetManager = context.engine_context.assetManager;
+    auto view = m_Registry->view<CSprite, CTexture, CWorldTransform>();
     for (entt::entity entity : view)
     {
         auto& sprite = view.get<CSprite>(entity);
@@ -215,7 +228,7 @@ void GameLayer::OnRender(Renderer& renderer, ApplicationContext& context)
         obj.scale.y = sprite.flipY ? -finalSize.y : finalSize.y;
         obj.rotation = transform.rotation;
 
-        obj.texture = &assetManager.GetTexture(texture.textureID);
+        obj.texture = &assetManager.GetTexture(texture.textureHandle);
         obj.texRect = texture.textureRect;
 
         m_SpriteSink->Submit(obj);
