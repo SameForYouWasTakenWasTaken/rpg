@@ -9,7 +9,6 @@
 #include "Events/WindowResizeEvent.hpp"
 #include "ILayer.hpp"
 #include "Rendering/Camera.hpp"
-#include "Rendering/ImGuiSink.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Rendering/SpriteSink.hpp"
 #include "Systems/Gameplay/Combat.hpp"
@@ -23,10 +22,7 @@ namespace ssg
 class GameLayer final : public ILayer
 {
   public:
-    GameLayer(EngineContext& context, Window& window)
-        : m_SpriteSink(nullptr), m_Window(window), m_EngineContext(context)
-    {
-    }
+    GameLayer() = default;
     ~GameLayer() override = default;
 
     GameLayer(const GameLayer&) = delete;
@@ -34,27 +30,26 @@ class GameLayer final : public ILayer
     GameLayer& operator=(const GameLayer&) = delete;
     GameLayer& operator=(GameLayer&&) = delete;
 
-    void OnAttach() override;
-    void OnDetach() override;
+    void OnAttach(context::SceneContext& context) override;
+    void OnDetach(context::SceneContext& context) override;
 
-    void OnUpdate(float dt, ApplicationContext& context) override;
-    void OnRender(Renderer& renderer, ApplicationContext& context) override;
+    void OnUpdate(float dt, context::SceneContext& context) override;
+    void OnRender(context::SceneContext& context) override;
 
   private:
     void OnWindowResize(const WindowResizeEvent& event);
     void OnKeyPress(const KeyPressedEvent& event);
 
     rendering::SpriteSink* m_SpriteSink;
-    Window& m_Window;
 
-    EngineContext& m_EngineContext;
     entt::entity m_LocalPlayer{entt::null};
     Camera m_LocalPlayerCamera;
-    entt::registry m_Registry;
 
-    SpatialGrid m_SpatialGrid{m_Registry, m_EngineContext};
-    TransformSystem m_TransformSystem{m_Registry, m_EngineContext};
-    CombatSystem m_CombatSystem{m_Registry, m_EngineContext, m_SpatialGrid};
+    TransformSystem* m_TransformSystem = nullptr;
+    SpatialGrid* m_SpatialGrid = nullptr;
+    CombatSystem* m_CombatSystem = nullptr;
+    EngineContext* m_EngineContext = nullptr;
+    entt::registry* m_Registry = nullptr;
 };
 
 } // namespace ssg

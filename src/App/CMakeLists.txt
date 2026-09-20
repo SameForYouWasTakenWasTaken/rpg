@@ -20,6 +20,12 @@ add_library(App STATIC
         Factories/Application.cpp
         Rendering/SpriteSink.hpp
         Rendering/SpriteSink.cpp
+        Scripting/MainAPI.cpp
+        Scripting/Entity.cpp
+        Scripting/Types/ScriptEntity.cpp
+        Scripting/Systems/AssetManager.cpp
+        Scripting/Types/FloatRect.cpp
+        Scripting/Types/SSGTypes.cpp
         Rendering/ImGuiSink.cpp
         Layers/Console.cpp
         Systems/Input/ImGuiCaptureProvider.cpp
@@ -34,7 +40,6 @@ target_link_libraries(App
         SFML::Graphics
         SFML::Window
         SFML::System
-        tinyxml2::tinyxml2
         ImGui-SFML::ImGui-SFML
         glad_gl_compatibility
 )

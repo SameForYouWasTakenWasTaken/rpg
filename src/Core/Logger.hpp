@@ -1,10 +1,16 @@
 #pragma once
 
 #include <chrono>
+#include <concepts>
+#include <cstdint>
 #include <deque>
 #include <format>
 #include <memory>
 #include <source_location>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <type_traits>
 
 #include "Types.hpp"
 
@@ -27,6 +33,37 @@ struct LogEntry
     String category;
     String source;
     std::chrono::system_clock::time_point time;
+};
+
+// A file + line pair. Built from a std::source_location for C++ callers,
+// or from a plain file/line for locations that don't come from C++ (Lua scripts).
+struct LogLocation
+{
+    std::string file;
+    uint32_t line;
+
+    LogLocation(const std::source_location& l) : file(l.file_name()), line(l.line()) {}
+
+    LogLocation(std::string f, uint32_t ln) : file(std::move(f)), line(ln) {}
+};
+
+// Bundles the format string with the caller's source location.
+// std::source_location::current() as a default argument is evaluated at the call site, but a
+// defaulted parameter can't follow a parameter pack. Putting it in the constructor of the
+// format-string parameter gets around that, so Info("cat", "msg {}", x) records where it was
+// called from instead of a line inside this header.
+template <typename... Args> struct FormatWithLocation
+{
+    std::format_string<Args...> fmt;
+    std::source_location loc;
+
+    template <typename T>
+        requires std::convertible_to<const T&, std::string_view>
+    consteval FormatWithLocation(const T& s,
+                                 std::source_location l = std::source_location::current())
+        : fmt(s), loc(l)
+    {
+    }
 };
 
 struct ILogSink
@@ -78,63 +115,55 @@ class Logger final
 
     void SetLevel(LogLevel level) { m_MinLevel = level; }
 
-    // Full logging function
+    // Full logging function (explicit location, e.g. from Lua)
     template <typename... Args>
-    void Log(LogLevel level, std::source_location loc, std::string_view category,
+    void Log(LogLevel level, LogLocation loc, std::string_view category,
              std::format_string<Args...> fmt, Args&&... args) const;
 
-    // Convenience overload
+    // Location taken automatically from the call site
     template <typename... Args>
-    void Log(LogLevel level, std::string_view category, std::format_string<Args...> fmt,
-             Args&&... args) const;
+    void Log(LogLevel level, std::string_view category,
+             FormatWithLocation<std::type_identity_t<Args>...> fmt, Args&&... args) const;
 
-    // Convenience functions
+    // Convenience functions: explicit location
     template <typename... Args>
-    void Info(std::source_location loc, std::string_view category, std::format_string<Args...> fmt,
+    void Info(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
               Args&&... args) const;
-
-    // no source loc
     template <typename... Args>
-    void Info(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const;
-
-    template <typename... Args>
-    void Warn(std::source_location loc, std::string_view category, std::format_string<Args...> fmt,
+    void Warn(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
               Args&&... args) const;
-
-    // no source loc
     template <typename... Args>
-    void Warn(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const;
-
+    void Error(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+               Args&&... args) const;
     template <typename... Args>
-    void Error(std::source_location loc, std::string_view category, std::format_string<Args...> fmt,
+    void Fatal(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+               Args&&... args) const;
+    template <typename... Args>
+    void Trace(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+               Args&&... args) const;
+    template <typename... Args>
+    void Debug(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
                Args&&... args) const;
 
-    // no source loc
+    // Convenience functions: location taken automatically from the call site
     template <typename... Args>
-    void Error(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const;
-
+    void Info(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+              Args&&... args) const;
     template <typename... Args>
-    void Fatal(std::source_location loc, std::string_view category, std::format_string<Args...> fmt,
+    void Warn(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+              Args&&... args) const;
+    template <typename... Args>
+    void Error(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
                Args&&... args) const;
-
-    // no source loc
     template <typename... Args>
-    void Fatal(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const;
-
-    template <typename... Args>
-    void Trace(std::source_location loc, std::string_view category, std::format_string<Args...> fmt,
+    void Fatal(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
                Args&&... args) const;
-
     template <typename... Args>
-    void Trace(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const;
-
-    // no source loc
-    template <typename... Args>
-    void Debug(std::source_location loc, std::string_view category, std::format_string<Args...> fmt,
+    void Trace(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
                Args&&... args) const;
-
     template <typename... Args>
-    void Debug(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const;
+    void Debug(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+               Args&&... args) const;
 
   private:
     void Dispatch(const LogEntry& entry) const;
@@ -148,12 +177,12 @@ class Logger final
 // ============================================================
 
 template <typename... Args>
-void Logger::Log(LogLevel level, std::source_location loc, std::string_view category,
+void Logger::Log(LogLevel level, LogLocation loc, std::string_view category,
                  std::format_string<Args...> fmt, Args&&... args) const
 {
     const String message = std::format(fmt, std::forward<Args>(args)...);
     const String categoryName = std::string(category);
-    const String source = std::string(loc.file_name()) + ":" + std::to_string(loc.line());
+    const String source = loc.file + ":" + std::to_string(loc.line);
     const auto time = std::chrono::system_clock::now();
 
     LogEntry entry{level, message, categoryName, source, time};
@@ -161,10 +190,10 @@ void Logger::Log(LogLevel level, std::source_location loc, std::string_view cate
 }
 
 template <typename... Args>
-void Logger::Log(LogLevel level, std::string_view category, std::format_string<Args...> fmt,
-                 Args&&... args) const
+void Logger::Log(LogLevel level, std::string_view category,
+                 FormatWithLocation<std::type_identity_t<Args>...> fmt, Args&&... args) const
 {
-    Log(level, std::source_location::current(), category, fmt, std::forward<Args>(args)...);
+    Log(level, LogLocation(fmt.loc), category, fmt.fmt, std::forward<Args>(args)...);
 }
 
 // ============================================================
@@ -172,16 +201,17 @@ void Logger::Log(LogLevel level, std::string_view category, std::format_string<A
 // ============================================================
 
 template <typename... Args>
-void Logger::Info(std::source_location loc, std::string_view category,
-                  std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Info(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+                  Args&&... args) const
 {
-    Log(LogLevel::Info, loc, category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Info, std::move(loc), category, fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::Info(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Info(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+                  Args&&... args) const
 {
-    Info(std::source_location::current(), category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Info, LogLocation(fmt.loc), category, fmt.fmt, std::forward<Args>(args)...);
 }
 
 // ============================================================
@@ -189,16 +219,17 @@ void Logger::Info(std::string_view category, std::format_string<Args...> fmt, Ar
 // ============================================================
 
 template <typename... Args>
-void Logger::Warn(std::source_location loc, std::string_view category,
-                  std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Warn(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+                  Args&&... args) const
 {
-    Log(LogLevel::Warn, loc, category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Warn, std::move(loc), category, fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::Warn(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Warn(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+                  Args&&... args) const
 {
-    Warn(std::source_location::current(), category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Warn, LogLocation(fmt.loc), category, fmt.fmt, std::forward<Args>(args)...);
 }
 
 // ============================================================
@@ -206,16 +237,17 @@ void Logger::Warn(std::string_view category, std::format_string<Args...> fmt, Ar
 // ============================================================
 
 template <typename... Args>
-void Logger::Error(std::source_location loc, std::string_view category,
-                   std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Error(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+                   Args&&... args) const
 {
-    Log(LogLevel::Error, loc, category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Error, std::move(loc), category, fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::Error(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Error(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+                   Args&&... args) const
 {
-    Error(std::source_location::current(), category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Error, LogLocation(fmt.loc), category, fmt.fmt, std::forward<Args>(args)...);
 }
 
 // ============================================================
@@ -223,16 +255,17 @@ void Logger::Error(std::string_view category, std::format_string<Args...> fmt, A
 // ============================================================
 
 template <typename... Args>
-void Logger::Fatal(std::source_location loc, std::string_view category,
-                   std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Fatal(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+                   Args&&... args) const
 {
-    Log(LogLevel::Fatal, loc, category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Fatal, std::move(loc), category, fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::Fatal(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Fatal(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+                   Args&&... args) const
 {
-    Fatal(std::source_location::current(), category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Fatal, LogLocation(fmt.loc), category, fmt.fmt, std::forward<Args>(args)...);
 }
 
 // ============================================================
@@ -240,16 +273,17 @@ void Logger::Fatal(std::string_view category, std::format_string<Args...> fmt, A
 // ============================================================
 
 template <typename... Args>
-void Logger::Trace(std::source_location loc, std::string_view category,
-                   std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Trace(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+                   Args&&... args) const
 {
-    Log(LogLevel::Trace, loc, category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Trace, std::move(loc), category, fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::Trace(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Trace(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+                   Args&&... args) const
 {
-    Trace(std::source_location::current(), category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Trace, LogLocation(fmt.loc), category, fmt.fmt, std::forward<Args>(args)...);
 }
 
 // ============================================================
@@ -257,16 +291,17 @@ void Logger::Trace(std::string_view category, std::format_string<Args...> fmt, A
 // ============================================================
 
 template <typename... Args>
-void Logger::Debug(std::source_location loc, std::string_view category,
-                   std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Debug(LogLocation loc, std::string_view category, std::format_string<Args...> fmt,
+                   Args&&... args) const
 {
-    Log(LogLevel::Debug, loc, category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Debug, std::move(loc), category, fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::Debug(std::string_view category, std::format_string<Args...> fmt, Args&&... args) const
+void Logger::Debug(std::string_view category, FormatWithLocation<std::type_identity_t<Args>...> fmt,
+                   Args&&... args) const
 {
-    Debug(std::source_location::current(), category, fmt, std::forward<Args>(args)...);
+    Log(LogLevel::Debug, LogLocation(fmt.loc), category, fmt.fmt, std::forward<Args>(args)...);
 }
 
 } // namespace ssg::log

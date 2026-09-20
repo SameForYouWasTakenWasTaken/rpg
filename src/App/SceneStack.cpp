@@ -29,20 +29,26 @@ void SceneStack::Clear() { m_Scenes.clear(); }
 
 bool SceneStack::Empty() const { return m_Scenes.empty(); }
 
-void SceneStack::Update(float dt, ApplicationContext& context)
+void SceneStack::Update(float dt) const
 {
     if (!m_Scenes.empty())
     {
-        m_Scenes.back()->OnUpdate(dt, context);
+        m_Scenes.back()->OnUpdate(dt);
     }
 }
 
-void SceneStack::Render(Renderer& renderer, ApplicationContext& context)
+void SceneStack::Render() const
 {
     if (!m_Scenes.empty())
     {
-        m_Scenes.back()->OnRender(renderer, context);
+        m_Scenes.back()->OnRender();
     }
+}
+IScene* SceneStack::Current() const
+{
+    if (Empty())
+        return nullptr;
+    return m_Scenes.back().get();
 }
 
 } // namespace ssg

@@ -29,8 +29,10 @@ class SceneStack
 
     bool Empty() const;
 
-    void Update(float dt, ApplicationContext& context);
-    void Render(Renderer& renderer, ApplicationContext& context);
+    void Update(float dt) const;
+    void Render() const;
+
+    IScene* Current() const;
 
   private:
     Vector<std::unique_ptr<IScene>> m_Scenes;

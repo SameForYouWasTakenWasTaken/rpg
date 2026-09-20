@@ -8,7 +8,7 @@ namespace ssg
 
 struct CTexture
 {
-    TextureHandle textureID{TextureHandle::GetInvalidValue()};
+    TextureHandle textureHandle{TextureHandle::GetInvalidValue()};
     sf::FloatRect textureRect{{0.0f, 0.0f}, {0.0f, 0.0f}};
 };
 

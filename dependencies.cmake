@@ -1,7 +1,5 @@
 include(FetchContent)
 
-include(FetchContent)
-
 function(setup_dependency)
     cmake_parse_arguments(
             PARSE_ARGV 0
@@ -120,4 +118,39 @@ glad_add_library(
         REPRODUCIBLE
         LOADER
         API gl:compatibility=2.1
+)
+
+# Lua
+FetchContent_Declare(
+        lua
+        GIT_REPOSITORY https://github.com/lua/lua.git
+        GIT_TAG v5.4.8
+)
+
+FetchContent_MakeAvailable(lua)
+
+file(GLOB LUA_SOURCES
+        "${lua_SOURCE_DIR}/*.c"
+)
+
+# Remove the standalone interpreter/compiler entry points.
+list(REMOVE_ITEM LUA_SOURCES
+        "${lua_SOURCE_DIR}/lua.c"
+        "${lua_SOURCE_DIR}/luac.c"
+        "${lua_SOURCE_DIR}/onelua.c"
+)
+
+add_library(lua STATIC
+        ${LUA_SOURCES}
+)
+
+target_include_directories(lua PUBLIC
+        "${lua_SOURCE_DIR}"
+)
+
+setup_dependency(
+        NAME sol2
+        REPO https://github.com/ThePhD/sol2
+        TAG d805d02
+        
 )

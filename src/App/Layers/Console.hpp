@@ -9,11 +9,11 @@ class Console : public ILayer
 {
   public:
     explicit Console(EngineContext& m_engine_context) : m_EngineContext(m_engine_context) {}
-    void OnAttach() override;
-    void OnDetach() override;
+    void OnAttach(context::SceneContext&) override;
+    void OnDetach(context::SceneContext&) override;
 
-    void OnUpdate(float, ApplicationContext& context) override;
-    void OnRender(Renderer& renderer, ApplicationContext& context) override;
+    void OnUpdate(float, context::SceneContext& context) override;
+    void OnRender(context::SceneContext& context) override;
 
   private:
     static ImVec4 GetLogLevelColor(log::LogLevel logLevel);

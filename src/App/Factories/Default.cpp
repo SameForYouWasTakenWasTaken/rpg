@@ -77,7 +77,7 @@ json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, e
         auto regionRect = atlas.GetRegion(region);
 
         CTexture texture;
-        texture.textureID = atlas.GetTextureID();
+        texture.textureHandle = atlas.GetTextureID();
         texture.textureRect = regionRect;
 
         r.emplace_or_replace<CTexture>(entity, std::move(texture));

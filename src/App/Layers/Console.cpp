@@ -5,13 +5,12 @@
 namespace ssg
 {
 
-void Console::OnAttach() {}
-void Console::OnDetach() {}
-void Console::OnUpdate(float, ApplicationContext& context) {}
-void Console::OnRender(Renderer& renderer, ApplicationContext& applicationContext)
+void Console::OnAttach(context::SceneContext& context) {}
+void Console::OnDetach(context::SceneContext& context) {}
+void Console::OnUpdate(float, context::SceneContext& context) {}
+void Console::OnRender(context::SceneContext& context)
 {
-
-    ImGui::SetNextWindowSize(ImVec2(600, 350), ImGuiCond_FirstUseEver);
+ ImGui::SetNextWindowSize(ImVec2(600, 350), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Console"))
     {
         ImGui::End();

@@ -17,14 +17,14 @@ target_link_libraries(Game2
         EnTT::EnTT
 )
 
-add_custom_command(TARGET Game2 POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/App/assets
-        $<TARGET_FILE_DIR:Game2>/assets
-)
+function(clone_assets TARGET DIRECTORY DESTINATION)
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${DIRECTORY}
+            $<TARGET_FILE_DIR:Game2>/${DESTINATION}
+    )
+endfunction()
 
-add_custom_command(TARGET Game2 POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/App/data
-        $<TARGET_FILE_DIR:Game2>/data
-)
+clone_assets(Game2 ${CMAKE_CURRENT_SOURCE_DIR}/App/assets assets)
+clone_assets(Game2 ${CMAKE_CURRENT_SOURCE_DIR}/App/data data)
+clone_assets(Game2 ${CMAKE_CURRENT_SOURCE_DIR}/App/scripts scripts)

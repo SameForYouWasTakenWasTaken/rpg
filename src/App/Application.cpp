@@ -24,6 +24,8 @@
 #include "SFML/Graphics/Texture.hpp"
 #include "SceneStack.hpp"
 #include "Scenes/GameScene.hpp"
+#include "Scripting/Entity.hpp"
+#include "Scripting/MainAPI.hpp"
 
 namespace ssg
 {
@@ -34,27 +36,30 @@ void Application::Run()
 {
 
     auto& engine = m_EngineContext.engine;
+    auto& scriptEngine = engine.GetScriptEngine();
     auto& eventBus = engine.GetEventBus();
     auto& renderer = engine.GetRenderer();
 
+    // window config
     WindowSettings windowSettings = factory::LoadWindowSettings(Config::GAMES_JSON_FILEPATH);
     m_Window.SetSettings(windowSettings);
 
+    SceneStack stack;
     ApplicationContext context{m_Window};
 
     // Initialize render sinks
     renderer.AddSink(std::make_unique<rendering::SpriteSink>());
     renderer.AddSink(std::make_unique<rendering::ImGuiSink>(engine.GetInputGate(), m_Window));
 
-    // Scenes
-    SceneStack stack;
+    // initialize lua API (must be done before scene/layer creation)
+    lua::api::lua_api_init(engine.GetScriptEngine().getState(), m_EngineContext, stack);
 
-    auto scene = std::make_unique<GameScene>();
-    scene->PushLayer(std::make_unique<GameLayer>(m_EngineContext, m_Window));
-    scene->PushLayer(std::make_unique<Console>(m_EngineContext));
-
+    auto scene = std::make_unique<GameScene>(m_EngineContext, context);
     stack.Push(std::move(scene));
+    stack.Current()->PushLayer(std::make_unique<GameLayer>());
+    stack.Current()->PushLayer(std::make_unique<Console>(m_EngineContext));
 
+    // create clock for delta time
     sf::Clock clock;
     clock.start();
     while (m_Window.IsOpen() && engine.isRunning())
@@ -68,8 +73,9 @@ void Application::Run()
 
         renderer.Begin();
 
-        stack.Update(dt, context);
-        stack.Render(renderer, context);
+        lua::api::update(scriptEngine.getState(), dt);
+        stack.Update(dt);
+        stack.Render();
 
         renderer.End(m_Window);
 
