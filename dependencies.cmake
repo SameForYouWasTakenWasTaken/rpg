@@ -137,6 +137,7 @@ file(GLOB LUA_SOURCES
 list(REMOVE_ITEM LUA_SOURCES
         "${lua_SOURCE_DIR}/lua.c"
         "${lua_SOURCE_DIR}/luac.c"
+        "${lua_SOURCE_DIR}/onelua.c"
 )
 
 add_library(lua STATIC
