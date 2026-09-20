@@ -151,5 +151,6 @@ target_include_directories(lua PUBLIC
 setup_dependency(
         NAME sol2
         REPO https://github.com/ThePhD/sol2
-        TAG v3.3.0
+        TAG d805d02
+        
 )

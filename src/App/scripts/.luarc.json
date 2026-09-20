@@ -1,0 +1,11 @@
+{
+    "runtime.version": "Lua 5.4",
+    "workspace.library": [
+        "./api"
+    ],
+    "diagnostics.globals": [
+        "engine",
+        "Vec2",
+        "FloatRect"
+    ]
+}

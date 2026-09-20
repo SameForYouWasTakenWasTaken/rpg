@@ -14,7 +14,10 @@ local transform = e:get("transform")
 transform.position = Vec2(100, 100)
 transform.scale = Vec2(5, 5)
 
-print(transform.position)
-print(transform.scale)
+if transform then
+    print(transform.position)
+    print(transform.scale)
+end
+
 
 print("yayy!!")
