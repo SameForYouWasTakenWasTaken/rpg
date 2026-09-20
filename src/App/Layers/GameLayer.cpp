@@ -125,6 +125,10 @@ void GameLayer::OnWindowResize(const WindowResizeEvent& event)
 }
 void GameLayer::OnKeyPress(const KeyPressedEvent& event)
 {
+    auto& inpGate = m_EngineContext->engine.GetInputGate();
+    if (inpGate.WantsKeyboard())
+        return;
+
     if (event.key == Input::Key::R)
     {
         Vector<entt::entity> reloadTargets;
