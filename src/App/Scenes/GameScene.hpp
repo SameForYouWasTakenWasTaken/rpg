@@ -21,13 +21,13 @@ class GameScene final : public IScene
     {
 
         auto& spatialGrid = m_SystemRegistry.Register(
-            std::move(std::make_unique<SpatialGrid>(m_Registry, m_SceneContext.engine_context)));
+            std::make_unique<SpatialGrid>(m_Registry, m_SceneContext.engine_context));
 
-        auto& transformSystem = m_SystemRegistry.Register(std::move(
-            std::make_unique<TransformSystem>(m_Registry, m_SceneContext.engine_context)));
+        auto& transformSystem = m_SystemRegistry.Register(
+            std::make_unique<TransformSystem>(m_Registry, m_SceneContext.engine_context));
 
-        auto& combatSystem = m_SystemRegistry.Register(std::move(std::make_unique<CombatSystem>(
-            m_Registry, m_SceneContext.engine_context, spatialGrid)));
+        auto& combatSystem = m_SystemRegistry.Register(
+            std::make_unique<CombatSystem>(m_Registry, m_SceneContext.engine_context, spatialGrid));
     }
     ~GameScene();
 
