@@ -8,24 +8,10 @@
 #include <tuple>
 #include <unordered_map>
 
-#include "Components/CSprite.hpp"
-#include "Components/CTexture.hpp"
-#include "Components/CTransform.hpp"
+#include "ScriptComponents.hpp"
 
 namespace ssg::lua
 {
-template <class... Ts> struct TypeList
-{
-};
-
-template <class C, class T> struct Field
-{
-    const char* name;
-    T C::* ptr;
-};
-template <class C, class T> Field(const char*, T C::*) -> Field<C, T>;
-
-template <class C> struct ScriptComponent; // specialize per component
 
 struct ComponentOps
 {
@@ -98,33 +84,6 @@ template <class... Ts> auto build_ops(TypeList<Ts...>)
     (m.emplace(ScriptComponent<Ts>::name, make_ops<Ts>()), ...);
     return m;
 }
-
-template <> struct ScriptComponent<CTransform>
-{
-    static constexpr std::string_view name = "transform";
-    static constexpr auto fields = std::make_tuple(Field{"position", &CTransform::position},
-                                                   Field{"rotation", &CTransform::rotation},
-                                                   Field{"scale", &CTransform::scale});
-};
-
-template <> struct ScriptComponent<CSprite>
-{
-    static constexpr std::string_view name = "sprite";
-    static constexpr auto fields =
-        std::make_tuple(Field{"color", &CSprite::color}, Field{"z_index", &CSprite::zIndex},
-                        Field{"origin", &CSprite::origin}, Field{"size", &CSprite::size},
-                        Field{"flip_x", &CSprite::flipX}, Field{"flip_y", &CSprite::flipY});
-};
-
-template <> struct ScriptComponent<CTexture>
-{
-    static constexpr std::string_view name = "texture";
-    static constexpr auto fields =
-        std::make_tuple(Field{"texture_handle", &CTexture::textureHandle},
-                        Field{"float_rect", &CTexture::textureRect});
-};
-
-using ScriptComponents = TypeList<CTransform, CSprite, CTexture>;
 
 inline const ComponentOps& find_ops(std::string_view name)
 {
