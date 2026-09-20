@@ -7,6 +7,7 @@
 #include "Rendering/Renderer.hpp"
 #include "Scripting/ScriptEngine.hpp"
 #include "Systems/AssetManager.hpp"
+#include "Systems/InputGate.hpp"
 #include "Systems/InputSystem.hpp"
 
 #define SSG_ENGINE_HPP_INCLUDED
@@ -42,6 +43,9 @@ class Engine
     [[nodiscard]] Renderer& GetRenderer() { return m_renderer; }
     [[nodiscard]] const Renderer& GetRenderer() const { return m_renderer; }
 
+    [[nodiscard]] const InputGate& GetInputGate() const { return inputGate; }
+    [[nodiscard]] InputGate& GetInputGate() { return inputGate; }
+
     [[nodiscard]] lua::ScriptEngine& GetScriptEngine() { return scriptEngine; }
     [[nodiscard]] const lua::ScriptEngine& GetScriptEngine() const { return scriptEngine; }
 
@@ -52,10 +56,12 @@ class Engine
 
     Input inputSystem{eventBus};
     lua::ScriptEngine scriptEngine;
+    InputGate inputGate{};
 
     Renderer m_renderer;
 
     log::ConsoleSink m_ConsoleSink;
+    log::MemorySink m_MemorySink;
     std::atomic<bool> m_running{false};
 };
 

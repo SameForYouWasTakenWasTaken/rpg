@@ -26,6 +26,9 @@ add_library(App STATIC
         Scripting/Systems/AssetManager.cpp
         Scripting/Types/FloatRect.cpp
         Scripting/Types/SSGTypes.cpp
+        Rendering/ImGuiSink.cpp
+        Layers/Console.cpp
+        Systems/Input/ImGuiCaptureProvider.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -37,6 +40,8 @@ target_link_libraries(App
         SFML::Graphics
         SFML::Window
         SFML::System
+        ImGui-SFML::ImGui-SFML
+        glad_gl_compatibility
 )
 
 target_compile_features(App PRIVATE cxx_std_23)

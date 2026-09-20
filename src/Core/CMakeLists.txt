@@ -10,6 +10,7 @@ add_library(Core STATIC
         EngineContext.cpp
         Factories/AtlasLoader.cpp
         Scripting/ScriptEngine.cpp
+        Systems/InputGate.cpp
 )
 
 target_include_directories(Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -78,6 +78,13 @@ setup_dependency(
 )
 
 setup_dependency(
+        NAME tinyxml2
+        REPO https://github.com/leethomason/tinyxml2.git
+        TAG 11.0.0
+        TARGETS tinyxml2::tinyxml2
+)
+
+setup_dependency(
         NAME imgui
         REPO https://github.com/ocornut/imgui.git
         TAG v1.91.1
@@ -94,16 +101,6 @@ setup_dependency(
         TAG v3.0
         TARGETS ImGui-SFML::ImGui-SFML
 )
-
-# Scripting
-setup_dependency(
-        NAME sol2
-        REPO https://github.com/ThePhD/sol2.git
-        TAG v3.3.0
-        TARGETS sol2::sol2
-)
-
-# C LIBRARIES MUST BE DECLARED MANUALLY, FINDPACKAGE DOESNT WORK
 
 # GLAD
 FetchContent_Declare(
@@ -123,19 +120,35 @@ glad_add_library(
         API gl:compatibility=2.1
 )
 
-# LUA
+# Lua
 FetchContent_Declare(
         lua
         GIT_REPOSITORY https://github.com/lua/lua.git
         GIT_TAG v5.4.8
 )
+
 FetchContent_MakeAvailable(lua)
 
 file(GLOB LUA_SOURCES
-        ${lua_SOURCE_DIR}/*.c
+        "${lua_SOURCE_DIR}/*.c"
 )
-add_library(lua STATIC ${LUA_HEADERS} ${LUA_SOURCES})
+
+# Remove the standalone interpreter/compiler entry points.
+list(REMOVE_ITEM LUA_SOURCES
+        "${lua_SOURCE_DIR}/lua.c"
+        "${lua_SOURCE_DIR}/luac.c"
+)
+
+add_library(lua STATIC
+        ${LUA_SOURCES}
+)
 
 target_include_directories(lua PUBLIC
-        ${lua_SOURCE_DIR}/
+        "${lua_SOURCE_DIR}"
+)
+
+setup_dependency(
+        NAME sol2
+        REPO https://github.com/ThePhD/sol2
+        TAG v3.3.0
 )
