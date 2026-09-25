@@ -38,8 +38,10 @@ template <class C, class T>
 void bind_field(sol::usertype<ComponentRef<C>>& ut, const Field<C, T>& f)
 {
     auto ptr = f.ptr;
-    ut[f.name] = sol::property([ptr](const ComponentRef<C>& r) -> T { return r.get().*ptr; },
-                               [ptr](ComponentRef<C>& r, const T& v) { r.get().*ptr = v; });
+
+    ut[f.name] =
+        sol::property([ptr](ComponentRef<C>& r) -> T& { return r.get().*ptr; },     // get ref
+                      [ptr](ComponentRef<C>& r, const T& v) { r.get().*ptr = v; }); // assign value
 }
 
 template <class C> void register_component_ref(sol::state& lua)

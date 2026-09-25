@@ -25,18 +25,19 @@
 ---@field flip_y? boolean
 
 ---@class TextureRef
----@field texture_handle TextureHandle
+---@field asset_handle TextureHandle
 ---@field float_rect FloatRect
 
 ---@class TextureInit
----@field texture_handle? TextureHandle
+---@field asset_handle? TextureHandle
 ---@field float_rect? FloatRect
 
 ---@class TextureHandle
 ---@field id integer
 local TextureHandle = {}
 ---@return boolean
-function TextureHandle:valid() end
+function TextureHandle:valid()
+end
 
 ---@class Texture
 ---@field width integer
@@ -44,3 +45,4 @@ function TextureHandle:valid() end
 ---@field smooth boolean
 ---@field repeated boolean
 ---@field srgb boolean
+---@field asset_handle TextureHandle

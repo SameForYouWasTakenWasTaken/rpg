@@ -2,7 +2,7 @@
 
 #include <entt/entt.hpp>
 
-#include "ComponentView.hpp"
+#include "Components/ComponentView.hpp"
 #include "SceneStack.hpp"
 #include "Types/ScriptEntity.hpp"
 

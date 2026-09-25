@@ -29,9 +29,8 @@ template <> struct ScriptComponent<CSprite>
 template <> struct ScriptComponent<CTexture>
 {
     static constexpr std::string_view name = "texture";
-    static constexpr auto fields =
-        std::make_tuple(Field{"texture_handle", &CTexture::textureHandle},
-                        Field{"float_rect", &CTexture::textureRect});
+    static constexpr auto fields = std::make_tuple(Field{"asset_handle", &CTexture::textureHandle},
+                                                   Field{"float_rect", &CTexture::textureRect});
 };
 
 using ScriptComponents = TypeList<CTransform, CSprite, CTexture>;

@@ -1,6 +1,6 @@
 #include "MainAPI.hpp"
 
-#include "ComponentView.hpp"
+#include "Components/ComponentView.hpp"
 #include "Entity.hpp"
 #include "Logger.hpp"
 #include "Systems/AssetManager.hpp"
