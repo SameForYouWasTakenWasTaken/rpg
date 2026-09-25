@@ -25,6 +25,7 @@ Entities, components and assets all live in C++. Lua never owns them. It only ho
 | `FloatRect` | `sf::FloatRect` | a value |
 | `TextureHandle` | `TextureHandle` | a value |
 | `Texture` | `sf::Texture` | read-only info about a loaded texture |
+| `engine.input` | `Input` + `EventBus` | polling queries and input signals |
 
 Three consequences follow, and most scripting bugs come from forgetting one of them:
 

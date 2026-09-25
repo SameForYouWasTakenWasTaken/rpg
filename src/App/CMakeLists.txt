@@ -24,6 +24,7 @@ add_library(App STATIC
         Scripting/Entity.cpp
         Scripting/Types/ScriptEntity.cpp
         Scripting/Systems/AssetManager.cpp
+        Scripting/Systems/Input.cpp
         Scripting/Types/FloatRect.cpp
         Scripting/Types/SSGTypes.cpp
         Rendering/ImGuiSink.cpp

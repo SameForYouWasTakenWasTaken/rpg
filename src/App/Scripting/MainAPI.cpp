@@ -4,6 +4,7 @@
 #include "Entity.hpp"
 #include "Logger.hpp"
 #include "Systems/AssetManager.hpp"
+#include "Systems/Input.hpp"
 #include "Types/FloatRect.hpp"
 #include "Types/SSGTypes.hpp"
 
@@ -18,6 +19,7 @@ void lua_api_init(sol::state& state, EngineContext& context, SceneStack& stack)
     register_component_refs(state, ScriptComponents{});
     register_sf_float_rect(state);
     assets::register_all(engine_table, context);
+    input::register_all(engine_table, context);
     entity::register_all(engine_table, stack);
 }
 void update(sol::state& state, float dt)

@@ -23,6 +23,7 @@ Conventions used below:
 | [`engine.assets`](#-engineassets) | table | textures |
 | [`engine.assets.TextureHandle`](#texturehandle) | type | id of a loaded texture |
 | [`engine.assets.Texture`](#texture) | type | read-only texture info |
+| [`engine.input`](#-engineinput) | table | keyboard, mouse, and input signals |
 
 ---
 
@@ -263,6 +264,75 @@ Read-only info about a texture (`sf::Texture`). It has no constructor. The type 
 | `t:size()` | `Vec2` | width and height as a vector (**a method**, unlike `width`/`height`) |
 
 All properties are read-only.
+
+---
+
+## `engine.input`
+
+Keyboard and mouse access. `engine.input.Key` contains the SFML key names (`W`, `Space`,
+`Escape`, `Num0`–`Num9`, `F1`–`F15`, and so on); `MouseButton` contains `Left`, `Right`,
+`Middle`, `Extra1`, and `Extra2`; `MouseWheel` contains `Vertical` and `Horizontal`.
+
+All state queries and signals respect the `InputGate`: when UI has captured the relevant
+device, keyboard/mouse state reads as up and its signals do not fire. `mouse_position()`
+always returns the desktop cursor position.
+
+### State queries
+
+| Function | → | Description |
+| --- | --- | --- |
+| `engine.input.is_key_down(key)` | boolean | Is `key` currently held? |
+| `engine.input.is_key_up(key)` | boolean | Is `key` not held (or keyboard input is captured)? |
+| `engine.input.is_mouse_button_down(button)` | boolean | Is `button` currently held? |
+| `engine.input.is_mouse_button_up(button)` | boolean | Is `button` not held (or mouse input is captured)? |
+| `engine.input.mouse_position()` | `Vec2` | Current desktop cursor position. |
+
+```lua
+if engine.input.is_key_down(engine.input.Key.W) then
+    -- move forward
+end
+
+if engine.input.is_mouse_button_down(engine.input.MouseButton.Left) then
+    -- aim or attack
+end
+```
+
+### Signals
+
+The event members are Roblox-style signals. Call `:Connect(callback)` to subscribe; it
+returns an `InputConnection`. Call `connection:Disconnect()` to unsubscribe, or inspect
+`connection:Connected()`.
+
+| Signal | Callback event fields |
+| --- | --- |
+| `key_pressed` | `key`, `alt`, `control`, `shift`, `system` |
+| `key_released` | `key`, `alt`, `control`, `shift`, `system` |
+| `key_repeated` | `key` |
+| `mouse_button_pressed` | `button`, `x`, `y`, `position` (`Vec2`) |
+| `mouse_button_released` | `button`, `x`, `y`, `position` (`Vec2`) |
+| `mouse_moved` | `x`, `y`, `position` (`Vec2`) |
+| `mouse_wheel_scrolled` | `wheel`, `delta`, `x`, `y`, `position` (`Vec2`) |
+
+Signals are delivered from the engine's queued `EventBus`, so a platform input event is
+observed at the beginning of the following frame. Errors in one callback are reported to
+stderr and do not prevent other connected callbacks from running.
+
+```lua
+local connection = engine.input.key_pressed:Connect(function(event)
+    if event.key == engine.input.Key.F then
+        print("F pressed")
+    end
+end)
+
+engine.input.mouse_button_pressed:Connect(function(event)
+    if event.button == engine.input.MouseButton.Left then
+        print("clicked at", event.position)
+    end
+end)
+
+-- Later, when this listener is no longer needed:
+connection:Disconnect()
+```
 
 ---
 

@@ -1,4 +1,5 @@
 ---@diagnostic disable: need-check-nil
+local input = engine.input
 local e = engine.entity.create()
 local texture = engine.assets.get_texture("assets/Textures/tree.png")
 local assetTextureHandle = texture.asset_handle;
@@ -18,5 +19,14 @@ transform.position.x = 100;
 transform.position.y = 100;
 transform.scale = Vec2(5, 5)
 
+function _update(dt)
+	if input.is_key_down(input.Key.W) then
+		print("W is held")
+	end
+end
+
+input.key_pressed:Connect(function(event)
+	print("key " .. event.key .. " was pressed")
+end)
 
 print("yayy!!")
