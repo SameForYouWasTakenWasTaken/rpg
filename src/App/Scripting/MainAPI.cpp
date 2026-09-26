@@ -21,7 +21,7 @@ void lua_api_init(sol::state& state, EngineContext& engineContext, ApplicationCo
     glob_types::register_all(state, engine_table);
     register_component_refs(state, ScriptComponents{});
 
-    assets::register_all(engine_table, engineContext);
+    assets::register_all(state, engine_table, engineContext);
     input::register_all(engine_table, engineContext);
     entity::register_all(engine_table, stack);
 

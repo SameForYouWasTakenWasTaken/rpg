@@ -47,10 +47,10 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
     const auto& atlas = atlas::TexturePacker::Load(
         *m_EngineContext, "assets/Textures/Atlas/random.json", atlasTexture);
 
-    Region defaultPNG = atlas.GetRegion("default");
-    Region dogbite = atlas.GetRegion("dogbite");
-    Region shocked = atlas.GetRegion("shocked");
-    Region uwu = atlas.GetRegion("uwu");
+    Region defaultPNG = atlas.GetRegion("default").value();
+    Region dogbite = atlas.GetRegion("dogbite").value();
+    Region shocked = atlas.GetRegion("shocked").value();
+    Region uwu = atlas.GetRegion("uwu").value();
 
     auto makeEntity = [&](float x, float y, float size, const Filepath& definition)
     {
@@ -134,7 +134,7 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
         if (!it->is_directory())
             scriptEngine.runFile(it->path());
     }
-     scriptEngine.runFile("scripts/other_test.lua");
+    scriptEngine.runFile("scripts/other_test.lua");
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)

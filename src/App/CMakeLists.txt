@@ -29,6 +29,7 @@ add_library(App STATIC
         Rendering/ImGuiSink.cpp
         Layers/Console.cpp
         Systems/Input/ImGuiCaptureProvider.cpp
+        Scripting/Systems/AtlasLoaders.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
