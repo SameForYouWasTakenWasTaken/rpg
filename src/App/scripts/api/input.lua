@@ -1,25 +1,5 @@
 ---@meta
 
----@class InputConnection
-local InputConnection = {}
-
----Stops this callback from receiving future events. Safe to call more than once.
-function InputConnection:Disconnect()
-end
-
----@return boolean
-function InputConnection:Connected()
-end
-
----@class InputSignal<T>
-local InputSignal = {}
-
----@generic T
----@param callback fun(event: T)
----@return InputConnection
-function InputSignal:Connect(callback)
-end
-
 ---@class InputKey
 ---@field Unknown integer
 ---@field A integer
@@ -200,17 +180,17 @@ end
 function engine.input.mouse_position()
 end
 
----@type InputSignal<KeyInputEvent>
+---@type Signal<KeyInputEvent>
 engine.input.key_pressed = nil
----@type InputSignal<KeyInputEvent>
+---@type Signal<KeyInputEvent>
 engine.input.key_released = nil
----@type InputSignal<KeyRepeatedInputEvent>
+---@type Signal<KeyRepeatedInputEvent>
 engine.input.key_repeated = nil
----@type InputSignal<MouseButtonInputEvent>
+---@type Signal<MouseButtonInputEvent>
 engine.input.mouse_button_pressed = nil
----@type InputSignal<MouseButtonInputEvent>
+---@type Signal<MouseButtonInputEvent>
 engine.input.mouse_button_released = nil
----@type InputSignal<MouseMovedInputEvent>
+---@type Signal<MouseMovedInputEvent>
 engine.input.mouse_moved = nil
----@type InputSignal<MouseWheelInputEvent>
+---@type Signal<MouseWheelInputEvent>
 engine.input.mouse_wheel_scrolled = nil

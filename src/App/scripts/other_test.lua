@@ -34,6 +34,10 @@ engine.Window:set_title("Gooner")
 
 print(engine.Window:is_open())
 
+for _, e in pairs(engine.entity.get_all_of("transform")) do
+	print(e)
+end
+
 function engine.update(dt)
 	if input.is_key_down(input.Key.W) then
 		print("W is held")
