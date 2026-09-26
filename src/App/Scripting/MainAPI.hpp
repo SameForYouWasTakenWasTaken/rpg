@@ -26,7 +26,9 @@ inline ScriptLocation current_script_location(lua_State* L)
     return {};
 }
 
-void lua_api_init(sol::state& state, EngineContext& context, SceneStack& stack);
+void lua_api_init(sol::state& state, EngineContext& engine_context, ApplicationContext& context,
+                  SceneStack& stack);
 void update(sol::state& state, float dt);
 void register_print(EngineContext& context, sol::state& state);
+void register_error(EngineContext& context, sol::state& state);
 } // namespace ssg::lua::api

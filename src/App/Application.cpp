@@ -52,7 +52,7 @@ void Application::Run()
     renderer.AddSink(std::make_unique<rendering::ImGuiSink>(engine.GetInputGate(), m_Window));
 
     // initialize lua API (must be done before scene/layer creation)
-    lua::api::lua_api_init(engine.GetScriptEngine().getState(), m_EngineContext, stack);
+    lua::api::lua_api_init(engine.GetScriptEngine().getState(), m_EngineContext, context, stack);
 
     auto scene = std::make_unique<GameScene>(m_EngineContext, context);
     stack.Push(std::move(scene));

@@ -1,5 +1,7 @@
 #include "GameLayer.hpp"
 
+#include <fstream>
+
 #include "../Factories/Gameplay/Map/MapLoader.hpp"
 #include "../Map/Tilemap.hpp"
 #include "Application.hpp"
@@ -116,7 +118,23 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
     m_SpriteSink = &renderer.GetSink<rendering::SpriteSink>();
 
     auto& scriptEngine = engine.GetScriptEngine();
-    scriptEngine.runFile("scripts/other_test.lua");
+    Filepath tests_path = "scripts/tests";
+    std::error_code ec;
+    // Go through the scripts/tests/ folder and recursively run lua api tests
+    for (auto it = std::filesystem::recursive_directory_iterator(
+             tests_path, std::filesystem::directory_options::skip_permission_denied, ec);
+         it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
+    {
+        if (ec)
+        {
+            std::cerr << "Error: " << ec.message() << "\n";
+            ec.clear();
+            continue;
+        }
+        if (!it->is_directory())
+            scriptEngine.runFile(it->path());
+    }
+     scriptEngine.runFile("scripts/other_test.lua");
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)

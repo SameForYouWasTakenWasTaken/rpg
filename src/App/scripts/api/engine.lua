@@ -1,6 +1,7 @@
 ---@meta
 
 ---@class engine
+---@field update fun(dt: number)
 engine = {}
 
 ---@class engine.entity
