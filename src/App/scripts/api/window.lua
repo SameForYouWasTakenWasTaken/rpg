@@ -1,13 +1,11 @@
 ---@meta
 
 ---@class Window
+---@field size Vec2
 local Window = {}
 
 ---@param framerate number
 function Window:set_framerate(framerate) end
-
----@param size Vec2
-function Window:set_size(size) end
 
 ---@param enabled boolean
 function Window:set_vsync(enabled) end

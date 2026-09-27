@@ -49,6 +49,8 @@ class Window
     void SetVSync(bool vsync);
     void SetIcon(const Filepath& path);
 
+    Vec2 GetSize() const { return {m_View.getSize().x, m_View.getSize().y}; }
+
     template <typename... TArgs> void Draw(TArgs&&... args)
     {
         m_sfRenderWindow.draw(std::forward<TArgs>(args)...);

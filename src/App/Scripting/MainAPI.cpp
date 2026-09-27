@@ -20,14 +20,29 @@ void lua_api_init(LuaContext& lua_context, SceneStack& stack)
 
     register_component_refs(lua_context, ScriptComponents{});
 
-    assets::register_all(lua_context);
+    assets::register_all(lua_context, stack);
     input::register_all(lua_context);
     entity::register_all(lua_context, stack);
 }
 void update(LuaContext& lua_context, float dt)
 {
-    const sol::function _update = lua_context.namespace_table["update"];
-    _update.call<void>(dt);
+    auto& scriptEngine = lua_context.engine_context.engine.GetScriptEngine();
+    auto& scripts = scriptEngine.getScripts();
+    for (auto& script : scripts)
+    {
+        sol::optional<sol::function> update = script.environment["update"];
+
+        if (update)
+        {
+            auto result = (*update)(dt);
+
+            if (!result.valid())
+            {
+                sol::error err = result;
+                std::cerr << "[lua] update error: " << err.what() << '\n';
+            }
+        }
+    }
 }
 void register_print(LuaContext& lua_context)
 {

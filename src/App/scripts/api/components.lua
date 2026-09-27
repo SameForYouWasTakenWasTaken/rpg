@@ -23,6 +23,7 @@
 ---@field z_index? integer
 ---@field flip_x? boolean
 ---@field flip_y? boolean
+---@field origin? Vec2
 
 ---@class TextureRef
 ---@field asset_handle TextureHandle
@@ -31,13 +32,6 @@
 ---@class TextureInit
 ---@field asset_handle? TextureHandle
 ---@field float_rect? FloatRect
-
----@class TextureHandle
----@field id integer
-local TextureHandle = {}
----@return boolean
-function TextureHandle:valid()
-end
 
 ---@class Texture
 ---@field width integer

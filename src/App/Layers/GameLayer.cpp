@@ -100,7 +100,7 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
     map::MapEntry otherMapEntry = map::LookUpMapEntry("random");
     map::Tilemap tilemap = map::Tiled::LoadTilemapJSON(*m_EngineContext, mapEntry.mapConfigPath);
 
-    map::O_N2::CreateEntitiesForMap(*m_Registry, tilemap);
+    //  map::O_N2::CreateEntitiesForMap(*m_Registry, tilemap);
 
     // Inventory
     // add the weapon

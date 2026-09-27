@@ -1,8 +1,8 @@
-#pragma once
 #include "AssetManager.hpp"
 
 #include "AtlasLoaders.hpp"
 #include "Logger.hpp"
+#include "MapLoaders.hpp"
 #include "Systems/AssetManager.hpp"
 
 namespace ssg::lua::api::assets
@@ -116,15 +116,17 @@ void register_atlas(LuaContext& lua_context)
     // load the atlas loaders
     atlas_loaders::register_all(lua_context);
 }
-void register_all(LuaContext& lua_context)
+void register_all(LuaContext& lua_context, SceneStack& stack)
 {
     auto& table = lua_context.namespace_table;
-    auto assets_table = table.create_named("assets");
+    sol::table assets_table = table.create_named("assets");
 
     register_texture_handle(lua_context);
     register_texture(lua_context);
     register_atlas(lua_context);
     assets_table.set_function("get_texture", [&lua_context](const std::string& path)
                               { return get_texture(lua_context, Filepath(path)); });
+
+    map_loaders::register_all(lua_context, assets_table, stack);
 }
 } // namespace ssg::lua::api::assets

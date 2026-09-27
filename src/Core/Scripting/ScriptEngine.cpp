@@ -15,8 +15,10 @@ ScriptEngine::ScriptEngine()
 ScriptEngine::~ScriptEngine() {}
 bool ScriptEngine::runFile(const Filepath& path)
 {
-    // load script
+    sol::environment env(m_Lua, sol::create, m_Lua.globals());
+
     sol::load_result script = m_Lua.load_file(path.string());
+
     if (!script.valid())
     {
         sol::error err = script;
@@ -24,14 +26,19 @@ bool ScriptEngine::runFile(const Filepath& path)
         return false;
     }
 
-    // run script
-    sol::protected_function_result result = script();
+    sol::protected_function function = script;
+    sol::set_environment(env, function);
+
+    sol::protected_function_result result = function();
+
     if (!result.valid())
     {
         sol::error err = result;
         std::cerr << "[lua] runtime error: " << err.what() << '\n';
         return false;
     }
+
+    m_Scripts.emplace_back(path, std::move(env));
     return true;
 }
 } // namespace ssg::lua

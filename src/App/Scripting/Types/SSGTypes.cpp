@@ -145,7 +145,7 @@ void register_window(sol::state_view state)
     state.new_usertype<Window>(
         "Window", sol::no_constructor, "set_framerate", &Window::SetFramerate,
 
-        "set_size", &Window::SetSize,
+        "size", sol::property(&Window::SetSize, &Window::GetSize),
 
         "set_vsync", &Window::SetVSync,
 

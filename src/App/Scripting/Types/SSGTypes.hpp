@@ -1,9 +1,9 @@
 #pragma once
 #include <sol/state.hpp>
 
-#include "../../../Core/Scripting/Signals/Signal.hpp"
 #include "../LuaContext.hpp"
 #include "Application.hpp"
+#include "Scripting/Signals/Signal.hpp"
 
 namespace ssg::lua::api::glob_types
 {
