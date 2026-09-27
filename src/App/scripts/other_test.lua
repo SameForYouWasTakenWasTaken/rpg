@@ -29,10 +29,11 @@ transform.position.x = 100
 transform.position.y = 100
 transform.scale = Vec2.new(5, 5)
 
-engine.Window:set_framerate(60)
-engine.Window:set_title("Gooner")
+local window = engine.Window
+window:set_framerate(60)
+window:set_title("Gooner")
 
-print(engine.Window:is_open())
+print(window:is_open())
 
 for _, e in pairs(engine.entity.get_all_of("transform")) do
 	print(e)

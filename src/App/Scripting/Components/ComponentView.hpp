@@ -1,4 +1,5 @@
 #pragma once
+#include <entt/core/type_info.hpp> // entt::type_hash
 #include <entt/entity/handle.hpp>
 #include <entt/entity/registry.hpp>
 #include <sol/sol.hpp>
@@ -8,6 +9,7 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "../LuaContext.hpp"
 #include "ScriptComponents.hpp"
 
 namespace ssg::lua
@@ -19,6 +21,7 @@ struct ComponentOps
     bool (*has)(entt::handle);
     void (*remove)(entt::handle);
     sol::object (*get)(entt::handle, sol::this_state);
+    entt::id_type type_id;
 };
 
 // Getting components
@@ -44,16 +47,17 @@ void bind_field(sol::usertype<ComponentRef<C>>& ut, const Field<C, T>& f)
                       [ptr](ComponentRef<C>& r, const T& v) { r.get().*ptr = v; }); // assign value
 }
 
-template <class C> void register_component_ref(sol::state& lua)
+template <class C> void register_component_ref(LuaContext& lua_context)
 {
+    auto& lua = lua_context.state;
     auto ut = lua.new_usertype<ComponentRef<C>>(std::string(ScriptComponent<C>::name) + "Ref",
                                                 sol::no_constructor);
     std::apply([&](const auto&... f) { (bind_field<C>(ut, f), ...); }, ScriptComponent<C>::fields);
 }
 
-template <class... Ts> void register_component_refs(sol::state& lua, TypeList<Ts...>)
+template <class... Ts> void register_component_refs(LuaContext& lua_context, TypeList<Ts...>)
 {
-    (register_component_ref<Ts>(lua), ...);
+    (register_component_ref<Ts>(lua_context), ...);
 }
 
 // Finding/Creating components
@@ -77,6 +81,7 @@ template <class C> ComponentOps make_ops()
                 return sol::make_object(ts, sol::lua_nil);
             return sol::make_object(ts, ComponentRef<C>{h});
         },
+        entt::type_hash<C>::value(),
     };
 }
 
@@ -94,5 +99,32 @@ inline const ComponentOps& find_ops(std::string_view name)
     if (it == table.end())
         throw std::runtime_error("unknown component: " + std::string(name));
     return it->second;
+}
+
+inline sol::table get_all_of(entt::registry& reg, sol::state_view lua,
+                             const std::vector<std::string_view>& names)
+{
+    if (names.empty())
+        throw std::runtime_error("get_all_of: at least one component name is required");
+
+    entt::runtime_view view{};
+
+    for (auto n : names)
+    {
+        auto* storage = reg.storage(find_ops(n).type_id);
+        if (!storage)
+        {
+            // nothing has ever had this component -> intersection is empty
+            return lua.create_table();
+        }
+        view.iterate(*storage);
+    }
+
+    sol::table result = lua.create_table();
+    int index = 1;
+    for (entt::entity entity : view)
+        result[index++] = entity;
+
+    return result;
 }
 } // namespace ssg::lua

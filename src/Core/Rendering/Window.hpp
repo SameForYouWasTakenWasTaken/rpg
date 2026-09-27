@@ -10,6 +10,7 @@
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/RenderWindow.hpp"
 #include "SFML/Graphics/View.hpp"
+#include "Scripting/Signals/Signal.hpp"
 #include "Types.hpp"
 
 namespace ssg
@@ -69,6 +70,10 @@ class Window
     sf::RenderWindow& GetSFMLWindow() { return m_sfRenderWindow; }
 
     std::optional<sf::Event> PollSFMLEvents();
+
+    // lua API
+    lua::api::signals::Signal resized;
+    lua::api::signals::Signal closed;
 
   private:
     void OnResize(const WindowResizeEvent& event);

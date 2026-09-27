@@ -18,7 +18,8 @@ if not transform then return end
 if not sprite then return end
 
 local cam = Camera.new(Vec2.new(640, 360), Vec2.new(1280, 720))
-engine.Window:set_camera(cam)
+local window = engine.Window
+window:set_camera(cam)
 
 function engine.update(dt)
     local speed = 100;
@@ -38,6 +39,15 @@ function engine.update(dt)
         transform.position.x = transform.position.x + speed * dt
     end
 
-    cam.center = transform.position + transform.position * sprite.origin
+    cam.center = transform.position
     engine.Window:set_camera(cam);
 end
+
+window.closed:Connect(function(event)
+    print("window closed")
+end)
+
+window.resized:Connect(function(event)
+    print("window resized")
+    print(event.width, event.height)
+end)

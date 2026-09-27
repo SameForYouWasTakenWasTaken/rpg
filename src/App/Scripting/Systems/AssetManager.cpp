@@ -8,13 +8,15 @@
 namespace ssg::lua::api::assets
 {
 
-Texture get_texture(EngineContext& context, const Filepath& path)
+Texture get_texture(LuaContext& lua_context, const Filepath& path)
 {
+    auto& context = lua_context.engine_context;
     auto handle = context.assetManager.LoadTexture(path);
     return Texture{handle, context.assetManager.GetTexture(handle)};
 }
-void register_texture_handle(sol::table& table, EngineContext& context)
+void register_texture_handle(LuaContext& lua_context)
 {
+    auto table = lua_context.namespace_table["assets"].get<sol::table>();
     table.new_usertype<TextureHandle>(
         "TextureHandle", sol::no_constructor,
 
@@ -32,8 +34,9 @@ void register_texture_handle(sol::table& table, EngineContext& context)
 
     );
 }
-void register_texture(sol::table& table, EngineContext& context)
+void register_texture(LuaContext& lua_context)
 {
+    auto table = lua_context.namespace_table["assets"].get<sol::table>();
     table.new_usertype<Texture>(
         "Texture", sol::no_constructor,
 
@@ -63,8 +66,10 @@ void register_texture(sol::table& table, EngineContext& context)
 
     );
 }
-void register_atlas(sol::state& state, sol::table& table, EngineContext& context)
+void register_atlas(LuaContext& lua_context)
 {
+    auto& state = lua_context.state;
+    auto table = lua_context.namespace_table["assets"].get<sol::table>();
     // Regions are exclusive to atlasses, but they function as sf::FloatRect's, so no construction
     // needed
     state.new_usertype<Region>("Region", sol::no_constructor,
@@ -109,16 +114,17 @@ void register_atlas(sol::state& state, sol::table& table, EngineContext& context
         });
 
     // load the atlas loaders
-    atlas_loaders::register_all(state, table, context);
+    atlas_loaders::register_all(lua_context);
 }
-void register_all(sol::state& state, sol::table& table, EngineContext& context)
+void register_all(LuaContext& lua_context)
 {
+    auto& table = lua_context.namespace_table;
     auto assets_table = table.create_named("assets");
 
-    register_texture_handle(assets_table, context);
-    register_texture(assets_table, context);
-    register_atlas(state, assets_table, context);
-    assets_table.set_function("get_texture", [&context](const std::string& path)
-                              { return get_texture(context, Filepath(path)); });
+    register_texture_handle(lua_context);
+    register_texture(lua_context);
+    register_atlas(lua_context);
+    assets_table.set_function("get_texture", [&lua_context](const std::string& path)
+                              { return get_texture(lua_context, Filepath(path)); });
 }
 } // namespace ssg::lua::api::assets

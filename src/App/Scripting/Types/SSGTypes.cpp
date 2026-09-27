@@ -1,5 +1,7 @@
 #include "SSGTypes.hpp"
 
+#include "../LuaContext.hpp"
+#include "Engine.hpp"
 #include "Rendering/Camera.hpp"
 #include "Rendering/Window.hpp"
 #include "SFML/Window/Window.hpp"
@@ -8,7 +10,7 @@
 namespace ssg::lua::api::glob_types
 {
 
-void register_vec2(sol::state& state)
+void register_vec2(sol::state_view state)
 {
     auto make =
         sol::factories([]() { return glm::vec2(0.f); }, [](float s) { return glm::vec2(s); },
@@ -58,7 +60,7 @@ void register_vec2(sol::state& state)
         sol::meta_function::to_string, [](const glm::vec2& v)
         { return "Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")"; });
 }
-void register_camera(sol::state& state)
+void register_camera(sol::state_view state)
 {
 
     state.new_usertype<Camera>(
@@ -86,7 +88,7 @@ void register_camera(sol::state& state)
         sol::property([](const Camera& camera) { return camera.GetRotation(); },
                       [](Camera& camera, float degrees) { camera.SetRotation(degrees); }));
 }
-void register_sf_float_rect(sol::state& state)
+void register_sf_float_rect(sol::state_view state)
 {
     state.new_usertype<sf::FloatRect>(
         "FloatRect", sol::call_constructor,
@@ -138,7 +140,7 @@ void register_sf_float_rect(sol::state& state)
                    std::to_string(r.size.y) + ")";
         });
 }
-void register_window(sol::state& state)
+void register_window(sol::state_view state)
 {
     state.new_usertype<Window>(
         "Window", sol::no_constructor, "set_framerate", &Window::SetFramerate,
@@ -166,13 +168,38 @@ void register_window(sol::state& state)
                     c.setCenter({center.x, center.y});
                     c.setSize({size.x, size.y});
                 });
-        });
+        },
+        // connections
+
+        "resized", &Window::resized,
+
+        "closed", &Window::closed);
 }
-void register_all(sol::state& state, sol::table table)
+void register_all(LuaContext& context)
 {
+    auto state = context.state;
+    auto engine_table = context.namespace_table;
     register_vec2(state);
     register_sf_float_rect(state);
     register_camera(state);
     register_window(state);
+
+    engine_table.set("Window", std::ref(context.application_context.MainWindow));
+
+    auto& eventBus = context.engine_context.engine.GetEventBus();
+    eventBus.Sink<WindowResizeEvent>().connect<&events::window::on_resize>(context);
+    eventBus.Sink<WindowCloseEvent>().connect<&events::window::on_close>(context);
+}
+void events::window::on_resize(LuaContext& context, const WindowResizeEvent& e)
+{
+    sol::table table = context.state.create_table();
+    table["width"] = e.Width;
+    table["height"] = e.Height;
+    context.application_context.MainWindow.resized.Fire(table);
+}
+void events::window::on_close(LuaContext& context, const WindowCloseEvent& e)
+{
+    sol::table table = context.state.create_table();
+    context.application_context.MainWindow.closed.Fire(table);
 }
 } // namespace ssg::lua::api::glob_types

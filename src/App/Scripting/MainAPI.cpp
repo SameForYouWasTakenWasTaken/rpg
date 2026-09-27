@@ -3,38 +3,36 @@
 #include "Components/ComponentView.hpp"
 #include "Entity.hpp"
 #include "Logger.hpp"
+#include "Scripting/Signals/Signal.hpp"
 #include "Systems/AssetManager.hpp"
 #include "Systems/Input.hpp"
 #include "Types/SSGTypes.hpp"
 
 namespace ssg::lua::api
 {
-sol::table engine_table;
-
-void lua_api_init(sol::state& state, EngineContext& engineContext, ApplicationContext& appContext,
-                  SceneStack& stack)
+void lua_api_init(LuaContext& lua_context, SceneStack& stack)
 {
-    engine_table = state.create_table("engine");
-    register_print(engineContext, state);
-    register_error(engineContext, state);
+    register_print(lua_context);
+    register_error(lua_context);
 
-    glob_types::register_all(state, engine_table);
-    register_component_refs(state, ScriptComponents{});
+    signals::register_all(lua_context.state);
+    glob_types::register_all(lua_context);
 
-    assets::register_all(state, engine_table, engineContext);
-    input::register_all(engine_table, engineContext);
-    entity::register_all(engine_table, stack);
+    register_component_refs(lua_context, ScriptComponents{});
 
-    engine_table.set("Window", std::ref(appContext.MainWindow));
+    assets::register_all(lua_context);
+    input::register_all(lua_context);
+    entity::register_all(lua_context, stack);
 }
-void update(sol::state& state, float dt)
+void update(LuaContext& lua_context, float dt)
 {
-    const sol::function _update = engine_table["update"];
+    const sol::function _update = lua_context.namespace_table["update"];
     _update.call<void>(dt);
 }
-void register_print(EngineContext& context, sol::state& state)
+void register_print(LuaContext& lua_context)
 {
-    auto& logger = context.logger;
+    auto& logger = lua_context.engine_context.logger;
+    auto& state = lua_context.state;
     state.set_function("print",
                        [&logger](sol::this_state ts, sol::variadic_args args)
                        {
@@ -59,9 +57,10 @@ void register_print(EngineContext& context, sol::state& state)
                                        "lua", "{}", line);
                        });
 }
-void register_error(EngineContext& context, sol::state& state)
+void register_error(LuaContext& lua_context)
 {
-    auto& logger = context.logger;
+    auto& logger = lua_context.engine_context.logger;
+    auto& state = lua_context.state;
     state.set_function("error",
                        [&logger](sol::this_state ts, sol::variadic_args args)
                        {

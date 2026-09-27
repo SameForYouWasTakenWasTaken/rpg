@@ -12,10 +12,4 @@ function Connection:Connected()
 end
 
 ---@class Signal<T>
-local Signal = {}
-
----@generic T
----@param callback fun(event: T)
----@return Connection
-function Signal:Connect(callback)
-end
+---@field Connect fun(self: Signal<T>, callback: fun(event: T)): Connection

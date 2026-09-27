@@ -134,7 +134,7 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
         if (!it->is_directory())
             scriptEngine.runFile(it->path());
     }
-    scriptEngine.runFile("scripts/other_test.lua");
+    scriptEngine.runFile("scripts/player.lua");
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)
@@ -201,17 +201,17 @@ void GameLayer::OnUpdate(float dt, context::SceneContext& context)
     auto& transform = m_Registry->get<CTransform>(m_LocalPlayer);
     const auto& speed = m_Registry->get<CHumanoid>(m_LocalPlayer).speed;
 
-    if (Input::IsKeyDown(Input::Key::W))
-        transform.position.y -= speed * dt;
-
-    if (Input::IsKeyDown(Input::Key::S))
-        transform.position.y += speed * dt;
-
-    if (Input::IsKeyDown(Input::Key::A))
-        transform.position.x -= speed * dt;
-
-    if (Input::IsKeyDown(Input::Key::D))
-        transform.position.x += speed * dt;
+    // if (Input::IsKeyDown(Input::Key::W))
+    //     transform.position.y -= speed * dt;
+    //
+    // if (Input::IsKeyDown(Input::Key::S))
+    //     transform.position.y += speed * dt;
+    //
+    // if (Input::IsKeyDown(Input::Key::A))
+    //     transform.position.x -= speed * dt;
+    //
+    // if (Input::IsKeyDown(Input::Key::D))
+    //     transform.position.x += speed * dt;
 
     // 2. Derive world transforms from local + hierarchy.
     m_TransformSystem->Update(dt);
@@ -223,8 +223,8 @@ void GameLayer::OnUpdate(float dt, context::SceneContext& context)
     m_CombatSystem->Update(dt);
 
     // 5. Camera follows the player's world position.
-    m_LocalPlayerCamera.SetCenter(m_Registry->get<CWorldTransform>(m_LocalPlayer).position);
-    context.application_context.MainWindow.SetView(m_LocalPlayerCamera.GetView());
+    // m_LocalPlayerCamera.SetCenter(m_Registry->get<CWorldTransform>(m_LocalPlayer).position);
+    // context.application_context.MainWindow.SetView(m_LocalPlayerCamera.GetView());
 }
 
 void GameLayer::OnRender(context::SceneContext& context)

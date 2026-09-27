@@ -19,8 +19,9 @@ void entity::Entity::destroy()
 entt::entity entity::Entity::get_entity() { return is_valid() ? m_Entity : entt::null; }
 
 bool entity::Entity::is_valid() { return m_Entity != entt::null && m_Registry.valid(m_Entity); }
-void entity::register_entity(sol::table& engine)
+void entity::register_entity(LuaContext& lua_context)
 {
+    auto& engine = lua_context.namespace_table;
     engine.new_usertype<Entity>(
         "Entity", sol::no_constructor, "valid", &Entity::is_valid, "destroy", &Entity::destroy,
 
@@ -38,16 +39,31 @@ void entity::register_entity(sol::table& engine)
         sol::meta_function::equal_to, &Entity::operator==);
 }
 
-void entity::register_all(sol::table& table, SceneStack& sceneStack)
+void entity::register_all(LuaContext& lua_context, SceneStack& sceneStack)
 {
+    auto& table = lua_context.namespace_table;
     sol::table entity_table = table.create_named("entity");
 
-    register_entity(table);
+    register_entity(lua_context);
     entity_table.set_function("create",
-                              [&sceneStack]
+                              [&sceneStack]()
                               {
                                   entt::registry& reg = sceneStack.Current()->GetContext().registry;
                                   return Entity{reg.create(), reg};
+                              });
+
+    entity_table.set_function("get_all_of",
+                              [&sceneStack](sol::this_state ts, sol::variadic_args va)
+                              {
+                                  entt::registry& reg = sceneStack.Current()->GetContext().registry;
+                                  sol::state_view lua(ts);
+
+                                  std::vector<std::string_view> names;
+                                  names.reserve(va.size());
+                                  for (auto arg : va)
+                                      names.push_back(arg.as<std::string_view>());
+
+                                  return get_all_of(reg, lua, names);
                               });
 }
 } // namespace ssg::lua::api

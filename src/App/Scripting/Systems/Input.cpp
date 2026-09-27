@@ -1,9 +1,5 @@
 #include "Input.hpp"
 
-#include <algorithm>
-#include <iostream>
-#include <utility>
-
 #include "Engine.hpp"
 #include "Systems/InputGate.hpp"
 #include "Systems/InputSystem.hpp"
@@ -11,77 +7,11 @@
 namespace ssg::lua::api::input
 {
 
-struct Signal::State
-{
-    struct Listener
-    {
-        std::uint64_t id;
-        sol::protected_function callback;
-    };
-
-    std::vector<Listener> listeners;
-    std::uint64_t nextId = 1;
-};
-
-Signal::Signal() : m_State(std::make_shared<State>()) {}
-
-Connection Signal::Connect(sol::protected_function callback) const
-{
-    const std::uint64_t id = m_State->nextId++;
-    m_State->listeners.push_back({id, std::move(callback)});
-    return {m_State, id};
-}
-
-void Signal::Fire(const sol::table& event) const
-{
-    // Copying lets a callback disconnect itself (or another callback) safely.
-    const auto listeners = m_State->listeners;
-    for (const auto& listener : listeners)
-    {
-        const auto stillConnected =
-            std::ranges::any_of(m_State->listeners, [&listener](const State::Listener& current)
-                                { return current.id == listener.id; });
-        if (!stillConnected)
-            continue;
-
-        sol::protected_function_result result = listener.callback(event);
-        if (!result.valid())
-        {
-            sol::error error = result;
-            std::cerr << "[lua] input callback error: " << error.what() << '\n';
-        }
-    }
-}
-
-Connection::Connection(std::weak_ptr<Signal::State> state, std::uint64_t id)
-    : m_State(std::move(state)), m_Id(id)
-{
-}
-
-void Connection::Disconnect()
-{
-    const auto state = m_State.lock();
-    if (!state)
-        return;
-
-    std::erase_if(state->listeners,
-                  [this](const Signal::State::Listener& listener) { return listener.id == m_Id; });
-    m_State.reset();
-}
-
-bool Connection::Connected() const
-{
-    const auto state = m_State.lock();
-    return state &&
-           std::ranges::any_of(state->listeners, [this](const Signal::State::Listener& listener)
-                               { return listener.id == m_Id; });
-}
-
-InputAPI::InputAPI(EngineContext& context) : m_Context(context) {}
+InputAPI::InputAPI(LuaContext& lua_context) : m_LuaContext(lua_context) {}
 
 void InputAPI::Bind()
 {
-    auto& eventBus = m_Context.engine.GetEventBus();
+    auto& eventBus = m_LuaContext.engine_context.engine.GetEventBus();
     eventBus.Sink<KeyPressedEvent>().connect<&InputAPI::OnKeyPressed>(this);
     eventBus.Sink<KeyReleasedEvent>().connect<&InputAPI::OnKeyReleased>(this);
     eventBus.Sink<KeyRepeatedEvent>().connect<&InputAPI::OnKeyRepeated>(this);
@@ -93,7 +23,7 @@ void InputAPI::Bind()
 
 bool InputAPI::IsKeyDown(int key) const
 {
-    return !m_Context.engine.GetInputGate().WantsKeyboard() &&
+    return !m_LuaContext.engine_context.engine.GetInputGate().WantsKeyboard() &&
            Input::IsKeyDown(static_cast<Input::Key>(key));
 }
 
@@ -101,7 +31,7 @@ bool InputAPI::IsKeyUp(int key) const { return !IsKeyDown(key); }
 
 bool InputAPI::IsMouseButtonDown(int button) const
 {
-    return !m_Context.engine.GetInputGate().WantsMouse() &&
+    return !m_LuaContext.engine_context.engine.GetInputGate().WantsMouse() &&
            Input::IsMouseButtonDown(static_cast<Input::MouseButton>(button));
 }
 
@@ -111,10 +41,10 @@ Vec2 InputAPI::GetMousePosition() const { return Input::GetMousePosition(); }
 
 void InputAPI::OnKeyPressed(const KeyPressedEvent& event)
 {
-    if (m_Context.engine.GetInputGate().WantsKeyboard())
+    if (m_LuaContext.engine_context.engine.GetInputGate().WantsKeyboard())
         return;
 
-    sol::state_view state{m_Context.engine.GetScriptEngine().getState().lua_state()};
+    auto& state = m_LuaContext.state;
     auto data =
         state.create_table_with("key", static_cast<int>(event.key), "alt", event.alt, "control",
                                 event.control, "shift", event.shift, "system", event.system);
@@ -123,10 +53,10 @@ void InputAPI::OnKeyPressed(const KeyPressedEvent& event)
 
 void InputAPI::OnKeyReleased(const KeyReleasedEvent& event)
 {
-    if (m_Context.engine.GetInputGate().WantsKeyboard())
+    if (m_LuaContext.engine_context.engine.GetInputGate().WantsKeyboard())
         return;
 
-    sol::state_view state{m_Context.engine.GetScriptEngine().getState().lua_state()};
+    auto& state = m_LuaContext.state;
     auto data =
         state.create_table_with("key", static_cast<int>(event.key), "alt", event.alt, "control",
                                 event.control, "shift", event.shift, "system", event.system);
@@ -135,19 +65,19 @@ void InputAPI::OnKeyReleased(const KeyReleasedEvent& event)
 
 void InputAPI::OnKeyRepeated(const KeyRepeatedEvent& event)
 {
-    if (m_Context.engine.GetInputGate().WantsKeyboard())
+    if (m_LuaContext.engine_context.engine.GetInputGate().WantsKeyboard())
         return;
 
-    sol::state_view state{m_Context.engine.GetScriptEngine().getState().lua_state()};
+    auto& state = m_LuaContext.state;
     m_KeyRepeated.Fire(state.create_table_with("key", static_cast<int>(event.key)));
 }
 
 void InputAPI::OnMouseButtonPressed(const MouseButtonPressedEvent& event)
 {
-    if (m_Context.engine.GetInputGate().WantsMouse())
+    if (m_LuaContext.engine_context.engine.GetInputGate().WantsMouse())
         return;
 
-    sol::state_view state{m_Context.engine.GetScriptEngine().getState().lua_state()};
+    auto& state = m_LuaContext.state;
     m_MouseButtonPressed.Fire(state.create_table_with("button", static_cast<int>(event.button), "x",
                                                       event.x, "y", event.y, "position",
                                                       Vec2{event.x, event.y}));
@@ -155,10 +85,10 @@ void InputAPI::OnMouseButtonPressed(const MouseButtonPressedEvent& event)
 
 void InputAPI::OnMouseButtonReleased(const MouseButtonReleasedEvent& event)
 {
-    if (m_Context.engine.GetInputGate().WantsMouse())
+    if (m_LuaContext.engine_context.engine.GetInputGate().WantsMouse())
         return;
 
-    sol::state_view state{m_Context.engine.GetScriptEngine().getState().lua_state()};
+    auto& state = m_LuaContext.state;
     m_MouseButtonReleased.Fire(state.create_table_with("button", static_cast<int>(event.button),
                                                        "x", event.x, "y", event.y, "position",
                                                        Vec2{event.x, event.y}));
@@ -166,20 +96,20 @@ void InputAPI::OnMouseButtonReleased(const MouseButtonReleasedEvent& event)
 
 void InputAPI::OnMouseMoved(const MouseMovedEvent& event)
 {
-    if (m_Context.engine.GetInputGate().WantsMouse())
+    if (m_LuaContext.engine_context.engine.GetInputGate().WantsMouse())
         return;
 
-    sol::state_view state{m_Context.engine.GetScriptEngine().getState().lua_state()};
+    auto& state = m_LuaContext.state;
     m_MouseMoved.Fire(
         state.create_table_with("x", event.x, "y", event.y, "position", Vec2{event.x, event.y}));
 }
 
 void InputAPI::OnMouseWheelScrolled(const MouseWheelScrolledEvent& event)
 {
-    if (m_Context.engine.GetInputGate().WantsMouse())
+    if (m_LuaContext.engine_context.engine.GetInputGate().WantsMouse())
         return;
 
-    sol::state_view state{m_Context.engine.GetScriptEngine().getState().lua_state()};
+    auto& state = m_LuaContext.state;
     m_MouseWheelScrolled.Fire(state.create_table_with("wheel", static_cast<int>(event.wheel),
                                                       "delta", event.delta, "x", event.x, "y",
                                                       event.y, "position", Vec2{event.x, event.y}));
@@ -296,17 +226,13 @@ void set_key_constants(sol::table& keys)
 }
 } // namespace
 
-void register_all(sol::table& engine, EngineContext& context)
+void register_all(LuaContext& lua_context)
 {
-    auto input = std::make_shared<InputAPI>(context);
+    auto input = std::make_shared<InputAPI>(lua_context);
     input->Bind();
 
-    sol::state_view state{engine.lua_state()};
-
-    // Signal + connection types
-    state.new_usertype<Signal>("InputSignal", sol::no_constructor, "Connect", &Signal::Connect);
-    state.new_usertype<Connection>("InputConnection", sol::no_constructor, "Disconnect",
-                                   &Connection::Disconnect, "Connected", &Connection::Connected);
+    auto& engine = lua_context.namespace_table;
+    auto& state = lua_context.state;
 
     // Input related stuff
     auto inputTable = engine.create_named("input");

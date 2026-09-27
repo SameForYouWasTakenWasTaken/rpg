@@ -25,6 +25,7 @@ add_library(App STATIC
         Scripting/Types/ScriptEntity.cpp
         Scripting/Systems/AssetManager.cpp
         Scripting/Systems/Input.cpp
+        ../Core/Scripting/Signals/Signal.cpp
         Scripting/Types/SSGTypes.cpp
         Rendering/ImGuiSink.cpp
         Layers/Console.cpp

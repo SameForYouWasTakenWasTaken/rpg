@@ -36,7 +36,6 @@ void Application::Run()
 {
 
     auto& engine = m_EngineContext.engine;
-    auto& scriptEngine = engine.GetScriptEngine();
     auto& eventBus = engine.GetEventBus();
     auto& renderer = engine.GetRenderer();
 
@@ -51,8 +50,10 @@ void Application::Run()
     renderer.AddSink(std::make_unique<rendering::SpriteSink>());
     renderer.AddSink(std::make_unique<rendering::ImGuiSink>(engine.GetInputGate(), m_Window));
 
+    auto lua_context = lua::api::create_lua_context(m_EngineContext, context);
+
     // initialize lua API (must be done before scene/layer creation)
-    lua::api::lua_api_init(engine.GetScriptEngine().getState(), m_EngineContext, context, stack);
+    lua::api::lua_api_init(lua_context, stack);
 
     auto scene = std::make_unique<GameScene>(m_EngineContext, context);
     stack.Push(std::move(scene));
@@ -73,7 +74,7 @@ void Application::Run()
 
         renderer.Begin();
 
-        lua::api::update(scriptEngine.getState(), dt);
+        lua::api::update(lua_context, dt);
         stack.Update(dt);
         stack.Render();
 

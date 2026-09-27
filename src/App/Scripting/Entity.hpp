@@ -2,6 +2,7 @@
 #include <entt/entt.hpp>
 #include <sol/state.hpp>
 
+#include "LuaContext.hpp"
 #include "SceneStack.hpp"
 
 namespace ssg::lua::api::entity
@@ -24,6 +25,6 @@ class Entity
     entt::registry& m_Registry;
 };
 
-void register_entity(sol::table& engine);
-void register_all(sol::table& table, SceneStack& sceneStack);
+void register_entity(LuaContext& lua_context);
+void register_all(LuaContext& lua_context, SceneStack& sceneStack);
 } // namespace ssg::lua::api::entity
