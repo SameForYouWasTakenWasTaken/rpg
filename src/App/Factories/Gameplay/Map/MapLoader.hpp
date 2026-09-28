@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 
 #include "Config/Gameplay/Map/MapConfig.hpp"
 #include "EngineContext.hpp"

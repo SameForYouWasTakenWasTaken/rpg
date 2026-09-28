@@ -11,6 +11,7 @@
 
 #include "../LuaContext.hpp"
 #include "ScriptComponents.hpp"
+#include "Scripting/Entity.hpp"
 
 namespace ssg::lua
 {
@@ -122,8 +123,8 @@ inline sol::table get_all_of(entt::registry& reg, sol::state_view lua,
 
     sol::table result = lua.create_table();
     int index = 1;
-    for (entt::entity entity : view)
-        result[index++] = entity;
+    for (Entity entity : view)
+        result[index++] = Entity{entity};
 
     return result;
 }

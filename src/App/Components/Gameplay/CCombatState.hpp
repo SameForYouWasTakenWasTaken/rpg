@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 #include <vector>
 
 namespace ssg
@@ -14,7 +14,7 @@ struct CCombatState
     float windowLo = 0.0f;      // cached absolute open time
     float windowHi = 0.0f;      // cached absolute close time
 
-    entt::entity cachedWeapon{entt::null};
-    std::vector<entt::entity> alreadyHit{};
+    Entity cachedWeapon{entt::null};
+    std::vector<Entity> alreadyHit{};
 };
 } // namespace ssg

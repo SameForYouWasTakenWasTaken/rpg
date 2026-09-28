@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 
 #include "EngineContext.hpp"
 #include "Events/EventBus.hpp"

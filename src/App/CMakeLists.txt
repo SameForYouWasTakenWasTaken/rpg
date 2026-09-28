@@ -32,6 +32,7 @@ add_library(App STATIC
         Systems/Input/ImGuiCaptureProvider.cpp
         Scripting/Systems/AtlasLoaders.cpp
         Scripting/Systems/MapLoaders.cpp
+        Scripting/Types/LibTypes.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

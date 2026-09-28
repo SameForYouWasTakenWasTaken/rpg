@@ -54,7 +54,7 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
 
     auto makeEntity = [&](float x, float y, float size, const Filepath& definition)
     {
-        entt::entity entity = m_Registry->create();
+        Entity entity = m_Registry->create();
         factory::ApplyCharacterDefinition(*m_EngineContext, *m_Registry, entity, definition);
         // modify local transform (scale stays a {1,1} multiplier; size lives on the sprite)
         auto* transform = m_Registry->try_get<CTransform>(entity);
@@ -74,7 +74,7 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
 
     auto makeWeapon = [&](const Filepath& definition)
     {
-        entt::entity entity = m_Registry->create();
+        Entity entity = m_Registry->create();
         factory::ApplyWeaponDefinition(*m_EngineContext, *m_Registry, entity, definition);
         return entity;
     };
@@ -149,7 +149,7 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
 
     if (event.key == Input::Key::R)
     {
-        Vector<entt::entity> reloadTargets;
+        Vector<Entity> reloadTargets;
 
         auto view = m_Registry->view<CDefinition>();
 
@@ -231,7 +231,7 @@ void GameLayer::OnRender(context::SceneContext& context)
 {
     auto& assetManager = context.engine_context.assetManager;
     auto view = m_Registry->view<CSprite, CTexture, CWorldTransform>();
-    for (entt::entity entity : view)
+    for (Entity entity : view)
     {
         auto& sprite = view.get<CSprite>(entity);
         auto& texture = view.get<CTexture>(entity);

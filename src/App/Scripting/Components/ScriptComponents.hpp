@@ -5,6 +5,7 @@
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
+#include "Components/Gameplay/Inventory/CInventory.hpp"
 #include "ScriptComponent.hpp"
 
 namespace ssg::lua
@@ -31,6 +32,13 @@ template <> struct ScriptComponent<CTexture>
     static constexpr std::string_view name = "texture";
     static constexpr auto fields = std::make_tuple(Field{"asset_handle", &CTexture::textureHandle},
                                                    Field{"float_rect", &CTexture::textureRect});
+};
+
+template <> struct ScriptComponent<CInventory>
+{
+    static constexpr std::string_view name = "inventory";
+    static constexpr auto fields = std::make_tuple(Field{"capacity", &CInventory::capacity},
+                                                   Field{"items", &CInventory::items});
 };
 
 using ScriptComponents = TypeList<CTransform, CSprite, CTexture>;

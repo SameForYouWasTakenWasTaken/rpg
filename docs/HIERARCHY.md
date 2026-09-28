@@ -1,6 +1,7 @@
 # 🌳 Transforms, Hierarchy & Systems
 
-This document explains the transform pipeline, the parent/child hierarchy and the entity factories. Everything lives in the `ssg` namespace.
+This document explains the transform pipeline, the parent/child hierarchy and the entity factories. Everything lives in
+the `ssg` namespace.
 
 If you only remember one thing, remember this rule:
 
@@ -21,10 +22,10 @@ classic source of hierarchy bugs.
 So we split the concept into two components and let **one system** own the
 conversion:
 
-| Component | Meaning | Who writes it |
-| --- | --- | --- |
-| `CTransform` | **local** — relative to the parent (or the world, if a root) | you / gameplay |
-| `CWorldTransform` | **world** — absolute, derived | **only** `TransformSystem` |
+| Component         | Meaning                                                      | Who writes it              |
+|-------------------|--------------------------------------------------------------|----------------------------|
+| `CTransform`      | **local** — relative to the parent (or the world, if a root) | you / gameplay             |
+| `CWorldTransform` | **world** — absolute, derived                                | **only** `TransformSystem` |
 
 Roots (entities with no parent) have `world == local`.
 
@@ -33,6 +34,7 @@ Roots (entities with no parent) have `world == local`.
 ## 🧩 The components
 
 ### `CTransform` (local)
+
 ```cpp
 struct CTransform
 {
@@ -47,6 +49,7 @@ struct CTransform
 > `1×` child of a `1×` parent stays `1×`, it does not multiply into a giant.
 
 ### `CWorldTransform` (world, derived)
+
 ```cpp
 struct CWorldTransform
 {
@@ -55,10 +58,12 @@ struct CWorldTransform
     float rotation{0};
 };
 ```
+
 Read-only to everyone except `TransformSystem`. Rendering, the spatial grid, and
 the camera all read this.
 
 ### `CRelationship` (the hierarchy)
+
 An **intrusive linked list**. A parent does not store an array of children — it
 points at its *first* child, and each child points at its siblings.
 
@@ -66,14 +71,15 @@ points at its *first* child, and each child points at its siblings.
 struct CRelationship
 {
     std::size_t  children{0};       // number of direct children
-    entt::entity first{entt::null}; // head of the child list
-    entt::entity prev{entt::null};  // previous sibling
-    entt::entity next{entt::null};  // next sibling
-    entt::entity parent{entt::null};// up-link to the parent
+    Entity first{entt::null}; // head of the child list
+    Entity prev{entt::null};  // previous sibling
+    Entity next{entt::null};  // next sibling
+    Entity parent{entt::null};// up-link to the parent
 };
 ```
 
 It remains a linked list because:
+
 - **No per-parent heap allocation** — the links live inside each entity's own component.
 - **O(1) attach / detach** — just fix up neighbour pointers.
 - **Cache-friendly** — all `CRelationship` components sit in one packed pool.
@@ -90,6 +96,7 @@ It remains a linked list because:
 ordering is guaranteed without any sorting.
 
 Composition (position-only projects can ignore scale/rotation):
+
 ```
 world.scale    = parentWorld.scale * local.scale
 world.rotation = parentWorld.rotation + local.rotation
@@ -97,6 +104,7 @@ world.position = parentWorld.position + parentWorld.scale * local.position
 ```
 
 ### Frame order (critical)
+
 `TransformSystem::Update()` must run **before** anything that reads world
 position.
 
@@ -111,12 +119,13 @@ All linked-list surgery lives in two functions so call sites never touch
 `first`/`prev`/`next` directly.
 
 ```cpp
-void AttachChild(entt::registry&, entt::entity parent, entt::entity child);
-void AttachChild(entt::registry&, entt::entity parent, entt::entity child, AttachMode mode);
-void DetachChild(entt::registry&, entt::entity child);
+void AttachChild(entt::registry&, Entity parent, Entity child);
+void AttachChild(entt::registry&, Entity parent, Entity child, AttachMode mode);
+void DetachChild(entt::registry&, Entity child);
 ```
 
 ### `AttachMode`
+
 ```cpp
 enum class AttachMode : std::uint8_t
 {
@@ -134,6 +143,7 @@ enum class AttachMode : std::uint8_t
   safely no-ops if either entity lacks a transform.
 
 ### `KeepWorld` needs current world transforms
+
 The rebase reads `CWorldTransform`. During the frame loop those are already
 up to date. But during one-time setup (`OnAttach`), the loop has not run yet, so
 call `TransformSystem::Update(0.f)` once before attaching:
@@ -144,12 +154,13 @@ hierarchy::AttachChild(registry, parent, child, hierarchy::AttachMode::KeepWorld
 ```
 
 ### Turning a child back into a root / reparenting
-| You want to... | Do this |
-| --- | --- |
-| Create a root | Just create the entity — don't attach it |
-| Make B a child of A | `AttachChild(reg, A, B)` |
-| Child back to a root | `DetachChild(reg, child)` |
-| Reparent | `DetachChild(reg, child)` then `AttachChild(reg, newParent, child)` |
+
+| You want to...       | Do this                                                             |
+|----------------------|---------------------------------------------------------------------|
+| Create a root        | Just create the entity — don't attach it                            |
+| Make B a child of A  | `AttachChild(reg, A, B)`                                            |
+| Child back to a root | `DetachChild(reg, child)`                                           |
+| Reparent             | `DetachChild(reg, child)` then `AttachChild(reg, newParent, child)` |
 
 ---
 
@@ -160,17 +171,17 @@ created**. They do not create the entity — that keeps creation and component
 setup separate.
 
 ```cpp
-void AddDefaultTransform(entt::registry&, entt::entity);
-void AddDefaultTexture(entt::registry&, entt::entity);
-void AddDefaultSprite(entt::registry&, entt::entity, TextureID, const sf::FloatRect&,
+void AddDefaultTransform(entt::registry&, Entity);
+void AddDefaultTexture(entt::registry&, Entity);
+void AddDefaultSprite(entt::registry&, Entity, TextureID, const sf::FloatRect&,
                       Vec2 size = {100, 100});
 ```
 
-| Factory | Adds |
-| --- | --- |
-| `AddDefaultTransform` | `CTransform` + `CWorldTransform` + `CRelationship` (root) |
-| `AddDefaultTexture` | the above + an empty `CTexture` |
-| `AddDefaultSprite` | the above + `CSprite` (origin `{0.5,0.5}`, `size`) + `CTexture` |
+| Factory               | Adds                                                            |
+|-----------------------|-----------------------------------------------------------------|
+| `AddDefaultTransform` | `CTransform` + `CWorldTransform` + `CRelationship` (root)       |
+| `AddDefaultTexture`   | the above + an empty `CTexture`                                 |
+| `AddDefaultSprite`    | the above + `CSprite` (origin `{0.5,0.5}`, `size`) + `CTexture` |
 
 Factories guarantee the **local + world transform pair always
 exists together**. A common hierarchy bug is an entity with a `CTransform` but no
@@ -179,6 +190,7 @@ exists together**. A common hierarchy bug is an entity with a `CTransform` but n
 that impossible.
 
 Usage:
+
 ```cpp
 auto e = registry.create();
 factory::AddDefaultSprite(registry, e, texID, rect, {200, 200});
@@ -187,5 +199,6 @@ factory::AddDefaultSprite(registry, e, texID, rect, {200, 200});
 ---
 
 ## ➡️ Related docs
+
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — the big picture.
 - [`CLASSES.md`](CLASSES.md) — per-class reference.

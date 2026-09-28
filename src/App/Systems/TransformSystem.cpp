@@ -31,7 +31,7 @@ void TransformSystem::Update(float /*dt*/)
     }
 }
 
-void TransformSystem::UpdateEntity(entt::entity entity, const WorldTransform& parentWorld)
+void TransformSystem::UpdateEntity(Entity entity, const WorldTransform& parentWorld)
 {
     if (entity == entt::null)
         return;
@@ -53,7 +53,7 @@ void TransformSystem::UpdateEntity(entt::entity entity, const WorldTransform& pa
     if (relation == nullptr)
         return;
 
-    entt::entity child = relation->first;
+    Entity child = relation->first;
     while (child != entt::null)
     {
         UpdateEntity(child, world);

@@ -21,7 +21,7 @@
 namespace ssg::factory
 {
 
-json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, entt::entity entity,
+json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, Entity entity,
                                     Filepath definition)
 
 {

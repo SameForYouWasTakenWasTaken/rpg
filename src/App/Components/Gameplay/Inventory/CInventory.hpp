@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 
 #include "CItem.hpp"
 #include "Types.hpp"
@@ -15,13 +15,13 @@ struct InventoryEntry
         Data
     };
     Kind kind = Kind::Entity;
-    entt::entity entity = entt::null;
+    Entity entity = entt::null;
     CItem data;
 };
 
 struct CInventory
 {
-    Vector<entt::entity> items{};
+    Vector<Entity> items{};
     size_t capacity{0};
 };
 } // namespace ssg

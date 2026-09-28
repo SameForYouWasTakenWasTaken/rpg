@@ -6,7 +6,7 @@
 
 namespace ssg::hierarchy
 {
-void AttachChild(entt::registry& registry, entt::entity parent, entt::entity child)
+void AttachChild(entt::registry& registry, Entity parent, Entity child)
 {
     auto& parentRelation = registry.get_or_emplace<CRelationship>(parent);
     auto& childRelation = registry.get_or_emplace<CRelationship>(child);
@@ -24,7 +24,7 @@ void AttachChild(entt::registry& registry, entt::entity parent, entt::entity chi
     parentRelation.children++;
 }
 
-void AttachChild(entt::registry& registry, entt::entity parent, entt::entity child, AttachMode mode)
+void AttachChild(entt::registry& registry, Entity parent, Entity child, AttachMode mode)
 {
     AttachChild(registry, parent, child);
 
@@ -46,7 +46,7 @@ void AttachChild(entt::registry& registry, entt::entity parent, entt::entity chi
     }
 }
 
-void DetachChild(entt::registry& registry, entt::entity child)
+void DetachChild(entt::registry& registry, Entity child)
 {
     auto& childRelation = registry.get<CRelationship>(child);
 

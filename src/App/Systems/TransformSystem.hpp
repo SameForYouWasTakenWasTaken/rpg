@@ -21,7 +21,7 @@ class TransformSystem final : public ISystem
   private:
     struct WorldTransform; // fwd, defined in the .cpp
 
-    void UpdateEntity(entt::entity entity, const WorldTransform& parentWorld);
+    void UpdateEntity(Entity entity, const WorldTransform& parentWorld);
 };
 
 } // namespace ssg

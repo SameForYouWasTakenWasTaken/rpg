@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 
 #include "Events/IEvent.hpp"
 
@@ -9,9 +9,9 @@ namespace ssg
 class OnAttackRequest : public IEvent
 {
   public:
-    entt::entity Attacker;
+    Entity Attacker;
 
-    OnAttackRequest(entt::entity attacker) : Attacker(attacker) {}
+    OnAttackRequest(Entity attacker) : Attacker(attacker) {}
     GENERATE_EVENT_TYPE();
 };
 } // namespace ssg
