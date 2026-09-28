@@ -25,4 +25,8 @@ void AttachChild(entt::registry& registry, Entity parent, Entity child, AttachMo
 
 void DetachChild(entt::registry& registry, Entity child);
 
+bool IsRoot(entt::registry& registry, Entity e);
+
+Entity GetRoot(entt::registry& registry, Entity e);
+
 } // namespace ssg::hierarchy

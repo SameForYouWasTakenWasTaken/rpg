@@ -4,11 +4,17 @@
 ---@class NoneInit
 
 ---@class TransformRef
+---@field world_position Vec2
+---@field world_rotation number
+---@field world_scale Vec2
 ---@field position Vec2
 ---@field rotation number
 ---@field scale Vec2
 
 ---@class TransformInit
+---@field world_position? Vec2
+---@field world_rotation? number
+---@field world_scale? Vec2
 ---@field position? Vec2
 ---@field rotation? number
 ---@field scale? Vec2

@@ -24,9 +24,18 @@ template <> struct ScriptComponent<None>
 template <> struct ScriptComponent<CTransform>
 {
     static constexpr std::string_view name = "transform";
-    static constexpr auto fields = std::make_tuple(Field{"position", &CTransform::position},
-                                                   Field{"rotation", &CTransform::rotation},
-                                                   Field{"scale", &CTransform::scale});
+    static constexpr auto fields =
+        std::make_tuple(Field{"position", &CTransform::position},
+
+                        Field{"rotation", &CTransform::rotation},
+
+                        Field{"scale", &CTransform::scale},
+
+                        Field{"world_position", &CTransform::worldPosition},
+
+                        Field{"world_rotation", &CTransform::worldRotation},
+
+                        Field{"world_scale", &CTransform::worldScale});
 };
 
 template <> struct ScriptComponent<CSprite>

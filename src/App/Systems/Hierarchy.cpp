@@ -2,7 +2,6 @@
 
 #include "Components/CRelationship.hpp"
 #include "Components/CTransform.hpp"
-#include "Components/CWorldTransform.hpp"
 
 namespace ssg::hierarchy
 {
@@ -32,16 +31,17 @@ void AttachChild(entt::registry& registry, Entity parent, Entity child, AttachMo
     {
         // Rebase the child's local transform so its world position is unchanged.
         // No-op if either entity lacks the transforms this needs.
-        auto* childLocal = registry.try_get<CTransform>(child);
-        const auto* childWorld = registry.try_get<CWorldTransform>(child);
-        const auto* parentWorld = registry.try_get<CWorldTransform>(parent);
+        auto* childTransform = registry.try_get<CTransform>(child);
+        const auto* parentTransform = registry.try_get<CTransform>(parent);
 
-        if (childLocal != nullptr && childWorld != nullptr && parentWorld != nullptr)
+        if (childTransform != nullptr && parentTransform != nullptr)
         {
-            childLocal->position =
-                (childWorld->position - parentWorld->position) / parentWorld->scale;
-            childLocal->scale = childWorld->scale / parentWorld->scale;
-            childLocal->rotation = childWorld->rotation - parentWorld->rotation;
+            childTransform->position =
+                (childTransform->worldPosition - parentTransform->worldPosition) /
+                parentTransform->worldScale;
+            childTransform->scale = childTransform->worldScale / parentTransform->worldScale;
+            childTransform->rotation =
+                childTransform->worldRotation - parentTransform->worldRotation;
         }
     }
 }
@@ -50,7 +50,7 @@ void DetachChild(entt::registry& registry, Entity child)
 {
     auto& childRelation = registry.get<CRelationship>(child);
 
-    if (childRelation.parent == entt::null)
+    if (IsRoot(registry, child))
         return; // already a root, nothing to unlink
 
     auto& parentRelation = registry.get<CRelationship>(childRelation.parent);
@@ -76,5 +76,30 @@ void DetachChild(entt::registry& registry, Entity child)
     childRelation.parent = entt::null;
     childRelation.prev = entt::null;
     childRelation.next = entt::null;
+}
+bool IsRoot(entt::registry& registry, Entity e)
+{
+    auto* relationship = registry.try_get<CRelationship>(e);
+    return relationship && relationship->parent == entt::null;
+}
+Entity GetRoot(entt::registry& registry, Entity e)
+{
+    auto* relationship = registry.try_get<CRelationship>(e);
+
+    if (!relationship)
+        return entt::null;
+
+    Entity current = e;
+
+    while (relationship->parent != entt::null)
+    {
+        current = relationship->parent;
+        relationship = registry.try_get<CRelationship>(current);
+
+        if (!relationship)
+            return current;
+    }
+
+    return current;
 }
 } // namespace ssg::hierarchy

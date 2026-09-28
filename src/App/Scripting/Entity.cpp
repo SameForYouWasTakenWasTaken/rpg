@@ -7,10 +7,6 @@
 
 namespace ssg::lua::api::entity
 {
-entt::registry& current_registry(SceneStack& sceneStack)
-{
-    return sceneStack.Current()->GetContext().registry;
-}
 
 // Throws a Lua error instead of hitting an entt assert on stale ids
 entt::handle handle_of(SceneStack& sceneStack, Entity e)
@@ -64,7 +60,9 @@ void register_entity(LuaContext& lua_context, SceneStack& sceneStack)
         {
             return a.id == b.id &&
                    current_registry(*stack).valid(a.id) == current_registry(*stack).valid(b.id);
-        });
+        },
+        sol::meta_function::to_string,
+        [](const Entity& e) { return std::to_string(static_cast<std::uint32_t>(e.id)); });
 }
 
 void register_all(LuaContext& lua_context, SceneStack& sceneStack)

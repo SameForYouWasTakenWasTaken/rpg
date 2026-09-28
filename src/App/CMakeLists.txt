@@ -33,6 +33,7 @@ add_library(App STATIC
         Scripting/Systems/AtlasLoaders.cpp
         Scripting/Systems/MapLoaders.cpp
         Scripting/Types/LibTypes.cpp
+        Scripting/Systems/Hierarchy.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

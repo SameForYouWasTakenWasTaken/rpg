@@ -5,6 +5,7 @@
 namespace ssg::lua::api::hierarchy
 {
 
-void register_attach(LuaContext& context);
-void register_all(LuaContext& context, SceneStack& stack, sol::table namespaceTable);
+void helper_attach(LuaContext& context, entt::registry& r, Entity parent, Entity child);
+void helper_detach(LuaContext& context, entt::registry& r, Entity child);
+void register_all(LuaContext& context, SceneStack& stack);
 } // namespace ssg::lua::api::hierarchy

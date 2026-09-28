@@ -5,6 +5,7 @@
 #include "Logger.hpp"
 #include "Scripting/Signals/Signal.hpp"
 #include "Systems/AssetManager.hpp"
+#include "Systems/Hierarchy.hpp"
 #include "Systems/Input.hpp"
 #include "Types/SSGTypes.hpp"
 
@@ -23,6 +24,7 @@ void lua_api_init(LuaContext& lua_context, SceneStack& stack)
     assets::register_all(lua_context, stack);
     input::register_all(lua_context);
     entity::register_all(lua_context, stack);
+    hierarchy::register_all(lua_context, stack);
 }
 void update(LuaContext& lua_context, float dt)
 {

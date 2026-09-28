@@ -9,7 +9,6 @@
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
-#include "Components/CWorldTransform.hpp"
 #include "Components/Gameplay/CHumanoid.hpp"
 #include "Engine.hpp"
 #include "EngineContext.hpp"
@@ -86,14 +85,14 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
     // auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
 
     m_LocalPlayer = makeEntity(500.f, 500.f, 100.f, "data/characters/player.json");
-    auto& localPlayerWorld = m_Registry->get<CWorldTransform>(m_LocalPlayer);
-    m_LocalPlayerCamera.SetCenter(localPlayerWorld.position);
+    auto& localPlayerTransform = m_Registry->get<CTransform>(m_LocalPlayer);
+    m_LocalPlayerCamera.SetCenter(localPlayerTransform.worldPosition);
     m_LocalPlayerCamera.SetZoom(.35f);
 
     // World transforms must be current for KeepWorld rebasing to be correct.
     m_TransformSystem->Update(0.0f);
-    auto& worldWeapon = m_Registry->get<CWorldTransform>(someWeapon);
-    worldWeapon.position = localPlayerWorld.position + Vec2{100.f, 0.f};
+    auto& worldWeapon = m_Registry->get<CTransform>(someWeapon);
+    worldWeapon.worldPosition = localPlayerTransform.worldPosition + Vec2{100.f, 0.f};
 
     // maps
     map::MapEntry mapEntry = map::LookUpMapEntry("other_random");
@@ -230,25 +229,25 @@ void GameLayer::OnUpdate(float dt, context::SceneContext& context)
 void GameLayer::OnRender(context::SceneContext& context)
 {
     auto& assetManager = context.engine_context.assetManager;
-    auto view = m_Registry->view<CSprite, CTexture, CWorldTransform>();
+    auto view = m_Registry->view<CSprite, CTexture, CTransform>();
     for (Entity entity : view)
     {
         auto& sprite = view.get<CSprite>(entity);
         auto& texture = view.get<CTexture>(entity);
-        auto& transform = view.get<CWorldTransform>(entity);
+        auto& transform = view.get<CTransform>(entity);
 
         rendering::RenderObject obj;
         obj.color = sprite.color;
         obj.origin = sprite.origin;
         obj.zIndex = sprite.zIndex;
 
-        obj.pos = transform.position;
+        obj.pos = transform.worldPosition;
 
         // Final pixel size = sprite size * world scale multiplier.
-        const Vec2 finalSize = sprite.size * transform.scale;
+        const Vec2 finalSize = sprite.size * transform.worldScale;
         obj.scale.x = sprite.flipX ? -finalSize.x : finalSize.x;
         obj.scale.y = sprite.flipY ? -finalSize.y : finalSize.y;
-        obj.rotation = transform.rotation;
+        obj.rotation = transform.worldRotation;
 
         obj.texture = &assetManager.GetTexture(texture.textureHandle);
         obj.texRect = texture.textureRect;

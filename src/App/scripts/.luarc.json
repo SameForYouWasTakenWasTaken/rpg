@@ -8,5 +8,8 @@
         "Vec2",
         "FloatRect",
         "TextureHandle"
+    ],
+    "diagnostics.disable": [
+        "lowercase-global"
     ]
 }

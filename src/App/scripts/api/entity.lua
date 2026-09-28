@@ -29,7 +29,7 @@ end
 
 ---@param name "none"
 ---@param init? NoneInit
----@overload fun(self: Entity, name: "transform", init?: TransformRef)
+---@overload fun(self: Entity, name: "transform", init?: TransformInit)
 ---@overload fun(self: Entity, name: "sprite", init?: SpriteInit)
 ---@overload fun(self: Entity, name: "texture", init?: TextureInit)
 ---@overload fun(self: Entity, name: "inventory", init?: InventoryInit)
