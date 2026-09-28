@@ -1,5 +1,8 @@
 ---@meta
 
+---@class NoneRef
+---@class NoneInit
+
 ---@class TransformRef
 ---@field position Vec2
 ---@field rotation number
@@ -37,10 +40,22 @@
 ---@field capacity integer
 ---@field items Entity[]
 
-
 ---@class InventoryInit
 ---@field capacity? integer
 ---@field items? Entity[]
+
+---@class RelationshipRef
+---@field children integer
+---@field first Entity?
+---@field prev Entity?
+---@field next Entity?
+---@field parent Entity?
+
+---@class RelationshipInit
+---@field first? Entity?
+---@field prev? Entity?
+---@field next? Entity?
+---@field parent? Entity?
 
 ---@class Texture
 ---@field width integer

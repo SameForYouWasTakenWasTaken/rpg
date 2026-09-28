@@ -27,28 +27,32 @@ end
 function Entity:destroy()
 end
 
----@param name "transform"
----@param init? TransformInit
+---@param name "none"
+---@param init? NoneInit
+---@overload fun(self: Entity, name: "transform", init?: TransformRef)
 ---@overload fun(self: Entity, name: "sprite", init?: SpriteInit)
 ---@overload fun(self: Entity, name: "texture", init?: TextureInit)
 ---@overload fun(self: Entity, name: "inventory", init?: InventoryInit)
+---@overload fun(self: Entity, name: "relationship", init?: NoneInit)
 function Entity:add(name, init)
 end
 
----@param name "transform"|"sprite"|"texture"|"inventory"
+---@param name "none"|"transform"|"sprite"|"texture"|"inventory"|"relationship"
 ---@return boolean
 function Entity:has(name)
 end
 
----@param name "transform"|"sprite"|"texture"|"inventory"
+---@param name "none"|"transform"|"sprite"|"texture"|"inventory"|"relationship"
 function Entity:remove(name)
 end
 
 ---Returns a live reference, or nil if the entity lacks the component.
----@param name "transform"
----@return TransformRef?
+---@param name "none"
+---@return NoneRef?
+---@overload fun(self: Entity, name: "transform"): TransformRef?
 ---@overload fun(self: Entity, name: "sprite"): SpriteRef?
 ---@overload fun(self: Entity, name: "texture"): TextureRef?
 ---@overload fun(self: Entity, name: "inventory"): InventoryRef?
+---@overload fun(self: Entity, name: "relationship"): RelationshipRef?
 function Entity:get(name)
 end

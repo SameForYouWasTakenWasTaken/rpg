@@ -8,12 +8,26 @@ local atlas = engine.assets.load_texture_packer_atlas(
 )
 
 local region = atlas:get_region("dogbite")
+local otherRegion = atlas:get_region("shocked")
+
+local function createSpawnable(asset_handle, region)
+    local e = engine.entity.create()
+    e:add("transform", { position = Vec2.new(100, 100) })
+    e:add("sprite", { size = Vec2.new(128, 128), z_index = 10, origin = Vec2.new(0.5, 0.5) })
+    e:add("texture", { asset_handle = asset_handle, float_rect = region:get_dimensions() })
+
+    return e
+end
+
+local someWeapon = createSpawnable(atlas.asset_handle, otherRegion)
+local sprite = someWeapon:get("sprite")
+sprite.size = Vec2.new(32, 32)
+
+
 -- create player
-local player = engine.entity.create()
-player:add("transform", { position = Vec2.new(100, 100) })
-player:add("sprite", { size = Vec2.new(128, 128), z_index = 10, origin = Vec2.new(0.5, 0.5) })
-player:add("texture", { asset_handle = atlas.asset_handle, float_rect = region:get_dimensions() })
+local player = createSpawnable(atlas.asset_handle, region)
 player:add("inventory", { capacity = 20 })
+player:add("relationship")
 
 -- create map
 local someMap = assets.map.load_tiled("data/maps/other_random_map/mapWithTree.tmj")

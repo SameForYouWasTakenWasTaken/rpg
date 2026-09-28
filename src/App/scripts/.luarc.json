@@ -6,6 +6,7 @@
     "diagnostics.globals": [
         "engine",
         "Vec2",
-        "FloatRect"
+        "FloatRect",
+        "TextureHandle"
     ]
 }

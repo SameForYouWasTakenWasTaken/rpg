@@ -2,6 +2,7 @@
 #include <string_view>
 #include <tuple>
 
+#include "Components/CRelationship.hpp"
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
@@ -10,6 +11,16 @@
 
 namespace ssg::lua
 {
+struct None
+{
+};
+
+template <> struct ScriptComponent<None>
+{
+    static constexpr std::string_view name = "none";
+    static constexpr auto fields = std::make_tuple();
+};
+
 template <> struct ScriptComponent<CTransform>
 {
     static constexpr std::string_view name = "transform";
@@ -41,6 +52,20 @@ template <> struct ScriptComponent<CInventory>
                                                    Field{"items", &CInventory::items});
 };
 
-using ScriptComponents = TypeList<CTransform, CSprite, CTexture, CInventory>;
+template <> struct ScriptComponent<CRelationship>
+{
+    static constexpr std::string_view name = "relationship";
+    static constexpr auto fields = std::make_tuple(Field{"children", &CRelationship::children},
+
+                                                   Field{"first", &CRelationship::first},
+
+                                                   Field{"prev", &CRelationship::prev},
+
+                                                   Field{"next", &CRelationship::next},
+
+                                                   Field{"parent", &CRelationship::parent});
+};
+
+using ScriptComponents = TypeList<None, CTransform, CSprite, CTexture, CInventory, CRelationship>;
 
 } // namespace ssg::lua
