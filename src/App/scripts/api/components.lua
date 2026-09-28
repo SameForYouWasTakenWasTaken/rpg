@@ -33,6 +33,15 @@
 ---@field asset_handle? TextureHandle
 ---@field float_rect? FloatRect
 
+---@class InventoryRef
+---@field capacity integer
+---@field items Entity[]
+
+
+---@class InventoryInit
+---@field capacity? integer
+---@field items? Entity[]
+
 ---@class Texture
 ---@field width integer
 ---@field height integer

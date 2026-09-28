@@ -31,15 +31,16 @@ end
 ---@param init? TransformInit
 ---@overload fun(self: Entity, name: "sprite", init?: SpriteInit)
 ---@overload fun(self: Entity, name: "texture", init?: TextureInit)
+---@overload fun(self: Entity, name: "inventory", init?: InventoryInit)
 function Entity:add(name, init)
 end
 
----@param name "transform"|"sprite"|"texture"
+---@param name "transform"|"sprite"|"texture"|"inventory"
 ---@return boolean
 function Entity:has(name)
 end
 
----@param name "transform"|"sprite"|"texture"
+---@param name "transform"|"sprite"|"texture"|"inventory"
 function Entity:remove(name)
 end
 
@@ -48,5 +49,6 @@ end
 ---@return TransformRef?
 ---@overload fun(self: Entity, name: "sprite"): SpriteRef?
 ---@overload fun(self: Entity, name: "texture"): TextureRef?
+---@overload fun(self: Entity, name: "inventory"): InventoryRef?
 function Entity:get(name)
 end

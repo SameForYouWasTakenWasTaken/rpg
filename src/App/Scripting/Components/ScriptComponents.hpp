@@ -41,6 +41,6 @@ template <> struct ScriptComponent<CInventory>
                                                    Field{"items", &CInventory::items});
 };
 
-using ScriptComponents = TypeList<CTransform, CSprite, CTexture>;
+using ScriptComponents = TypeList<CTransform, CSprite, CTexture, CInventory>;
 
 } // namespace ssg::lua

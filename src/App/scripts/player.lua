@@ -13,6 +13,7 @@ local player = engine.entity.create()
 player:add("transform", { position = Vec2.new(100, 100) })
 player:add("sprite", { size = Vec2.new(128, 128), z_index = 10, origin = Vec2.new(0.5, 0.5) })
 player:add("texture", { asset_handle = atlas.asset_handle, float_rect = region:get_dimensions() })
+player:add("inventory", { capacity = 20 })
 
 -- create map
 local someMap = assets.map.load_tiled("data/maps/other_random_map/mapWithTree.tmj")
@@ -20,8 +21,12 @@ someMap:create() -- create the entities
 
 local transform = player:get("transform")
 local sprite = player:get("sprite")
+local inventory = player:get("inventory")
 if not transform then return end
 if not sprite then return end
+if not inventory then return end
+
+print("inventory capacity:", inventory.capacity)
 
 -- set camera
 local window = engine.Window
