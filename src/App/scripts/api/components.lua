@@ -1,11 +1,20 @@
 ---@meta
 
+---@class NoneRef
+---@class NoneInit
+
 ---@class TransformRef
+---@field world_position Vec2
+---@field world_rotation number
+---@field world_scale Vec2
 ---@field position Vec2
 ---@field rotation number
 ---@field scale Vec2
 
 ---@class TransformInit
+---@field world_position? Vec2
+---@field world_rotation? number
+---@field world_scale? Vec2
 ---@field position? Vec2
 ---@field rotation? number
 ---@field scale? Vec2
@@ -23,20 +32,36 @@
 ---@field z_index? integer
 ---@field flip_x? boolean
 ---@field flip_y? boolean
+---@field origin? Vec2
 
 ---@class TextureRef
----@field texture_handle TextureHandle
+---@field asset_handle TextureHandle
 ---@field float_rect FloatRect
 
 ---@class TextureInit
----@field texture_handle? TextureHandle
+---@field asset_handle? TextureHandle
 ---@field float_rect? FloatRect
 
----@class TextureHandle
----@field id integer
-local TextureHandle = {}
----@return boolean
-function TextureHandle:valid() end
+---@class InventoryRef
+---@field capacity integer
+---@field items Entity[]
+
+---@class InventoryInit
+---@field capacity? integer
+---@field items? Entity[]
+
+---@class RelationshipRef
+---@field children integer
+---@field first Entity?
+---@field prev Entity?
+---@field next Entity?
+---@field parent Entity?
+
+---@class RelationshipInit
+---@field first? Entity?
+---@field prev? Entity?
+---@field next? Entity?
+---@field parent? Entity?
 
 ---@class Texture
 ---@field width integer
@@ -44,3 +69,4 @@ function TextureHandle:valid() end
 ---@field smooth boolean
 ---@field repeated boolean
 ---@field srgb boolean
+---@field asset_handle TextureHandle

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 
 #include "Events/IEvent.hpp"
 
@@ -9,9 +9,9 @@ namespace ssg
 class OnEntityDeath : public IEvent
 {
   public:
-    entt::entity entity;
+    Entity entity;
 
-    OnEntityDeath(entt::entity e) : entity(e) {}
+    OnEntityDeath(Entity e) : entity(e) {}
     GENERATE_EVENT_TYPE();
 };
 } // namespace ssg

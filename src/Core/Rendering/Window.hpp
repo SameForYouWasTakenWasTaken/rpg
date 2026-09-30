@@ -10,6 +10,7 @@
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/RenderWindow.hpp"
 #include "SFML/Graphics/View.hpp"
+#include "Scripting/Signals/Signal.hpp"
 #include "Types.hpp"
 
 namespace ssg
@@ -48,6 +49,8 @@ class Window
     void SetVSync(bool vsync);
     void SetIcon(const Filepath& path);
 
+    Vec2 GetSize() const { return {m_View.getSize().x, m_View.getSize().y}; }
+
     template <typename... TArgs> void Draw(TArgs&&... args)
     {
         m_sfRenderWindow.draw(std::forward<TArgs>(args)...);
@@ -60,11 +63,19 @@ class Window
     bool IsOpen() const { return m_sfRenderWindow.isOpen(); };
     bool IsFocused() const { return m_sfRenderWindow.hasFocus(); };
 
-    void UpdateView(std::invocable<sf::View&> auto&& func);
+    void UpdateView(std::invocable<sf::View&> auto&& func)
+    {
+        func(m_View);
+        SetView(m_View);
+    }
     const sf::RenderWindow& GetSFMLWindow() const { return m_sfRenderWindow; }
     sf::RenderWindow& GetSFMLWindow() { return m_sfRenderWindow; }
 
     std::optional<sf::Event> PollSFMLEvents();
+
+    // lua API
+    lua::api::signals::Signal resized;
+    lua::api::signals::Signal closed;
 
   private:
     void OnResize(const WindowResizeEvent& event);

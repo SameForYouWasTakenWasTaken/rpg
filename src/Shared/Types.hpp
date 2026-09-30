@@ -29,13 +29,13 @@ using AtlasID = std::string;
 struct TextureHandle
 {
     using value_type = std::uint32_t;
-    value_type id;
+    value_type id = GetInvalidValue();
 
     TextureHandle() = default;
     ~TextureHandle() = default;
     TextureHandle(value_type id) : id(id) {}
 
-    [[nodiscard]] bool IsValid() const { return id != static_cast<value_type>(-1); }
+    [[nodiscard]] bool IsValid() const { return id != GetInvalidValue(); }
     [[nodiscard]] static value_type GetInvalidValue() { return static_cast<value_type>(-1); }
 
     friend bool operator==(const TextureHandle& lhs, const TextureHandle& rhs)

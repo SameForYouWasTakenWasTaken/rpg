@@ -1,0 +1,80 @@
+#pragma once
+#include <string_view>
+#include <tuple>
+
+#include "Components/CRelationship.hpp"
+#include "Components/CSprite.hpp"
+#include "Components/CTexture.hpp"
+#include "Components/CTransform.hpp"
+#include "Components/Gameplay/Inventory/CInventory.hpp"
+#include "ScriptComponent.hpp"
+
+namespace ssg::lua
+{
+struct None
+{
+};
+
+template <> struct ScriptComponent<None>
+{
+    static constexpr std::string_view name = "none";
+    static constexpr auto fields = std::make_tuple();
+};
+
+template <> struct ScriptComponent<CTransform>
+{
+    static constexpr std::string_view name = "transform";
+    static constexpr auto fields =
+        std::make_tuple(Field{"position", &CTransform::position},
+
+                        Field{"rotation", &CTransform::rotation},
+
+                        Field{"scale", &CTransform::scale},
+
+                        Field{"world_position", &CTransform::worldPosition},
+
+                        Field{"world_rotation", &CTransform::worldRotation},
+
+                        Field{"world_scale", &CTransform::worldScale});
+};
+
+template <> struct ScriptComponent<CSprite>
+{
+    static constexpr std::string_view name = "sprite";
+    static constexpr auto fields =
+        std::make_tuple(Field{"color", &CSprite::color}, Field{"z_index", &CSprite::zIndex},
+                        Field{"origin", &CSprite::origin}, Field{"size", &CSprite::size},
+                        Field{"flip_x", &CSprite::flipX}, Field{"flip_y", &CSprite::flipY});
+};
+
+template <> struct ScriptComponent<CTexture>
+{
+    static constexpr std::string_view name = "texture";
+    static constexpr auto fields = std::make_tuple(Field{"asset_handle", &CTexture::textureHandle},
+                                                   Field{"float_rect", &CTexture::textureRect});
+};
+
+template <> struct ScriptComponent<CInventory>
+{
+    static constexpr std::string_view name = "inventory";
+    static constexpr auto fields = std::make_tuple(Field{"capacity", &CInventory::capacity},
+                                                   Field{"items", &CInventory::items});
+};
+
+template <> struct ScriptComponent<CRelationship>
+{
+    static constexpr std::string_view name = "relationship";
+    static constexpr auto fields = std::make_tuple(Field{"children", &CRelationship::children},
+
+                                                   Field{"first", &CRelationship::first},
+
+                                                   Field{"prev", &CRelationship::prev},
+
+                                                   Field{"next", &CRelationship::next},
+
+                                                   Field{"parent", &CRelationship::parent});
+};
+
+using ScriptComponents = TypeList<None, CTransform, CSprite, CTexture, CInventory, CRelationship>;
+
+} // namespace ssg::lua

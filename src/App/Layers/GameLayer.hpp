@@ -1,7 +1,7 @@
 #pragma once
 
+#include <Entity.hpp>
 #include <SFML/Graphics.hpp>
-#include <entt/entt.hpp>
 #include <memory>
 
 #include "EngineContext.hpp"
@@ -42,7 +42,7 @@ class GameLayer final : public ILayer
 
     rendering::SpriteSink* m_SpriteSink;
 
-    entt::entity m_LocalPlayer{entt::null};
+    Entity m_LocalPlayer{entt::null};
     Camera m_LocalPlayerCamera;
 
     TransformSystem* m_TransformSystem = nullptr;

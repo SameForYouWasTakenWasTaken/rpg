@@ -2,7 +2,6 @@
 
 #include "Components/CRelationship.hpp"
 #include "Components/CTransform.hpp"
-#include "Components/CWorldTransform.hpp"
 
 namespace ssg
 {
@@ -31,7 +30,7 @@ void TransformSystem::Update(float /*dt*/)
     }
 }
 
-void TransformSystem::UpdateEntity(entt::entity entity, const WorldTransform& parentWorld)
+void TransformSystem::UpdateEntity(Entity entity, const WorldTransform& parentWorld)
 {
     if (entity == entt::null)
         return;
@@ -43,17 +42,17 @@ void TransformSystem::UpdateEntity(entt::entity entity, const WorldTransform& pa
     world.rotation = parentWorld.rotation + local.rotation;
     world.position = parentWorld.position + parentWorld.scale * local.position;
 
-    auto& worldComponent = m_Registry.get_or_emplace<CWorldTransform>(entity);
-    worldComponent.position = world.position;
-    worldComponent.scale = world.scale;
-    worldComponent.rotation = world.rotation;
+    auto& worldComponent = m_Registry.get_or_emplace<CTransform>(entity);
+    worldComponent.worldPosition = world.position;
+    worldComponent.worldScale = world.scale;
+    worldComponent.worldRotation = world.rotation;
 
     // Recurse into children (parent-first ordering is guaranteed this way).
     const auto* relation = m_Registry.try_get<CRelationship>(entity);
     if (relation == nullptr)
         return;
 
-    entt::entity child = relation->first;
+    Entity child = relation->first;
     while (child != entt::null)
     {
         UpdateEntity(child, world);

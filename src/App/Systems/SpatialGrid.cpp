@@ -3,7 +3,7 @@
 namespace ssg
 {
 
-void SpatialGrid::Insert(entt::entity entity)
+void SpatialGrid::Insert(Entity entity)
 {
     const auto& transform = m_Registry.get<CTransform>(entity);
 
@@ -17,7 +17,7 @@ void SpatialGrid::Rebuild()
 {
     m_Grid.clear();
 
-    for (entt::entity entity : m_Registry.view<CTransform>())
+    for (Entity entity : m_Registry.view<CTransform>())
         Insert(entity);
 }
 

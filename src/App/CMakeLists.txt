@@ -24,11 +24,16 @@ add_library(App STATIC
         Scripting/Entity.cpp
         Scripting/Types/ScriptEntity.cpp
         Scripting/Systems/AssetManager.cpp
-        Scripting/Types/FloatRect.cpp
+        Scripting/Systems/Input.cpp
+        ../Core/Scripting/Signals/Signal.cpp
         Scripting/Types/SSGTypes.cpp
         Rendering/ImGuiSink.cpp
         Layers/Console.cpp
         Systems/Input/ImGuiCaptureProvider.cpp
+        Scripting/Systems/AtlasLoaders.cpp
+        Scripting/Systems/MapLoaders.cpp
+        Scripting/Types/LibTypes.cpp
+        Scripting/Systems/Hierarchy.cpp
 )
 
 target_include_directories(App PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 
 namespace ssg
 {
 struct CEquipment
 {
-    entt::entity weapon{entt::null};
+    Entity weapon{entt::null};
 };
 }; // namespace ssg

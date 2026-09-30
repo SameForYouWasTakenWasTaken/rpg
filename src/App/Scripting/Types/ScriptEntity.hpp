@@ -1,5 +1,5 @@
 #pragma once
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 #include <sol/state.hpp>
 
 namespace ssg::lua
@@ -8,7 +8,7 @@ class ScriptEntity
 {
 
   public:
-    entt::entity handle;
+    Entity handle;
     entt::registry* registry;
 
     static void Register(sol::state& state);

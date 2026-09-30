@@ -7,7 +7,7 @@
 
 namespace ssg::factory
 {
-json::json ApplyWeaponDefinition(EngineContext& context, entt::registry& r, entt::entity entity,
+json::json ApplyWeaponDefinition(EngineContext& context, entt::registry& r, Entity entity,
                                  Filepath definition)
 {
     json::json data =

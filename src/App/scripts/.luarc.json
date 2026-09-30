@@ -6,6 +6,10 @@
     "diagnostics.globals": [
         "engine",
         "Vec2",
-        "FloatRect"
+        "FloatRect",
+        "TextureHandle"
+    ],
+    "diagnostics.disable": [
+        "lowercase-global"
     ]
 }

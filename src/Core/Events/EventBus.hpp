@@ -1,8 +1,8 @@
 #pragma once
 
+#include <Entity.hpp>
 #include <SFML/Graphics.hpp>
 #include <concepts>
-#include <entt/entt.hpp>
 
 #include "Events/IEvent.hpp"
 

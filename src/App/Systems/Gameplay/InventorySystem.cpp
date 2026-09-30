@@ -30,8 +30,7 @@ bool IsValidIndex(const CInventory& inventory, size_t index)
 
 } // namespace
 
-bool AddItem(EngineContext& engineContext, entt::registry& registry, entt::entity owner,
-             entt::entity item)
+bool AddItem(EngineContext& engineContext, entt::registry& registry, Entity owner, Entity item)
 {
     auto& inventory = registry.get<CInventory>(owner);
     auto& incoming = registry.get<CItem>(item);
@@ -70,7 +69,7 @@ bool AddItem(EngineContext& engineContext, entt::registry& registry, entt::entit
 }
 
 std::optional<size_t> FindItemIndex(EngineContext& engineContext, entt::registry& registry,
-                                    entt::entity owner, std::string_view itemType)
+                                    Entity owner, std::string_view itemType)
 {
     auto& inventory = registry.get<CInventory>(owner);
 
@@ -89,7 +88,7 @@ std::optional<size_t> FindItemIndex(EngineContext& engineContext, entt::registry
     return std::nullopt;
 }
 
-void Equip(EngineContext& engineContext, entt::registry& registry, entt::entity owner, size_t index)
+void Equip(EngineContext& engineContext, entt::registry& registry, Entity owner, size_t index)
 {
     auto& inventory = registry.get<CInventory>(owner);
     auto& equipment = registry.get<CEquipment>(owner);
@@ -101,7 +100,7 @@ void Equip(EngineContext& engineContext, entt::registry& registry, entt::entity 
         return;
     }
 
-    entt::entity item = inventory.items[index];
+    Entity item = inventory.items[index];
 
     if (item == entt::null)
     {
@@ -129,8 +128,7 @@ void Equip(EngineContext& engineContext, entt::registry& registry, entt::entity 
     engineContext.logger.Info("Inventory", "Equipped {}", itemData.itemTypeId);
 }
 
-void Unequip(EngineContext& engineContext, entt::registry& registry, entt::entity owner,
-             size_t slot)
+void Unequip(EngineContext& engineContext, entt::registry& registry, Entity owner, size_t slot)
 {
     // slot is currently unused.
     (void)slot;
@@ -140,7 +138,7 @@ void Unequip(EngineContext& engineContext, entt::registry& registry, entt::entit
     if (equipment.weapon == entt::null)
         return;
 
-    entt::entity weapon = equipment.weapon;
+    Entity weapon = equipment.weapon;
 
     auto& itemData = registry.get<CItem>(weapon);
 
@@ -155,7 +153,7 @@ void Unequip(EngineContext& engineContext, entt::registry& registry, entt::entit
     engineContext.logger.Warn("Inventory", "Couldn't unequip {}", itemData.itemTypeId);
 }
 
-void Drop(EngineContext& engineContext, entt::registry& registry, entt::entity owner, size_t index,
+void Drop(EngineContext& engineContext, entt::registry& registry, Entity owner, size_t index,
           ItemCount_t amount)
 {
     auto& inventory = registry.get<CInventory>(owner);
@@ -166,7 +164,7 @@ void Drop(EngineContext& engineContext, entt::registry& registry, entt::entity o
         return;
     }
 
-    entt::entity inventoryItem = inventory.items[index];
+    Entity inventoryItem = inventory.items[index];
 
     if (inventoryItem == entt::null)
     {
@@ -217,7 +215,7 @@ void Drop(EngineContext& engineContext, entt::registry& registry, entt::entity o
 
     // Create a new entity representing the stack that was dropped into the world.
     auto& itemDefinition = registry.get<CDefinition>(inventoryItem);
-    entt::entity worldItem = registry.create();
+    Entity worldItem = registry.create();
     factory::ApplyItemDefinition(engineContext, registry, worldItem, itemDefinition.filepath);
 
     auto& worldItemData = registry.get<CItem>(worldItem);
@@ -233,8 +231,8 @@ void Drop(EngineContext& engineContext, entt::registry& registry, entt::entity o
     engineContext.logger.Info("Inventory", "Dropped {}x {}", amount, worldItemData.itemTypeId);
 }
 
-void RemoveItemFromInventory(EngineContext& engineContext, entt::registry& registry,
-                             entt::entity owner, size_t index, ItemCount_t amount)
+void RemoveItemFromInventory(EngineContext& engineContext, entt::registry& registry, Entity owner,
+                             size_t index, ItemCount_t amount)
 {
     auto& inventory = registry.get<CInventory>(owner);
 
@@ -246,7 +244,7 @@ void RemoveItemFromInventory(EngineContext& engineContext, entt::registry& regis
         return;
     }
 
-    entt::entity itemEntity = inventory.items[index];
+    Entity itemEntity = inventory.items[index];
 
     if (itemEntity == entt::null)
     {
@@ -277,8 +275,8 @@ void RemoveItemFromInventory(EngineContext& engineContext, entt::registry& regis
     }
 }
 
-void RemoveItemFromHotbar(EngineContext& engineContext, entt::registry& registry,
-                          entt::entity owner, size_t slot)
+void RemoveItemFromHotbar(EngineContext& engineContext, entt::registry& registry, Entity owner,
+                          size_t slot)
 {
     // TODO
 }

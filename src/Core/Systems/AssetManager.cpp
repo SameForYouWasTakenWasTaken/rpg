@@ -82,7 +82,7 @@ EntityDefinition AssetManager::GetEntityDefinition(const Filepath& filepath)
 
     const String regionName = json::AttemptAccessField<String>(spriteField, "region");
 
-    definition.region = GetAtlas(definition.atlasID).GetRegion(regionName);
+    definition.region = GetAtlas(definition.atlasID).GetRegion(regionName).value();
 
     return definition;
 }

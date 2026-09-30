@@ -1,5 +1,7 @@
 #include "GameLayer.hpp"
 
+#include <fstream>
+
 #include "../Factories/Gameplay/Map/MapLoader.hpp"
 #include "../Map/Tilemap.hpp"
 #include "Application.hpp"
@@ -7,7 +9,6 @@
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
-#include "Components/CWorldTransform.hpp"
 #include "Components/Gameplay/CHumanoid.hpp"
 #include "Engine.hpp"
 #include "EngineContext.hpp"
@@ -45,14 +46,14 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
     const auto& atlas = atlas::TexturePacker::Load(
         *m_EngineContext, "assets/Textures/Atlas/random.json", atlasTexture);
 
-    Region defaultPNG = atlas.GetRegion("default");
-    Region dogbite = atlas.GetRegion("dogbite");
-    Region shocked = atlas.GetRegion("shocked");
-    Region uwu = atlas.GetRegion("uwu");
+    Region defaultPNG = atlas.GetRegion("default").value();
+    Region dogbite = atlas.GetRegion("dogbite").value();
+    Region shocked = atlas.GetRegion("shocked").value();
+    Region uwu = atlas.GetRegion("uwu").value();
 
     auto makeEntity = [&](float x, float y, float size, const Filepath& definition)
     {
-        entt::entity entity = m_Registry->create();
+        Entity entity = m_Registry->create();
         factory::ApplyCharacterDefinition(*m_EngineContext, *m_Registry, entity, definition);
         // modify local transform (scale stays a {1,1} multiplier; size lives on the sprite)
         auto* transform = m_Registry->try_get<CTransform>(entity);
@@ -72,7 +73,7 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
 
     auto makeWeapon = [&](const Filepath& definition)
     {
-        entt::entity entity = m_Registry->create();
+        Entity entity = m_Registry->create();
         factory::ApplyWeaponDefinition(*m_EngineContext, *m_Registry, entity, definition);
         return entity;
     };
@@ -84,21 +85,21 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
     // auto other = makeEntity(340.0f, 340.0f, 200.0f, "data/characters/default.json");
 
     m_LocalPlayer = makeEntity(500.f, 500.f, 100.f, "data/characters/player.json");
-    auto& localPlayerWorld = m_Registry->get<CWorldTransform>(m_LocalPlayer);
-    m_LocalPlayerCamera.SetCenter(localPlayerWorld.position);
+    auto& localPlayerTransform = m_Registry->get<CTransform>(m_LocalPlayer);
+    m_LocalPlayerCamera.SetCenter(localPlayerTransform.worldPosition);
     m_LocalPlayerCamera.SetZoom(.35f);
 
     // World transforms must be current for KeepWorld rebasing to be correct.
     m_TransformSystem->Update(0.0f);
-    auto& worldWeapon = m_Registry->get<CWorldTransform>(someWeapon);
-    worldWeapon.position = localPlayerWorld.position + Vec2{100.f, 0.f};
+    auto& worldWeapon = m_Registry->get<CTransform>(someWeapon);
+    worldWeapon.worldPosition = localPlayerTransform.worldPosition + Vec2{100.f, 0.f};
 
     // maps
     map::MapEntry mapEntry = map::LookUpMapEntry("other_random");
     map::MapEntry otherMapEntry = map::LookUpMapEntry("random");
     map::Tilemap tilemap = map::Tiled::LoadTilemapJSON(*m_EngineContext, mapEntry.mapConfigPath);
 
-    map::O_N2::CreateEntitiesForMap(*m_Registry, tilemap);
+    //  map::O_N2::CreateEntitiesForMap(*m_Registry, tilemap);
 
     // Inventory
     // add the weapon
@@ -116,7 +117,23 @@ void GameLayer::OnAttach(context::SceneContext& sceneContext)
     m_SpriteSink = &renderer.GetSink<rendering::SpriteSink>();
 
     auto& scriptEngine = engine.GetScriptEngine();
-    scriptEngine.runFile("scripts/other_test.lua");
+    Filepath tests_path = "scripts/tests";
+    std::error_code ec;
+    // Go through the scripts/tests/ folder and recursively run lua api tests
+    for (auto it = std::filesystem::recursive_directory_iterator(
+             tests_path, std::filesystem::directory_options::skip_permission_denied, ec);
+         it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
+    {
+        if (ec)
+        {
+            std::cerr << "Error: " << ec.message() << "\n";
+            ec.clear();
+            continue;
+        }
+        if (!it->is_directory())
+            scriptEngine.runFile(it->path());
+    }
+    scriptEngine.runFile("scripts/player.lua");
 }
 
 void GameLayer::OnWindowResize(const WindowResizeEvent& event)
@@ -131,7 +148,7 @@ void GameLayer::OnKeyPress(const KeyPressedEvent& event)
 
     if (event.key == Input::Key::R)
     {
-        Vector<entt::entity> reloadTargets;
+        Vector<Entity> reloadTargets;
 
         auto view = m_Registry->view<CDefinition>();
 
@@ -183,17 +200,17 @@ void GameLayer::OnUpdate(float dt, context::SceneContext& context)
     auto& transform = m_Registry->get<CTransform>(m_LocalPlayer);
     const auto& speed = m_Registry->get<CHumanoid>(m_LocalPlayer).speed;
 
-    if (Input::IsKeyDown(Input::Key::W))
-        transform.position.y -= speed * dt;
-
-    if (Input::IsKeyDown(Input::Key::S))
-        transform.position.y += speed * dt;
-
-    if (Input::IsKeyDown(Input::Key::A))
-        transform.position.x -= speed * dt;
-
-    if (Input::IsKeyDown(Input::Key::D))
-        transform.position.x += speed * dt;
+    // if (Input::IsKeyDown(Input::Key::W))
+    //     transform.position.y -= speed * dt;
+    //
+    // if (Input::IsKeyDown(Input::Key::S))
+    //     transform.position.y += speed * dt;
+    //
+    // if (Input::IsKeyDown(Input::Key::A))
+    //     transform.position.x -= speed * dt;
+    //
+    // if (Input::IsKeyDown(Input::Key::D))
+    //     transform.position.x += speed * dt;
 
     // 2. Derive world transforms from local + hierarchy.
     m_TransformSystem->Update(dt);
@@ -205,32 +222,32 @@ void GameLayer::OnUpdate(float dt, context::SceneContext& context)
     m_CombatSystem->Update(dt);
 
     // 5. Camera follows the player's world position.
-    m_LocalPlayerCamera.SetCenter(m_Registry->get<CWorldTransform>(m_LocalPlayer).position);
-    context.application_context.MainWindow.SetView(m_LocalPlayerCamera.GetView());
+    // m_LocalPlayerCamera.SetCenter(m_Registry->get<CWorldTransform>(m_LocalPlayer).position);
+    // context.application_context.MainWindow.SetView(m_LocalPlayerCamera.GetView());
 }
 
 void GameLayer::OnRender(context::SceneContext& context)
 {
     auto& assetManager = context.engine_context.assetManager;
-    auto view = m_Registry->view<CSprite, CTexture, CWorldTransform>();
-    for (entt::entity entity : view)
+    auto view = m_Registry->view<CSprite, CTexture, CTransform>();
+    for (Entity entity : view)
     {
         auto& sprite = view.get<CSprite>(entity);
         auto& texture = view.get<CTexture>(entity);
-        auto& transform = view.get<CWorldTransform>(entity);
+        auto& transform = view.get<CTransform>(entity);
 
         rendering::RenderObject obj;
         obj.color = sprite.color;
         obj.origin = sprite.origin;
         obj.zIndex = sprite.zIndex;
 
-        obj.pos = transform.position;
+        obj.pos = transform.worldPosition;
 
         // Final pixel size = sprite size * world scale multiplier.
-        const Vec2 finalSize = sprite.size * transform.scale;
+        const Vec2 finalSize = sprite.size * transform.worldScale;
         obj.scale.x = sprite.flipX ? -finalSize.x : finalSize.x;
         obj.scale.y = sprite.flipY ? -finalSize.y : finalSize.y;
-        obj.rotation = transform.rotation;
+        obj.rotation = transform.worldRotation;
 
         obj.texture = &assetManager.GetTexture(texture.textureHandle);
         obj.texRect = texture.textureRect;

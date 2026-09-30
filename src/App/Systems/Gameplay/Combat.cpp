@@ -1,6 +1,5 @@
 #include "Combat.hpp"
 
-#include "Components/CWorldTransform.hpp"
 #include "Components/Gameplay/CCombatState.hpp"
 #include "Components/Gameplay/CEquipment.hpp"
 #include "Components/Gameplay/CHealth.hpp"
@@ -20,7 +19,7 @@ CombatSystem::CombatSystem(entt::registry& registry, EngineContext& engineContex
         .connect<&CombatSystem::OnAttackEvent>(this);
 }
 
-void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target) const
+void CombatSystem::ResolveAttack(Entity attacker, Entity target) const
 {
     float damage =
         m_Registry.get<CWeapon>(m_Registry.get<CCombatState>(attacker).cachedWeapon).damage;
@@ -33,7 +32,7 @@ void CombatSystem::ResolveAttack(entt::entity attacker, entt::entity target) con
 }
 void CombatSystem::Update(float dt)
 {
-    auto view = m_Registry.view<CCombatState, CEquipment, CWorldTransform>();
+    auto view = m_Registry.view<CCombatState, CEquipment, CTransform>();
 
     for (auto attacker : view)
     {
@@ -49,15 +48,15 @@ void CombatSystem::Update(float dt)
         if (combatState.timeInAttack >= combatState.windowLo &&
             combatState.timeInAttack <= combatState.windowHi)
         {
-            auto& transform = m_Registry.get<CWorldTransform>(attacker);
+            auto& transform = m_Registry.get<CTransform>(attacker);
             float range = m_Registry.get<CWeapon>(combatState.cachedWeapon).range;
 
-            auto filterEntities = [attacker, this](entt::entity target)
+            auto filterEntities = [attacker, this](Entity target)
             { return target != attacker && m_Registry.all_of<CHealth, CHumanoid>(target); };
 
             // query target entities within range of entity, that are a humanoid and alive
-            for (entt::entity target :
-                 m_SpatialGrid.Query(transform.position, range, filterEntities))
+            for (Entity target :
+                 m_SpatialGrid.Query(transform.worldPosition, range, filterEntities))
             {
                 // skip already cached entities
                 if (std::ranges::contains(combatState.alreadyHit, target))

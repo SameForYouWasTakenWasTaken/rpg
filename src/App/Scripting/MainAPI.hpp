@@ -1,6 +1,8 @@
 #pragma once
 #include <sol/sol.hpp>
 
+#include "Engine.hpp"
+#include "LuaContext.hpp"
 #include "SceneStack.hpp"
 
 namespace ssg::lua::api
@@ -26,7 +28,16 @@ inline ScriptLocation current_script_location(lua_State* L)
     return {};
 }
 
-void lua_api_init(sol::state& state, EngineContext& context, SceneStack& stack);
-void update(sol::state& state, float dt);
-void register_print(EngineContext& context, sol::state& state);
+inline LuaContext create_lua_context(EngineContext& engine_context,
+                                     ApplicationContext& application_context)
+{
+    auto& lua_state = engine_context.engine.GetScriptEngine().getState();
+    auto engine_table = lua_state.create_table("engine");
+    return LuaContext{lua_state, engine_table, engine_context, application_context};
+}
+
+void lua_api_init(LuaContext& lua_context, SceneStack& stack);
+void update(LuaContext& lua_context, float dt);
+void register_print(LuaContext& lua_context);
+void register_error(LuaContext& lua_context);
 } // namespace ssg::lua::api

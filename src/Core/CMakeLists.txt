@@ -2,7 +2,6 @@ add_library(Core STATIC
         Engine.cpp
         Rendering/Renderer.cpp
         Rendering/Camera.cpp
-        Entity.cpp
         Rendering/Window.cpp
         Systems/AssetManager.cpp
         Logger.cpp

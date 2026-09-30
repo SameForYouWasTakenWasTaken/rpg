@@ -1,6 +1,6 @@
 #include "MapLoader.hpp"
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 #include <fstream>
 #include <nlohmann/json_fwd.hpp>
 
@@ -39,7 +39,7 @@ void CreateEntitiesForMap(entt::registry& registry, Tilemap& tilemap)
                 const auto localId = gid - tileset->getFirstGid();
                 const auto region = tileset->getRegion(localId);
 
-                entt::entity entity = registry.create();
+                Entity entity = registry.create();
 
                 auto& transform = registry.emplace<CTransform>(entity);
                 auto& sprite = registry.emplace<CSprite>(entity);

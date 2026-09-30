@@ -7,7 +7,6 @@
 #include "Components/CSprite.hpp"
 #include "Components/CTexture.hpp"
 #include "Components/CTransform.hpp"
-#include "Components/CWorldTransform.hpp"
 #include "Components/Gameplay/CCombatState.hpp"
 #include "Components/Gameplay/CEquipment.hpp"
 #include "Components/Gameplay/CHealth.hpp"
@@ -21,7 +20,7 @@
 namespace ssg::factory
 {
 
-json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, entt::entity entity,
+json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, Entity entity,
                                     Filepath definition)
 
 {
@@ -74,7 +73,7 @@ json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, e
         r.emplace_or_replace<CSprite>(entity, std::move(sprite));
 
         auto& atlas = assetManager.GetAtlas(atlasID);
-        auto regionRect = atlas.GetRegion(region);
+        auto regionRect = atlas.GetRegion(region).value();
 
         CTexture texture;
         texture.textureHandle = atlas.GetTextureID();
@@ -92,12 +91,10 @@ json::json ApplyCharacterDefinition(EngineContext& context, entt::registry& r, e
         auto rotation = json::AttemptAccessField<float>(component, "rotation");
 
         CTransform transform;
-        transform.position = Vec2{position.x, position.y};
-        transform.scale = Vec2{scale.x, scale.y};
-        transform.rotation = rotation;
-        r.emplace_or_replace<CTransform>(entity, std::move(transform));
-        // Add additional world transform for hierarchial entities
-        auto& worldTransform = r.emplace_or_replace<CWorldTransform>(entity);
+        transform.worldPosition = transform.position;
+        transform.worldScale = transform.scale;
+        transform.worldRotation = transform.rotation;
+        r.emplace_or_replace<CTransform>(entity, transform);
     }
 
     if (json::Has(components, "health"))

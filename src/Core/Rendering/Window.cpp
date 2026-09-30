@@ -70,10 +70,4 @@ void Window::OnWindowSetView(const WindowSetViewEvent& event)
         SetView(event.view);
 }
 
-void Window::UpdateView(std::invocable<sf::View&> auto&& func)
-{
-    func(m_View);
-    SetView(m_View);
-}
-
 } // namespace ssg

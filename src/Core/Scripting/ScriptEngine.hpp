@@ -6,6 +6,11 @@
 
 namespace ssg::lua
 {
+struct Script
+{
+    Filepath path;
+    sol::environment environment;
+};
 class ScriptEngine
 {
   public:
@@ -14,8 +19,10 @@ class ScriptEngine
 
     bool runFile(const Filepath& path);
     [[nodiscard]] sol::state& getState() { return m_Lua; }
+    [[nodiscard]] std::vector<Script>& getScripts() { return m_Scripts; }
 
   private:
     sol::state m_Lua;
+    std::vector<Script> m_Scripts;
 };
 } // namespace ssg::lua

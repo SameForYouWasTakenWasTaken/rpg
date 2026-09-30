@@ -1,7 +1,9 @@
 #pragma once
 
+#include <Entity.hpp>
 #include <cstdint>
-#include <entt/entt.hpp>
+
+#include "Entity.hpp"
 
 namespace ssg::hierarchy
 {
@@ -16,12 +18,15 @@ enum class AttachMode : std::uint8_t
 
 // Pure hierarchy attach: links `child` under `parent` in the linked list.
 // Knows nothing about transforms.
-void AttachChild(entt::registry& registry, entt::entity parent, entt::entity child);
+void AttachChild(entt::registry& registry, Entity parent, Entity child);
 
 // Runs AttachChild, then applies the extra behaviour selected by `mode`.
-void AttachChild(entt::registry& registry, entt::entity parent, entt::entity child,
-                 AttachMode mode);
+void AttachChild(entt::registry& registry, Entity parent, Entity child, AttachMode mode);
 
-void DetachChild(entt::registry& registry, entt::entity child);
+void DetachChild(entt::registry& registry, Entity child);
+
+bool IsRoot(entt::registry& registry, Entity e);
+
+Entity GetRoot(entt::registry& registry, Entity e);
 
 } // namespace ssg::hierarchy

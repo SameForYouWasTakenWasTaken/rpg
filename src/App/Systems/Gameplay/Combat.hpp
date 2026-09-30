@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <Entity.hpp>
 
 #include "EngineContext.hpp"
 #include "Events/Gameplay/OnAttackRequest.hpp"
@@ -23,7 +23,7 @@ class CombatSystem : public ISystem
 
   private:
     void OnAttackEvent(OnAttackRequest& event);
-    void ResolveAttack(entt::entity attacker, entt::entity defender) const;
+    void ResolveAttack(Entity attacker, Entity defender) const;
 
     SpatialGrid& m_SpatialGrid;
 };

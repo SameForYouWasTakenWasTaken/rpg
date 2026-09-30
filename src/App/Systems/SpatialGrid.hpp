@@ -1,8 +1,8 @@
 #pragma once
 
+#include <Entity.hpp>
 #include <cmath>
 #include <cstdint>
-#include <entt/entt.hpp>
 #include <limits>
 #include <unordered_map>
 
@@ -15,7 +15,7 @@ namespace ssg
 {
 
 using GridKey = std::int64_t;
-using GridEntityList = Vector<entt::entity>;
+using GridEntityList = Vector<Entity>;
 
 class SpatialGrid : public ISystem
 {
@@ -32,12 +32,11 @@ class SpatialGrid : public ISystem
 
     void Update(float /*dt*/) override { Rebuild(); }
 
-    void Insert(entt::entity entity);
+    void Insert(Entity entity);
     void Rebuild();
     void Clear() { m_Grid.clear(); }
 
-    template <typename TFilter>
-    entt::entity FindNearest(const Vec2& pos, float radius, TFilter&& filter);
+    template <typename TFilter> Entity FindNearest(const Vec2& pos, float radius, TFilter&& filter);
 
     template <typename TFilter>
     GridEntityList Query(const Vec2& pos, float radius, TFilter&& filter);
@@ -75,7 +74,7 @@ void SpatialGrid::Iterate(const Vec2& pos, float radius, TFilter&& filter, TCall
             if (it == m_Grid.end())
                 continue;
 
-            for (entt::entity entity : it->second)
+            for (Entity entity : it->second)
             {
                 if (!filter(entity))
                     continue;
@@ -91,13 +90,13 @@ void SpatialGrid::Iterate(const Vec2& pos, float radius, TFilter&& filter, TCall
 }
 
 template <typename TFilter>
-entt::entity SpatialGrid::FindNearest(const Vec2& pos, float radius, TFilter&& filter)
+Entity SpatialGrid::FindNearest(const Vec2& pos, float radius, TFilter&& filter)
 {
-    entt::entity nearestEntity{entt::null};
+    Entity nearestEntity{entt::null};
     float bestDist = std::numeric_limits<float>::max();
 
     Iterate(pos, radius, filter,
-            [&](entt::entity entity)
+            [&](Entity entity)
             {
                 const auto& transform = m_Registry.get<CTransform>(entity);
                 const Vec2 delta = transform.position - pos;
@@ -118,7 +117,7 @@ GridEntityList SpatialGrid::Query(const Vec2& pos, float radius, TFilter&& filte
 {
     GridEntityList neighbours;
 
-    Iterate(pos, radius, filter, [&](entt::entity entity) { neighbours.push_back(entity); });
+    Iterate(pos, radius, filter, [&](Entity entity) { neighbours.push_back(entity); });
 
     return neighbours;
 }
