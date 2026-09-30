@@ -122,6 +122,7 @@ inline sol::table get_all_of(entt::registry& reg, sol::state_view lua,
     }
 
     sol::table result = lua.create_table();
+
     int index = 1;
     for (Entity entity : view)
         result[index++] = Entity{entity};

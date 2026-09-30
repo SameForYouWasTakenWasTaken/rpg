@@ -10,7 +10,7 @@ ScriptEngine::ScriptEngine()
 
     // Set the package path to the scripts/ folder, to ensure require() works as intended
     m_Lua["package"]["path"] =
-        std::string(m_Lua["package"]["path"]) + ";scripts/?.lua;scripts/?/init.lua";
+        String(m_Lua["package"]["path"].get<String>()) + ";scripts/?.lua;scripts/?/init.lua";
 }
 ScriptEngine::~ScriptEngine() {}
 bool ScriptEngine::runFile(const Filepath& path)
